@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/libraint/public_html/dashaboard.librainternational.com.pe
+    - /bin/cp -R * $DEPLOYPATH
