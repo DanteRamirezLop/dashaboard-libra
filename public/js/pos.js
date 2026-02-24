@@ -280,7 +280,8 @@ $(document).ready(function() {
                     ' (Out of stock) </li>';
                 return $(string).appendTo(ul);
             } else {
-                var string = '<div>' + item.name;
+
+                var string = '<div> <strong>' + item.product_custom_field1 + '</strong>  - ' +  item.name ;
                 if (item.type == 'variable') {
                     string += '-' + item.variation;
                 }

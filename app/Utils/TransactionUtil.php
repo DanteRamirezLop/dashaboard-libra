@@ -2086,6 +2086,7 @@ class TransactionUtil extends Util
                 $line_array['product_custom_fields'] = implode(',', $temp);
             }
 
+
             //Group product taxes by name.
             if (! empty($tax_details)) {
                 if ($tax_details->is_tax_group) {

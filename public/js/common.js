@@ -370,11 +370,12 @@ ranges[LANG.last_financial_year] = [
     moment(financial_year.end._i).subtract(1, 'year'),
 ];
 
+    // startDate: financial_year.start,
 var dateRangeSettings = {
     showDropdowns : true,
     linkedCalendars : false,
     ranges: ranges,
-    startDate: financial_year.start,
+    startDate:"01/01/2020",
     endDate: financial_year.end,
     locale: {
         cancelLabel: LANG.clear,

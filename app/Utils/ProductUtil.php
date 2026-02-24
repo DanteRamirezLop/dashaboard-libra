@@ -1718,6 +1718,7 @@ class ProductUtil extends Util
                 'products.name',
                 'products.type',
                 'products.enable_stock',
+                'products.product_custom_field1',
                 'variations.id as variation_id',
                 'variations.name as variation',
                 'VLD.qty_available',

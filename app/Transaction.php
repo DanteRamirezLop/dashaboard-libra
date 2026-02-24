@@ -306,6 +306,24 @@ class Transaction extends Model
         return $payment_status;
     }
 
+     public static function getOverduePaymentTime($transaction)
+    {
+        $payment_status = $transaction->payment_status;
+        $timeDiff = '';
+        if (in_array($payment_status, ['partial', 'due']) && ! empty($transaction->pay_term_number) && ! empty($transaction->pay_term_type)) {
+            $transaction_date = \Carbon::parse($transaction->transaction_date);
+            $due_date = $transaction->pay_term_type == 'days' ? $transaction_date->addDays($transaction->pay_term_number) : $transaction_date->addMonths($transaction->pay_term_number);
+            $now = \Carbon::now();
+            if ($now->gt($due_date)) {
+                $timeDiff = $now->diffInDays($due_date);
+                $timeDiff = '[' .$timeDiff.' días]';
+            }
+        }else{
+            $timeDiff = '';
+        }
+        return $timeDiff;
+    }
+
     /**
      * Due date custom attribute
      */

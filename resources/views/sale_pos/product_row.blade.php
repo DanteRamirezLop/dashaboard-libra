@@ -23,9 +23,10 @@
 			name="products[{{$row_count}}][so_line_id]" 
 			value="{{$so_line->id}}">
 		@endif
+		
 		@php
-			$product_name = e($product->product_name) . '<br/>' . $product->sub_sku ;
-			if(!empty($product->brand)){ $product_name .= ' ' . $product->brand ;}
+			$product_name = '<strong>'. $product->product_custom_field1 .'</strong> '. $product->product_name . '<br/>';
+			if(!empty($product->brand)){ $product_name .= ' Marca: ' . $product->brand ;}
 		@endphp
 
 		@if( ($edit_price || $edit_discount) && empty($is_direct_sell) )
