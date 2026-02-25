@@ -1021,7 +1021,7 @@
                                 <div class="tw-flex tw-items-center tw-flex-1 tw-min-w-0 tw-gap-1">
                                     <div class="tw-w-full sm:tw-w-1/2 md:tw-w-1/2">
                                         <h3 class="tw-font-bold tw-text-base lg:tw-text-xl">
-                                            Holding
+                                          @lang('lang_v1.about_us')
                                         </h3>
                                     </div>
                                 </div>
@@ -1029,7 +1029,7 @@
                             <div class="tw-flow-root tw-mt-5  tw-border-gray-200">
                                 <div class="tw--mx-4 tw--my-2 tw-overflow-x-auto sm:tw--mx-5">
                                     <div class="tw-inline-block tw-min-w-full tw-py-2 tw-align-middle sm:tw-px-5">
-                                        <img src="{{asset('/img/business.webp')}}" alt="holding" with="100%">
+                                        <img src="{{asset('/img/business.webp')}}" alt="holding" with="100%" style="mask-image: linear-gradient(transparent, white 18%);border-radius: 5px;">
                                     </div>
                                 </div>
                             </div>

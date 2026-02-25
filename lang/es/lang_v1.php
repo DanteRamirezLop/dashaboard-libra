@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'about_us'=>'Nosotros',
     'login_to_your' => 'Iniciar sesión en ',
     'welcome_back'=>'¡Bienvenido de nuevo!',
     'enable_editing_product_from_purchase' => 'Habilitar la edición del precio del producto desde la pantalla de compra',
@@ -278,7 +279,7 @@ return [
     'time_format' => 'Formato de tiempo',
     '12_hour' => '12 horas',
     '24_hour' => '24 horas',
-    'list_quotations' => 'Lista de citas',
+    'list_quotations' => 'Lista de cotizaciones',
     'list_drafts' => 'List Drafts',
     'you_cannot_delete_this_contact' => 'No se puede eliminar el contacto: las transacciones ya existen para el contacto',
     'enable_row' => 'Habilitar fila',
@@ -677,7 +678,7 @@ return [
     'returned' => 'regresó',
     'dob' => 'Fecha de nacimiento',
     'married' => 'Casado',
-    'unmarried' => 'Soltero',
+    'unmarried' => 'Simple',
     'marital_status' => 'Estado civil',
     'blood_group' => 'Grupo sanguíneo',
     'divorced' => 'Divorciado',

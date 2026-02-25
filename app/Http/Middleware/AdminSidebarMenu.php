@@ -789,13 +789,42 @@ class AdminSidebarMenu
 
             //Notification template menu
             if (auth()->user()->can('send_notifications')) {
-                $menu->url(action([\App\Http\Controllers\NotificationTemplateController::class, 'index']), __('lang_v1.notification_templates'), ['icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                $menu->url(action([\App\Http\Controllers\NotificationTemplateController::class, 'index']), __('lang_v1.notification_templates'),
+                 ['icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10z"></path>
                     <path d="M3 7l9 6l9 -6"></path>
                   </svg>', 'active' => request()->segment(1) == 'notification-templates'])->order(80);
             }
+
+             //prestamos
+            if ($is_admin || auth()->user()->hasAnyPermission(['loan.own_quotation','loan.all_quotations' ])) {
+                $menu->dropdown(
+                    __('loand.loands'),
+                     function ($sub) {
+                        $sub->url(
+                            action([\App\Http\Controllers\LoanQuotationController::class, 'index']),
+                            __('loand.loan_quotation_list'),
+                            ['icon' => '', 'active' => request()->segment(1) == 'loanQuotation'  && request()->segment(2) == null]
+                        );
+        
+                         $sub->url(
+                             action([\App\Http\Controllers\LoanQuotationController::class, 'create']),
+                            __('loand.add_loan_quotation'),
+                             ['icon' => '', 'active' => request()->segment(1) == 'loanQuotation' && request()->segment(2) == 'create']
+                         );
+                       
+                     },
+                     ['icon' => '
+                     <svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="24px" height="24px" viewBox="0 0 24 24" stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="#000000"><path d="M2 11L4.80662 7.84255C5.5657 6.98859 6.65372 6.5 7.79627 6.5L8 6.5" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M2 19.5003L7.5 19.5L11.5 16.5003C11.5 16.5003 12.3091 15.9528 13.5 15.0001C16 13.0002 13.5 9.83352 11 11.4997C8.96409 12.8565 7 14.0003 7 14.0003" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 13.5V7C8 5.89543 8.89543 5 10 5H20C21.1046 5 22 5.89543 22 7V13C22 14.1046 21.1046 15 20 15H13.5" stroke="#000000" stroke-width="1.5"></path><path d="M15 12C13.8954 12 13 11.1046 13 10C13 8.89543 13.8954 8 15 8C16.1046 8 17 8.89543 17 10C17 11.1046 16.1046 12 15 12Z" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M19.5 10.01L19.51 9.99889" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M10.5 10.01L10.51 9.99889" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>   
+                    </svg>
+                  ']
+                 )->order(45);
+            }
+
+
 
             //Settings Dropdown
             if (auth()->user()->can('business_settings.access') ||
@@ -881,7 +910,12 @@ class AdminSidebarMenu
                   </svg>', 'id' => 'tour_step3']
                 )->order(85);
             }
+
+
         });
+
+        //Prestamos
+        
 
         //Add menus from modules
         $moduleUtil = new ModuleUtil;

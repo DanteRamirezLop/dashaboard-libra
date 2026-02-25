@@ -214,6 +214,7 @@ class RoleController extends Controller
 
         $common_settings = ! empty(session('business.common_settings')) ? session('business.common_settings') : [];
 
+
         return view('role.edit')
             ->with(compact('role', 'role_permissions', 'selling_price_groups', 'module_permissions', 'common_settings'));
     }

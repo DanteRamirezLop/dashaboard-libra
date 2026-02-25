@@ -1577,13 +1577,94 @@
               </label>
             </div>
           </div>
+
         </div>
         </div>
         <hr>
+
+      <!-- SECCION DE PRESTAMOS -->
+      <div class="row check_group">
+        <div class="col-md-1">
+          <h4>@lang( 'loand.loands' ) ***** </h4>
+        </div>
+        <div class="col-md-2">
+          <div class="checkbox">
+              <label>
+                <input type="checkbox" class="check_all input-icheck" > {{ __( 'role.select_all' ) }}
+              </label>
+            </div>
+        </div>
+        <div class="col-md-9">
+          <div class="col-md-12">
+            <div class="checkbox">
+              <label>
+                {!! Form::radio('radio_option[loands_quotation_view]', 'loand.own_quotation', false, 
+                [ 'class' => 'input-icheck']); !!} {{ __( 'loand.add_edit_view_all_quotation_loands' ) }}
+              </label>
+            </div>
+          </div>
+          <div class="col-md-12">
+            <div class="checkbox">
+              <label>
+                {!! Form::radio('radio_option[loands_quotation_view]', 'loand.all_quotation', false, 
+                [ 'class' => 'input-icheck']); !!} {{ __( 'loand.add_edit_view_own_quotation_loands' ) }}
+              </label>
+            </div>
+          </div>
+
+          <div class="col-md-12">
+            <div class="checkbox">
+              <label>
+                {!! Form::checkbox('permissions[]', 'loand.view', false, 
+                [ 'class' => 'input-icheck']); !!} {{ __( 'loand.view_loands' ) }}
+              </label>
+            </div>
+          </div>
+
+          <div class="col-md-12">
+            <div class="checkbox">
+              <label>
+                {!! Form::checkbox('permissions[]', 'loand.create', false, 
+                [ 'class' => 'input-icheck']); !!} {{ __( 'loand.create_loands' ) }}
+              </label>
+            </div>
+          </div>
+
+          <div class="col-md-12">
+            <div class="checkbox">
+              <label>
+                {!! Form::checkbox('permissions[]', 'loand.update', false, 
+                [ 'class' => 'input-icheck']); !!} {{ __( 'loand.edit_loands' ) }}
+              </label>
+            </div>
+          </div>
+
+          <div class="col-md-12">
+            <div class="checkbox">
+              <label>
+                {!! Form::checkbox('permissions[]', 'loand.delete', false, 
+                [ 'class' => 'input-icheck']); !!} {{ __( 'loand.delete_loands' ) }}
+              </label>
+            </div>
+          </div>
+
+          <div class="col-md-12">
+            <div class="checkbox">
+              <label>
+                {!! Form::checkbox('permissions[]', 'loand_settings.access', false, 
+                [ 'class' => 'input-icheck']); !!} {{ __( 'loand.access_loand_settings' ) }}
+              </label>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <hr>
+
         @if(in_array('booking', $enabled_modules))
         <div class="row check_group">
         <div class="col-md-1">
-          <h4>@lang( 'restaurant.bookings' )</h4>
+          <h4>@lang( 'restaurant.bookings' ) </h4>
         </div>
         <div class="col-md-2">
           <div class="checkbox">
@@ -1609,10 +1690,12 @@
               </label>
             </div>
           </div>
+          
         </div>
         </div>
         <hr>
         @endif
+
         <div class="row">
         <div class="col-md-3">
           <h4>@lang( 'lang_v1.access_selling_price_groups' )</h4>
@@ -1626,6 +1709,8 @@
               </label>
             </div>
           </div>
+
+
           @if(count($selling_price_groups) > 0)
           @foreach($selling_price_groups as $selling_price_group)
           <div class="col-md-12">

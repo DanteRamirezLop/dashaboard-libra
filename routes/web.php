@@ -60,6 +60,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\VariationTemplateController;
 use App\Http\Controllers\WarrantyController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\LoanController;
+use App\Http\Controllers\LoanQuotationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -240,16 +242,11 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('/pos/variation/{variation_id}/{location_id}', [\App\Http\Controllers\ProductController::class, 'getVarationDetail']);
     // end pos display screen route
     Route::resource('pos', SellPosController::class);
-
     Route::resource('roles', RoleController::class);
-
     Route::resource('users', ManageUserController::class);
-
     Route::resource('group-taxes', GroupTaxController::class);
-
     Route::get('/barcodes/set_default/{id}', [BarcodeController::class, 'setDefault']);
     Route::resource('barcodes', BarcodeController::class);
-
     //Invoice schemes..
     Route::get('/invoice-schemes/set_default/{id}', [InvoiceSchemeController::class, 'setDefault']);
     Route::resource('invoice-schemes', InvoiceSchemeController::class);
@@ -458,6 +455,13 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
 
     Route::get('bookings/get-todays-bookings', [Restaurant\BookingController::class, 'getTodaysBookings']);
     Route::resource('bookings', Restaurant\BookingController::class);
+    //PRESTAMOS
+    Route::resource('loans-quotations', LoanQuotationController::class);
+    Route::get('report-loans-quotations', [LoanQuotationController::class, 'report'])->name('report-loans-quotations');
+
+    Route::resource('loans', LoanController::class);
+    Route::get('get-customer-sunat',[LoanController::class, 'getCustomerSunat'])->name('get-customer-sunat');
+
 
     Route::resource('types-of-service', TypesOfServiceController::class);
     Route::get('sells/edit-shipping/{id}', [SellController::class, 'editShipping']);
