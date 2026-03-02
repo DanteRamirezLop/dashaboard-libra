@@ -205,6 +205,11 @@
                                      <option value="10">10 meses</option>
                                      <option value="11">11 meses</option>
                                     <option value="12">12 meses</option>
+                                    <option value="13">13 meses</option>
+                                    <option value="14">14 meses</option>
+                                    <option value="15">15 meses</option>
+                                    <option value="16">16 meses</option>
+                                    <option value="17">17 meses</option>
                                     <option value="18">18 meses</option>
                                 </select>
                             </div>
@@ -242,7 +247,7 @@
                 <div class="col-md-3">
                     <div class="form-group col-sm-12">
                         {!! Form::label('allow_decimal', 'Tasa de interés anual' . ':*') !!} 
-                        <select name="multiplayer" id="multiplayer" class="form-control" required>
+                        <select name="annual_interest_rate" id="annual_interest_rate" class="form-control" required>
                             <option value="0" selected disabled>@lang('messages.please_select' )</option>
                             <option value="20">20%</option>
                             <option value="19">19%</option>
@@ -317,7 +322,24 @@
     <script src="{{ asset('js/pos.js') }}"></script>
     
     <script type="text/javascript">
+
+       $.validator.addMethod("menorOIgualQue", function(value, element, param) {
+            // value = valor del 2do select (el que estás validando)
+            let primero = parseFloat($('#mounth_fracction').val());
+            let segundo = parseFloat($('#number_month').val());
+
+            // Si alguno está vacío, deja que "required" lo maneje (o lo damos por válido)
+            if (isNaN(primero) || isNaN(segundo)) return true;
+
+            return primero <= segundo;
+        }, "Tienes que selecionar una cuota mayor o igual a los meses a fraccionar de la inicial.");
+
         $('form#cotizar_add_form').validate({
+            rules: {
+                number_month: {
+                    menorOIgualQue: "#mounth_fracction"
+                }
+            },
             errorPlacement: function(error, element) {
                 if (element.parent('.iradio_square-blue').length) {
                     error.insertAfter($(".radio_btns"));
@@ -330,7 +352,14 @@
             submitHandler: function(form) {
                 form.submit();
             }
+
         });
+
+        $('#mounth_fracction').on('change', function() {
+            $('#number_month').valid();
+            console.log('Validando number_month al cambiar mounth_fracction');
+        });
+
         $(document).ready(function() {
             $('input[type=radio][name=type_initial]').on('ifChecked', function(){
                 if ($(this).val() == 1) {
@@ -339,8 +368,6 @@
                     $("#inicial").show();
                 }
             });
-
-
             $('input[type=radio][name=option]').on('ifChecked', function(){
                 if ($(this).val() == 1) {
                     $("#credito").hide();
@@ -348,7 +375,6 @@
                     $("#credito").show();
                 }
             });
-
             $('input[type=radio][name=option_seguro]').on('ifChecked', function(){
                 if ($(this).val() == 1) {
                     $("#tramite").hide();
@@ -356,7 +382,6 @@
                     $("#tramite").show();
                 }
             });
-
              $('input[type=radio][name=option_gps]').on('ifChecked', function(){
                 if ($(this).val() == 1) {
                     $("#gps").hide();
@@ -364,7 +389,6 @@
                     $("#gps").show();
                 }
             });
-
             $('input[type=radio][name=option_tramite]').on('ifChecked', function(){
                 if ($(this).val() == 1) {
                     $("#initial").hide();
@@ -383,12 +407,11 @@
                 }
             });
             
-             //Calculate % initial
+             //Calculate % initial en porcentage
              $('#pay_initial').on('input', function() {
                 let precio = parseFloat($('#prices').val());
                 console.log(precio);
                 let inicial = parseFloat($(this).val());
-
                 if (!isNaN(precio) && precio > 0 && !isNaN(inicial)) {
                     let porcentaje = (inicial / precio) * 100;
                     $('#porcentaje').val(porcentaje.toFixed(2) + '%');
@@ -427,6 +450,7 @@
                     data: {
                         _token: token_location,
                         dni:dni,
+                        type:'dni',
                     },
                     success: function (response) {
                         $("#email").val("");
@@ -481,6 +505,7 @@
                     data: {
                         _token: token_location,
                         ruc:ruc,
+                        type:'ruc',
                     },
                     success: function (response) {
                         if(response.status){
@@ -520,7 +545,6 @@
                     success: function(response) {
                         if (response.status) {
                            $('#prices').html(response.options);
-
                         }
                     }
                 });

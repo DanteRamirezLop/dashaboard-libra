@@ -814,6 +814,14 @@ class AdminSidebarMenu
                             __('loand.add_loan_quotation'),
                              ['icon' => '', 'active' => request()->segment(1) == 'loanQuotation' && request()->segment(2) == 'create']
                          );
+
+                         if (auth()->user()->can('loand_settings.access')) {
+                            $sub->url(
+                                action([\App\Http\Controllers\LoanSettingsController::class, 'index']),
+                                  __('loand.loan_settings'),
+                                ['icon' => '', 'active' => request()->segment(1) == 'loan-settings' && request()->segment(2) == null]
+                            );
+                         }
                        
                      },
                      ['icon' => 'fas fa-hand-holding-usd',

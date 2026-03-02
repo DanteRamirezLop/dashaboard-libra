@@ -36,6 +36,7 @@ return [
     'loan_cannot_be_deleted'=>'No se puede eliminar la cotización',
     'add_quotation' => 'Agregar cotización',
     'created_successfully'=>'Creado con éxito',
+    'loan_settings'=>'Configuración',
 
 
 ];

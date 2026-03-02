@@ -9,10 +9,10 @@ use Spatie\Permission\PermissionRegistrar;
 use Spatie\Permission\Exceptions\RoleAlreadyExists;
 use Spatie\Permission\Guard;
 
-class Goal extends Model
+class LoanSetting extends Model
 {
     use HasFactory;
-    protected $table = 'goals';
+    protected $table = 'loan_settings';
 
     protected $fillable = [
         'user_id',
@@ -25,16 +25,14 @@ class Goal extends Model
     public function __construct(array $attributes = [])
     {
         $attributes['guard_name'] = $attributes['guard_name'] ?? config('auth.defaults.guard');
-
         parent::__construct($attributes);
-
         $this->guarded[] = $this->primaryKey;
     }
 
-    public function getTable()
-    {
-        return config('permission.table_names.goals', parent::getTable());
-    }
+    // public function getTable()
+    // {
+    //     return config('permission.table_names.goals', parent::getTable());
+    // }
 
     public function user()
     {

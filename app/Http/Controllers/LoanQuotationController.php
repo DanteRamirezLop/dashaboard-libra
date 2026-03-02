@@ -15,7 +15,7 @@ use App\Category;
 use App\Utils\ContactUtil;
 use App\Variation;
 use App\Media;
-use App\Goal;
+use App\LoanSetting;
 use App\Charts\CommonChart;
 use App\BusinessLocation;
 use App\Utils\TransactionUtil;
@@ -131,7 +131,7 @@ class LoanQuotationController extends Controller
 
         $walk_in_customer = $this->contactUtil->getWalkInCustomer($business_id);
         // Traer todos los goals en 1 sola query
-        $goals = Goal::query()
+        $goals = LoanSetting::query()
             ->whereIn('name', ['coste-tramite', 'gps', 'seguro', 'initial'])
             ->get()
             ->keyBy('name');
@@ -184,8 +184,8 @@ class LoanQuotationController extends Controller
                 ? (float) $request->input('prices')
                 : (float) Variation::where('product_id', $product_id)->value('sell_price_inc_tax'); // 1 query
 
-            // 4) Traer Goals en un solo query (terminos, tramite, gps, seguro)
-            $goals = Goal::whereIn('name', ['terminos-y-condiciones', 'coste-tramite', 'gps', 'seguro'])
+            // 4) Traer LoanSettings en un solo query (terminos, tramite, gps, seguro)
+            $goals = LoanSetting::whereIn('name', ['terminos-y-condiciones', 'coste-tramite', 'gps', 'seguro'])
                 ->get()
                 ->keyBy('name');
 
@@ -335,9 +335,234 @@ class LoanQuotationController extends Controller
     }
 
 
-    public function storeAdmin(Request $request)
-    {
-        
+    public function storeAdmin(Request $request){
+        try {
+            $output = DB::transaction(function () use ($request) {
+
+                $business_id = $request->session()->get('user.business_id');
+
+                $product_id  = (int) $request->input('product_id');
+                $customer_id = (int) $request->input('contact_id');
+
+                $initial_amount   = (float) $request->input('pay_initial', 0);
+                $type_initial     = (int) $request->input('type_initial', 1);
+                $annualRate       = (float) $request->input('annual_interest_rate', 0); // Tasa anual (input antiguo)
+                $typeQuotation    = (int) $request->input('option'); // 1 contado, 2 crédito (input antiguo)
+                $option_tramite   = (int) $request->input('option_tramite', 0);
+                $option_gps       = (int) $request->input('option_gps', 0);
+                $option_seguro    = (int) $request->input('option_seguro', 0);
+
+                // Teléfono
+                $mobileRaw = $request->input('mobile');
+                $mobile = $mobileRaw ? $this->formatearTelefonoPeru($mobileRaw) : null;
+
+                // Actualizar contacto (1 query)
+                Contact::whereKey($customer_id)->update([
+                    'email'  => $request->input('email'),
+                    'mobile' => $mobile,
+                ]);
+
+                // Producto
+                $product = Product::select('id', 'name')->findOrFail($product_id);
+
+                // Precio de maquinaria
+                $product_mount = $request->filled('prices')
+                    ? (float) $request->input('prices')
+                    : (float) optional(
+                        Variation::where('product_id', $product_id)->select('sell_price_inc_tax')->first()
+                    )->sell_price_inc_tax;
+
+                // Mozo / asesor
+                $waiter = $request->input('waiter')
+                    ?: (auth()->user()->first_name . ' ' . auth()->user()->last_name);
+
+                // “customer” (en tu código actual es type_product)
+                $customer_name = $request->input('customer');
+
+                // Cargar LoanSettings en un solo query
+                $goals = LoanSetting::whereIn('name', [
+                    'terminos-y-condiciones',
+                    'coste-tramite',
+                    'gps',
+                    'seguro',
+                ])->get()->keyBy('name');
+
+                $terms = (string) optional($goals->get('terminos-y-condiciones'))->description;
+
+                // Defaults (contado)
+                $number_month               = 0;
+                $total_amount_interest      = 0; // antes: rate
+                $total_cost_loan            = 0; // antes: amount
+                $initial_admin_fee          = 0; // antes: admin_fee
+                $initial_gps                = 0; // antes: gps
+                $initial_insurance          = 0; // antes: insurance
+                $balance_to_financed        = 0; // antes: loan_amount
+                $gps_quotes                 = 0;
+                $insurance_quotes           = 0;
+                $initial_percentage         = 0;
+
+                $amount_fracction           = 0;
+                $mounth_fracction           = 0;
+                $initial_cuotes             = 0;
+                $taxes_fraccion             = 0;
+
+                $json = [];
+
+                // ======= COTIZACIÓN A CRÉDITO =======
+                if ($typeQuotation === 2) {
+
+                    $number_month = (int) $request->input('number_month', 0);
+                    $meses_gps_seguro = ($number_month < 12) ? $number_month : 12;
+
+                    // Trámite
+                    if ($option_tramite === 1) {
+                        $initial_admin_fee = (float) optional($goals->get('coste-tramite'))->amount_total;
+                    }
+
+                    // GPS
+                    if ($option_gps === 1) {
+                        $gps_tbl = $goals->get('gps');
+                        $initial_gps = (float) $gps_tbl->amount_inicial;
+                        $gps_amount_total = (float) $gps_tbl->amount_total;
+
+                        $gps_quotes = $gps_amount_total - $initial_gps;
+                        $gps_coutes = $meses_gps_seguro > 0 ? ($gps_quotes / $meses_gps_seguro) : 0;
+                    } else {
+                        $gps_coutes = 0;
+                    }
+
+                    // Seguro
+                    if ($option_seguro === 1) {
+                        $seguro_tbl = $goals->get('seguro');
+                        $initial_insurance = (float) $seguro_tbl->amount_inicial;
+                        $seguro_amount_total = (float) $seguro_tbl->amount_total;
+
+                        $insurance_quotes = $seguro_amount_total - $initial_insurance;
+                        $seguro_coutes = $meses_gps_seguro > 0 ? ($insurance_quotes / $meses_gps_seguro) : 0;
+                    } else {
+                        $seguro_coutes = 0;
+                    }
+
+                    // Porcentaje inicial
+                    $initial_percentage = $product_mount > 0 ? (100 * $initial_amount) / $product_mount : 0;
+
+                    // Inicial fraccionada
+                    if ($type_initial === 2) {
+                        $amount_fracction = (float) $request->input('amount_fracction', 0);
+                        $mounth_fracction = (int) $request->input('mounth_fracction', 0);
+                        $rate_fracction   = (float) $request->input('rate_fracction', 0);
+
+                        $initial_cuotes = $this->calculateQuote($rate_fracction, $mounth_fracction, $amount_fracction);
+                        $mount_aux = $initial_cuotes * $mounth_fracction;
+                        $taxes_fraccion = round($mount_aux - $amount_fracction, 4);
+                    }
+
+                    // Monto financiado
+                    $balance_to_financed = round($product_mount - $initial_amount, 4);
+
+                    // Cuota francesa
+                    $tasaMensual = ($annualRate / 100) / 12;
+                    if ($number_month <= 0) {
+                        throw new \Exception('Número de meses inválido.');
+                    }
+
+                    if ($tasaMensual > 0) {
+                        $cuota = $balance_to_financed * ($tasaMensual * pow(1 + $tasaMensual, $number_month)) / (pow(1 + $tasaMensual, $number_month) - 1);
+                    } else {
+                        $cuota = $balance_to_financed / $number_month;
+                    }
+
+                    $amount_fraccion = round($cuota, 4);
+
+                    // Cronograma (sin mutar el Carbon original)
+                    $saldo = $balance_to_financed;
+                    $baseDate = Carbon::now();
+
+                    for ($i = 1; $i <= $number_month; $i++) {
+                        $date_quota = $baseDate->copy()->addMonths($i)->format('Y-m-d');
+
+                        $saldo_inicial = $saldo;
+                        $interes = $saldo * $tasaMensual;
+                        $amortizacion = $cuota - $interes;
+                        $saldo = $saldo - $amortizacion;
+                        if ($saldo < 0) { $saldo = 0; }
+
+                        $initial_fraccion = ($type_initial === 2 && $i <= $mounth_fracction) ? $initial_cuotes : 0;
+                        $gps = ($i <= $meses_gps_seguro) ? $gps_coutes : 0;
+                        $seguro = ($i <= $meses_gps_seguro) ? $seguro_coutes : 0;
+
+                        $json[] = [
+                            'id'            => $i,
+                            'date'          => $date_quota,
+                            'saldo_inicial' => $saldo_inicial,
+                            'amount'        => $amount_fraccion,
+                            'capital'       => $amortizacion,
+                            'interes'       => $interes,
+                            'saldo_final'   => $saldo,
+                            'total_pay'     => 0,
+                            'status'        => 0,
+                            'gps'           => $gps,
+                            'seguro'        => $seguro,
+                            'initial'       => $initial_fraccion,
+                        ];
+                    }
+
+                    // Totales
+                    $coste_prestamo = $amount_fraccion * $number_month;
+                    $total_cost_loan = $coste_prestamo + $gps_quotes + $insurance_quotes; // antes: amount
+                    $total_amount_interest = round($coste_prestamo - $balance_to_financed, 4); // antes: rate
+                } else {
+                    // Contado: mantener inicial en 0 para loan (como ya hacías)
+                    $annualRate = 0;
+                    $initial_amount = 0;
+                }
+
+                // Crear Loan (YA CON NOMBRES NUEVOS)
+                Loan::create([
+                    'customer_id'            => $customer_id,
+                    'user_id'                => auth()->user()->id,
+                    'business_id'            => $business_id,
+                    'product_id'             => $product_id,
+                    'status'                 => 'quotation',
+                    'product_name'           => $product->name,
+                    'date'                   => Carbon::now(),
+
+                    // RENOMBRADOS
+                    'customer_name'          => $customer_name,          // antes type_product
+                    'type_quotation'         => $typeQuotation,          // antes period
+                    'annual_interest_rate'   => $annualRate,             // antes multiplier
+                    'total_amount_interest'  => $total_amount_interest,  // antes rate
+                    'total_cost_loan'        => $total_cost_loan,        // antes amount
+                    'balance_to_financed'    => $balance_to_financed,    // antes loan_amount
+                    'initial_admin_fee'      => $initial_admin_fee,      // antes admin_fee
+                    'initial_gps'            => $initial_gps,            // antes gps
+                    'initial_insurance'      => $initial_insurance,      // antes insurance
+
+                    // Se quedan igual
+                    'number_month'           => $number_month,
+                    'quotes'                 => json_encode($json),
+                    'gps_quotes'             => $gps_quotes,
+                    'insurance_quotes'       => $insurance_quotes,
+                    'product_price'          => $product_mount,
+                    'initial_percentage'     => $initial_percentage,
+                    'initial_amount'         => $initial_amount,
+                    'contact_source'         => $request->input('contact_source'),
+                    'terms'                  => $terms,
+                    'waiter'                 => $waiter,
+                    'initial_fraction'       => $amount_fracction,
+                    'mounth_initial'         => $mounth_fracction,
+                    'start_rate'             => $taxes_fraccion,
+                ]);
+
+                return ['success' => true, 'msg' => 'successfully added'];
+            });
+
+        } catch (\Exception $e) {
+            \Log::emergency('File:'.$e->getFile().' Line:'.$e->getLine().' Message:'.$e->getMessage());
+            $output = ['success' => false, 'msg' => 'Error: '.$e->getLine().' Message: '.$e->getMessage()];
+        }
+
+        return redirect('loans-quotations')->with('status', $output);
     }
 
 
@@ -423,7 +648,18 @@ class LoanQuotationController extends Controller
     public function report()
     {
         return view('loan.quotation.report');
-     }
+    }
+
+    private function calculateQuote($multiplayer, $number_month, $loan_amount){
+        $tasaMensual = ($multiplayer / 100) / 12; 
+        if ($tasaMensual > 0) {
+            $cuota = $loan_amount * ($tasaMensual * pow(1 + $tasaMensual, $number_month)) / (pow(1 + $tasaMensual, $number_month) - 1);
+        } else {
+            $cuota = $loan_amount / $number_month; // Si la tasa es 0, simplemente dividir el monto total entre el número de meses
+        }
+        $amount_fraccion = round($cuota, 4);
+        return  $amount_fraccion;
+    }
 
 
     private function formatearTelefonoPeru($numero) {

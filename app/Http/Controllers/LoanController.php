@@ -15,7 +15,7 @@ use App\User;
 use App\Category;
 use App\Utils\ContactUtil;
 use App\Variation;
-use App\Goal;
+use App\LoanSetting;
 use App\Delay;
 use App\PaymentSchedule;
 use App\Utils\TransactionUtil;
@@ -55,7 +55,7 @@ class LoanController extends Controller {
         $this->transactionUtil = $transactionUtil;
     }
 
-  public function getPrices(Request $request){
+    public function getPrices(Request $request){
         $options = '';
         $options .= '<option selected disabled >Selecciona un precio</option>';
         $variations = Variation::where('product_id',$request->id)->get();

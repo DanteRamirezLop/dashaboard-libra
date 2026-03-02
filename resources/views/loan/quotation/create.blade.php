@@ -204,7 +204,7 @@
             </div>
         @endcomponent
         <div class=" text-center mt-5">
-            <button type="submit" class="btn btn-primary btn-big submit_product_form" value="submit" id="save">
+            <button type="submit" class="tw-dw-btn tw-dw-btn-primary tw-dw-btn-lg tw-text-white submit_product_form" value="submit" id="save">
                 @lang('messages.save')
             </button>
         </div>

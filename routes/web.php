@@ -62,6 +62,7 @@ use App\Http\Controllers\WarrantyController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\LoanQuotationController;
+use App\Http\Controllers\LoanSettingsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -455,15 +456,19 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
 
     Route::get('bookings/get-todays-bookings', [Restaurant\BookingController::class, 'getTodaysBookings']);
     Route::resource('bookings', Restaurant\BookingController::class);
-    //PRESTAMOS
-    Route::resource('loans-quotations', LoanQuotationController::class);
-    Route::post('/store-admin', [LoanQuotationController::class, 'storeAdmin']);
-    Route::post('dowload-loan-quotation-pdf', [LoanQuotationController::class, 'downloadPdf'])->name('download-loan-quotation-pdf');
-    Route::get('report-loans-quotations', [LoanQuotationController::class, 'report'])->name('report-loans-quotations');
 
+    //PRESTAMOS
     Route::resource('loans', LoanController::class);
-    Route::post('/get-customer-sunat',[LoanController::class,'getCustomerSunat']);
+    Route::post('get-customer-sunat',[LoanController::class,'getCustomerSunat']);
     Route::post('get-prices',[LoanController::class,'getPrices']);
+    //COTIZACIONES DE PRESTAMOS
+    Route::resource('loans-quotations', LoanQuotationController::class);
+    Route::get('report-loans-quotations', [LoanQuotationController::class, 'report'])->name('report-loans-quotations');
+    Route::post('storeAdmin', [LoanQuotationController::class, 'storeAdmin']);
+    Route::post('dowload-loan-quotation-pdf', [LoanQuotationController::class, 'downloadPdf'])->name('download-loan-quotation-pdf');
+    //Configuration for types of service
+    Route::get('loans-settings',[LoanSettingsController::class,'index'])->name('loans-settings');
+  
 
     Route::resource('types-of-service', TypesOfServiceController::class);
     Route::get('sells/edit-shipping/{id}', [SellController::class, 'editShipping']);
