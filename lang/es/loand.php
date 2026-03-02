@@ -23,5 +23,20 @@ return [
     'access_loand_settings' => 'Acceder a la configuración de préstamos', 
     'loan_quotation_list' => 'Todas las cotizaciones',
     'add_loan_quotation' => 'Agregar cotización',
+    'quotations' => 'Cotizaciones',
+    'credit' => 'Crédito',
+    'cash' => 'Contado',
+    'see_details'=>'Ver detalles',
+    'download_pdf' => 'Descargar PDF',
+    'back' => 'Volver',
+    'payment_date'=>'Fecha de pago',
+    'letter'=>'Letra',
+    'schedule'=>'Cronograma de pagos',
+    'deleted_success'=>'Cotización eliminada con éxito',
+    'loan_cannot_be_deleted'=>'No se puede eliminar la cotización',
+    'add_quotation' => 'Agregar cotización',
+    'created_successfully'=>'Creado con éxito',
+
+
 ];
 

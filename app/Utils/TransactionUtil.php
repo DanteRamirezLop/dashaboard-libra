@@ -3087,6 +3087,15 @@ class TransactionUtil extends Util
         return $status;
     }
 
+
+    public function currentCurrency($business_id)
+    {
+        $business = Business::find($business_id);
+        $currency = Currency::find($business->currency_id);
+
+        return $currency;
+    }
+
     /**
      * Purchase currency details
      *

@@ -1794,6 +1794,8 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
                         .last();
                     pos_each_row(this_row);
 
+                    //update_row_price_for_exchange_rate(this_row);   // <- AQUI CAMBIO DE MONEDA
+
                     //For initial discount if present
                     var line_total = __read_number(this_row.find('input.pos_line_total'));
                     this_row.find('span.pos_line_total_text').text(line_total);
@@ -1843,6 +1845,35 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
             },
         });
     }
+}
+
+
+function update_row_price_for_exchange_rate(row) {
+    var exchange_rate = $('input#exchange_rate').val();
+
+    console.log(exchange_rate);
+    console.log('------');
+    if (!exchange_rate) {
+        exchange_rate = 1;
+    }
+
+    if (exchange_rate == 1) {
+        return true;
+    }
+
+
+    var pos_unit_price = __read_number(row.find('.pos_unit_price')) * exchange_rate;
+    __write_number(row.find('.pos_unit_price'), pos_unit_price);
+
+    var pos_unit_price_inc_tax =__read_number(row.find('.pos_unit_price_inc_tax')) * exchange_rate;
+    __write_number(row.find('input.pos_unit_price_inc_tax'), pos_unit_price_inc_tax);
+
+    var pos_line_total = __read_number(row.find('.pos_line_total')) * exchange_rate;
+    __write_number(row.find('input.pos_line_total'),pos_line_total);
+
+    // row.find('.row_subtotal_after_tax').text(
+    //     __currency_trans_from_en(pos_line_total_text, false, true)
+    // );
 }
 
 //Update values for each row
@@ -3315,10 +3346,10 @@ function saveFormDataToLocalStorage() {
 
     let form = $('form#add_pos_sell_form'); // Select the form by ID
     // Check if the form exists in the DOM
-    if (form.length === 0) {
-        console.error("Error: Form #add_pos_sell_form not found.");
-        return;
-    }
+    // if (form.length === 0) {
+    //     console.error("Error: Form #add_pos_sell_form not found.");
+    //     return;
+    // }
     // Serialize form data into an array of objects: [{name: 'input_name', value: 'input_value'}, ...]
     let formArray = form.serializeArray();
 

@@ -1888,4 +1888,28 @@ class Util
         return $result;
     }
 
+
+    public function getModuleStaff($business_id,  $permission = false, $for_dropdown = false)
+    {
+        $waiters = [];
+        //Get all service staff roles
+        $service_staff_roles = Role::where('business_id', $business_id)
+            ->where('is_service_staff', 1)
+            ->pluck('name')
+            ->toArray();
+        //Get all users of service staff roles
+        if (! empty($service_staff_roles)) {
+            $waiters = User::where('business_id', $business_id)->role($service_staff_roles);
+            if (! empty($permission)) {
+                $waiters->permission([$permission]);
+            }
+             if ($for_dropdown) {
+                $waiters = $waiters->select('id', DB::raw('CONCAT(COALESCE(first_name, ""), " ", COALESCE(last_name, "")) as full_name'))->get()->pluck('full_name', 'id');
+            } else {
+                $waiters = $waiters->get();
+            }
+        }
+        return $waiters;
+    }
+
 }

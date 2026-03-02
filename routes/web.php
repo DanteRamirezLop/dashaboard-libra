@@ -457,11 +457,13 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::resource('bookings', Restaurant\BookingController::class);
     //PRESTAMOS
     Route::resource('loans-quotations', LoanQuotationController::class);
+    Route::post('/store-admin', [LoanQuotationController::class, 'storeAdmin']);
+    Route::post('dowload-loan-quotation-pdf', [LoanQuotationController::class, 'downloadPdf'])->name('download-loan-quotation-pdf');
     Route::get('report-loans-quotations', [LoanQuotationController::class, 'report'])->name('report-loans-quotations');
 
     Route::resource('loans', LoanController::class);
-    Route::get('get-customer-sunat',[LoanController::class, 'getCustomerSunat'])->name('get-customer-sunat');
-
+    Route::post('/get-customer-sunat',[LoanController::class,'getCustomerSunat']);
+    Route::post('get-prices',[LoanController::class,'getPrices']);
 
     Route::resource('types-of-service', TypesOfServiceController::class);
     Route::get('sells/edit-shipping/{id}', [SellController::class, 'editShipping']);

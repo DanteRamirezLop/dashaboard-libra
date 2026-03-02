@@ -23,6 +23,14 @@
 </section>
 <!-- Main content -->
 <section class="content no-print">
+
+<!-- Page level currency setting -->
+<input type="hidden" id="p_code" value="{{$currency_details->code}}">
+<input type="hidden" id="p_symbol" value="{{$currency_details->symbol}}">
+<input type="hidden" id="p_thousand" value="{{$currency_details->thousand_separator}}">
+<input type="hidden" id="p_decimal" value="{{$currency_details->decimal_separator}}">
+
+
 <input type="hidden" id="amount_rounding_method" value="{{$pos_settings['amount_rounding_method'] ?? ''}}">
 @if(!empty($pos_settings['allow_overselling']))
 	<input type="hidden" id="is_overselling_allowed">
@@ -320,6 +328,26 @@
 				        </div>
 				    </div>
 		        @endif
+
+				<!-- Currency Exchange Rate -->
+				<div class="col-sm-3 @if(!$currency_details->purchase_in_diff_currency) hide @endif">
+					<div class="form-group">
+						{!! Form::label('exchange_rate', __('purchase.p_exchange_rate') . ':*') !!}
+						@show_tooltip(__('tooltip.currency_exchange_factor'))
+						<div class="input-group">
+							<span class="input-group-addon">
+								<i class="fa fa-info"></i>
+							</span>
+							{!! Form::number('exchange_rate', $currency_details->p_exchange_rate, ['class' => 'form-control', 'required', 'step' => 0.001]); !!}
+						</div>
+						<span class="help-block text-danger">
+							@lang('purchase.diff_purchase_currency_help', ['currency' => $currency_details->name])
+						</span>
+					</div>
+				</div>
+
+
+
 		        <div class="col-sm-3">
 	                <div class="form-group">
 	                    {!! Form::label('upload_document', __('purchase.attach_document') . ':') !!}

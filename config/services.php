@@ -37,4 +37,12 @@ return [
         'enable' => env('TURNSTILE_ENABLE'),
     ],
 
+    'apiperu' => [
+        'token'=> env('APIPERU_TOKEN'),
+    ],
+    
+    'apiperutipocambio' => [
+        'token'=> env('APIPERU_TIPOCAMBIO_TOKEN'),
+    ],
+
 ];

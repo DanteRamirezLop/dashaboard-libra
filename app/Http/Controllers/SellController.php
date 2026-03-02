@@ -823,9 +823,12 @@ class SellController extends Controller
         $users = config('constants.enable_contact_assign') ? User::forDropdown($business_id, false, false, false, true) : [];
 
         $change_return = $this->dummyPaymentLine;
+        // Moneda de cambio
+        $currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
 
         return view('sell.create')
             ->with(compact(
+                'currency_details',
                 'business_details',
                 'taxes',
                 'walk_in_customer',

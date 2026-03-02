@@ -201,10 +201,13 @@ class RoleController extends Controller
         $role = Role::where('business_id', $business_id)
                     ->with(['permissions'])
                     ->find($id);
+
+
         $role_permissions = [];
         foreach ($role->permissions as $role_perm) {
             $role_permissions[] = $role_perm->name;
         }
+
 
         $selling_price_groups = SellingPriceGroup::where('business_id', $business_id)
                                     ->active()

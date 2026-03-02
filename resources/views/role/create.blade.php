@@ -1599,7 +1599,7 @@
             <div class="checkbox">
               <label>
                 {!! Form::radio('radio_option[loands_quotation_view]', 'loand.own_quotation', false, 
-                [ 'class' => 'input-icheck']); !!} {{ __( 'loand.add_edit_view_all_quotation_loands' ) }}
+                [ 'class' => 'input-icheck']); !!} {{ __( 'loand.add_edit_view_own_quotation_loands' ) }}
               </label>
             </div>
           </div>
@@ -1607,7 +1607,7 @@
             <div class="checkbox">
               <label>
                 {!! Form::radio('radio_option[loands_quotation_view]', 'loand.all_quotation', false, 
-                [ 'class' => 'input-icheck']); !!} {{ __( 'loand.add_edit_view_own_quotation_loands' ) }}
+                [ 'class' => 'input-icheck']); !!} {{ __( 'loand.add_edit_view_all_quotation_loands' ) }} 
               </label>
             </div>
           </div>

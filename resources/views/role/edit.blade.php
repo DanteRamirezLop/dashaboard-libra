@@ -1579,7 +1579,7 @@
         <!-- SECCION DE PRESTAMOS -->
      <div class="row check_group">
         <div class="col-md-1">
-          <h4>@lang( 'loand.loands' ) ***** </h4>
+          <h4>@lang( 'loand.loands') </h4>
         </div>
         <div class="col-md-2">
           <div class="checkbox">
@@ -1593,7 +1593,7 @@
             <div class="checkbox">
               <label>
                 {!! Form::radio('radio_option[loands_quotation_view]', 'loand.own_quotation', in_array('loand.own_quotation', $role_permissions), 
-                [ 'class' => 'input-icheck']); !!} {{ __( 'loand.add_edit_view_all_quotation_loands' ) }}
+                [ 'class' => 'input-icheck']); !!}   {{ __( 'loand.add_edit_view_own_quotation_loands' ) }}
               </label>
             </div>
           </div>
@@ -1601,7 +1601,7 @@
             <div class="checkbox">
               <label>
                 {!! Form::radio('radio_option[loands_quotation_view]', 'loand.all_quotation',  in_array('loand.all_quotation', $role_permissions), 
-                [ 'class' => 'input-icheck']); !!} {{ __( 'loand.add_edit_view_own_quotation_loands' ) }}
+                [ 'class' => 'input-icheck']); !!} {{ __( 'loand.add_edit_view_all_quotation_loands' ) }}
               </label>
             </div>
           </div>
