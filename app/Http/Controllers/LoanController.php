@@ -311,6 +311,63 @@ class LoanController extends Controller {
         return view('loan.show')->with(compact('countVersion','annexes','canPayCapital','there_is_mora','paymentSchedules','type','customer','loan','user','total'));
     }
 
+
+     public function addCapital($loan_id,$type)
+    {
+        if (! auth()->user()->can('purchase.payments') && ! auth()->user()->can('sell.payments') && ! auth()->user()->can('all_expense.access') && ! auth()->user()->can('view_own_expense')) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        try {
+            if (request()->ajax()) {
+                $loan = Loan::find($loan_id);
+                $schedule_version = ScheduleVersion::where('loan_id', $loan->id)->where('status','active')->first();
+                $schedule_version_id = $schedule_version ? $schedule_version->id : NULL;
+                $business_id = request()->session()->get('user.business_id');
+                $transaction = Transaction::where('business_id', $business_id)->with(['contact', 'location'])->findOrFail( $loan->transaction_id);
+                if ($transaction->payment_status != 'paid') {
+                    $show_advance = in_array($transaction->type, ['sell', 'purchase']) ? true : false;
+                    $payment_types = $this->transactionUtil->payment_types(null, false,$business_id);
+                    $accounts = $this->moduleUtil->accountsDropdown($business_id, true, false, true);
+                    $paid_on = Carbon::now()->toDateTimeString();
+                    $rows = PaymentSchedule::query()
+                    ->where('loan_id', $loan->id)
+                    ->where('schedule_version_id', $schedule_version_id)
+                    ->orderBy('id')
+                    ->get();
+
+                    $nextPending = $rows->firstWhere('status', 'pending');
+                    if (!$nextPending) {
+                        return; // no hay cuotas pendientes
+                    }
+
+                    $amount = (float) $nextPending->opening_balance;
+
+                    if($type == 'total'){
+                        $other_expense = $this->transactionUtil->getOtherExpensesPaid($loan->id); // Monto de otros gastos pagados como el gps, seguro que en si son tiene intereses solo estan fraccionados 
+                        $amount = round($amount + $other_expense,4); 
+                        $amount_formated = $this->transactionUtil->num_f($amount);
+                        $view = view('loan.payment_total')->with(compact('transaction','loan','amount','amount_formated','paid_on','payment_types','accounts','type'))->render();
+                    }else{
+                        $amount_formated = $this->transactionUtil->num_f($amount);
+                        $view = view('loan.payment_capital')->with(compact('transaction','loan','amount','amount_formated','paid_on','payment_types','accounts','type'))->render();
+                    }
+
+                    $output = ['status' => 'due','view' => $view];
+                } else {
+                    $output = ['status' => 'paid','view' => '','msg' => __('purchase.amount_already_paid'),];
+                }
+                return json_encode($output);
+            }
+            //code...
+        } catch (\Throwable $th) {
+           Log::emergency('File:'.$th->getFile().'Line:'.$th->getLine().'Message:'.$th->getMessage());
+           $output = ['success' => false,
+            'msg' => 'Error: '.$th->getLine().'Message:'.$th->getMessage(),
+            ];  
+        }
+    }
+
     public function addPayment($payment_schedules_id){
         if (request()->ajax()) {
             //busco el tipo de cambio del dia
