@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'loands' => 'Préstamos',
+    'loans' => 'Préstamos',
     'loan' => 'Préstamo',
     'loan_list' => 'Lista de préstamos',
     'add_loan' => 'Agregar préstamo',
@@ -21,7 +21,7 @@ return [
     'edit_loands' => 'Editar préstamos',
     'delete_loands' => 'Eliminar préstamos', 
     'access_loand_settings' => 'Acceder a la configuración de préstamos', 
-    'loan_quotation_list' => 'Todas las cotizaciones',
+    'loan_quotation_list' => 'Lista de cotizaciones',
     'add_loan_quotation' => 'Agregar cotización',
     'quotations' => 'Cotizaciones',
     'credit' => 'Crédito',
@@ -36,8 +36,33 @@ return [
     'loan_cannot_be_deleted'=>'No se puede eliminar la cotización',
     'add_quotation' => 'Agregar cotización',
     'created_successfully'=>'Creado con éxito',
-    'loan_settings'=>'Configuración',
-
+    'loan_settings'=>'Configurar terminos',
+    'report_quotations'=>'Reporte de cotizaciones' ,
+    'all_quotations'=>'Todas las cotizaciones',
+    'my_quotations'=>'Mis cotizaciones',
+    'loands_list'=>'Todos los préstamos',
+    'add_loand'=>'Agregar préstamo',
+    'edit'=>'Editar préstamo',
+    'delete'=>'Eliminar préstamo',
+    'report_loans'=>'Reporte de préstamos',
+    'from_date'=>'Desde fecha',
+    'to_date'=>'Hasta fecha',
+    'total_loans'=>'Total de préstamos',
+    'total_amount'=>'Monto total',
+    'total_paid'=>'Total pagado',
+    'total_remaining'=>'Total restante', 
+    'all_loans'=>'Todos los préstamos',
+    'number_letter'=>'Número a letra',
+    'date_pay'=>'Fecha de pago',
+    'calendar_payments'=>'Calendario de pagos',
+    'all_lletters_payments'=>'Todas las letras de pago',
+    'delay_payments'=>'Pagos retrasados',
+    'paid_payment'=>'Pagado',
+    'remaining_payments'=>'Pagos restantes',
+    'total_payments'=>'Total de pagos',
+    'total_amount_payments'=>'Monto total de pagos',
+    'total_amount_paid'=>'Monto total pagado',
+ 
 
 ];
 

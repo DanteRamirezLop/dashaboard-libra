@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', __('loand.loan_settings'))
+@section('title', __('loans.loan_settings'))
 
 @section('content')
 
@@ -115,7 +115,7 @@
            var id = $("#id_terminos").val();
             $.ajax({
                 method: 'POST',
-                url: '/confi-update',
+                url: '/terms-update',
                 dataType: 'json',
                 data: {
                     id: id,
@@ -147,7 +147,7 @@
 
             $.ajax({
                 type: "POST",
-                url: "/confi-update",
+                url: "/terms-update",
                 data: {
                     id: id,
                     amount_total: amount_total,

@@ -10,7 +10,7 @@
 </section>
 <!-- Main content -->
 <section class="content">    
-	<div class="row">
+	    <div class="row">
             <div class="col-lg-12">
             @component('components.widget', ['class' => 'box-warning', 'title' => 'Resumen de la cotización'])  
                 <div class="col-lg-6">                
@@ -96,18 +96,18 @@
             </div>
         </div>
 
-    @if($loan->type_quotation == 2)                                
+        @if($loan->type_quotation == 2)                                
             <input type="hidden" value="{{$type}}" id="loan_type">
-            @component('components.widget', ['class' => 'box-primary', 'title' => __( 'loand.schedule' )])        
+            @component('components.widget', ['class' => 'box-primary', 'title' => __( 'loans.schedule' )])        
             <table class="table table-bordered table-striped dataTable text-center" id="loans_table">
                 <thead>
                     <tr>
-                        <th>@lang( 'loand.letter' )</th>
-                        <th>@lang( 'loand.payment_date' )</th>
+                        <th>@lang( 'loans.letter' )</th>
+                        <th>@lang( 'loans.payment_date' )</th>
                         <th>Saldo inicial</th>
-                        <th>+GPS</th> 
-                        <th>+Seguro</th>
-                        <th>+Inicial</th> 
+                        <th>+ GPS &nbsp;&nbsp;</th> 
+                        <th>+ Seguro</th>
+                        <th>+ Inicial</th> 
                         <th>Pago</th> 
                         <th>Capital</th> 
                         <th>Intereses</th> 

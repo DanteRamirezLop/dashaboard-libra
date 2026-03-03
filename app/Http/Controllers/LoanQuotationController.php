@@ -75,11 +75,11 @@ class LoanQuotationController extends Controller
                         @csrf
                         <input type="hidden" name="id" value="{{$id}}">
                         <button type="submit" class="tw-dw-btn tw-dw-btn-outline tw-dw-btn-xs tw-dw-btn-warning btn-xs">
-                            <i class="fas fa-file-pdf"></i> @lang("loand.download_pdf")
+                            <i class="fas fa-file-pdf"></i> @lang("loans.download_pdf")
                         </button>
                     </form>
                     <a href="{{action(\'App\Http\Controllers\LoanQuotationController@show\', [$id])}}" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline tw-dw-btn-info ">
-                        <i class="fas fa-eye"></i> @lang("loand.see_details")
+                        <i class="fas fa-eye"></i> @lang("loans.see_details")
                     </a>
                     @can("loand_setting.access")
                         <button data-href="{{action(\'App\Http\Controllers\LoanQuotationController@destroy\', [$id])}}"
@@ -324,7 +324,7 @@ class LoanQuotationController extends Controller
                 'waiter'              => $waiter,
             ]);
 
-            $output = ['success' => true, 'msg' => __('loand.created_successfully')];
+            $output = ['success' => true, 'msg' => __('loans.created_successfully')];
 
         } catch (\Throwable $e) {
             \Log::emergency('File:' . $e->getFile() . ' Line:' . $e->getLine() . ' Message:' . $e->getMessage());
@@ -630,7 +630,7 @@ class LoanQuotationController extends Controller
                 $loan = Loan::where('business_id', $business_id)->findOrFail($id);
                 if ($loan) {
                     $loan->delete();
-                    $output = ['success' => true,'msg' => __('loand.deleted_success')];
+                    $output = ['success' => true,'msg' => __('loans.deleted_success')];
                 } else {
                     $output = ['success' => false,'msg' =>  __('lang_v1.loan_cannot_be_deleted')];
                 }
@@ -645,9 +645,51 @@ class LoanQuotationController extends Controller
     }
 
 
-    public function report()
+    public function report(Request $request)
     {
-        return view('loan.quotation.report');
+
+        $labels = [];
+        $dates = [];
+        $business_id = $request->session()->get('user.business_id');
+
+        $date_range = $request->input('date_range');
+        if (! empty($date_range)) {
+            $date_range_array = explode('~', $date_range);
+            $filters['start_date'] = $this->transactionUtil->uf_date(trim($date_range_array[0]));
+            $filters['end_date'] = $this->transactionUtil->uf_date(trim($date_range_array[1]));
+            $filters['end_date'] =$filters['end_date']." 23:59:59";
+        } else {
+            $filters['start_date'] = \Carbon::now()->startOfMonth()->format('Y-m-d');
+            $filters['end_date'] = \Carbon::now()->endOfMonth()->format('Y-m-d');
+        }
+       
+        $business = BusinessLocation::find($business_id);
+        $user = User::find(auth()->user()->id);
+        $query = Loan::where('business_id',$business_id)->where('user_id',auth()->user()->id);
+        $query->whereBetween('created_at',[$filters['start_date'], $filters['end_date']]);
+        $loan = $query->get();
+       
+        $loan = $loan->map(function ($loan) {
+            return [
+                'id' => $loan->id,'date' => $loan->fecha_registro,
+            ];
+        });
+
+        $periodo = CarbonPeriod::create($filters['start_date'], $filters['end_date']);
+        foreach ($periodo as $fecha) {
+            $labels[] = date('j M Y', strtotime($fecha->toDateString()));
+            $total_sell_on_date = $loan->where('date',$fecha->toDateString())->count();
+            if (! empty($total_sell_on_date)) {
+                $all_sell_values[] = (float) $total_sell_on_date;
+            } else {
+                $all_sell_values[] = 0;
+            }
+        }
+    
+        $sells_chart_1 = new CommonChart;
+        $sells_chart_1->labels($labels);
+        $sells_chart_1->dataset('Cotizaciones Totales', 'line', $all_sell_values);
+        return view('loan.quotation.report', compact('sells_chart_1','date_range','business','user'));
     }
 
     private function calculateQuote($multiplayer, $number_month, $loan_amount){

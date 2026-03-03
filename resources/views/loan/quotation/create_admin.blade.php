@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', __('loand.add_quotation'))
+@section('title', __('loans.add_quotation'))
 
 @section('content')
 

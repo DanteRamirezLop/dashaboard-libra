@@ -63,6 +63,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\LoanQuotationController;
 use App\Http\Controllers\LoanSettingsController;
+use App\Http\Controllers\LoanPaymentController;
+use App\Http\Controllers\DelayController;
+use App\Http\Controllers\DelayPaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -457,19 +460,38 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('bookings/get-todays-bookings', [Restaurant\BookingController::class, 'getTodaysBookings']);
     Route::resource('bookings', Restaurant\BookingController::class);
 
+    //DELAY
+    Route::resource('delays',DelayController::class);
+    Route::get('laon/addDelay/{id}',[DelayController::class,'addDelay'])->name('add.delay.loan');
+    Route::get('delay/addPayment/{delay_id}', [DelayController::class,'addPayment'])->name('add.pay.delay');
+    Route::post('condonar',[DelayController::class,'condonar']);
+    Route::resource('delay-payment',DelayPaymentController::class);
     //PRESTAMOS
     Route::resource('loans', LoanController::class);
+    Route::get('report',[LoanController::class,'report'])->name('loans.report');
+    Route::get('add-letter-loan/{id}',[LoanController::class,'addLetterLoan'])->name('add-letter-loan');
+    Route::get('loan/addPayment/{payment_schedules_id}', [LoanController::class,'addPayment'])->name('add.pay.loan');
     Route::post('get-customer-sunat',[LoanController::class,'getCustomerSunat']);
     Route::post('get-prices',[LoanController::class,'getPrices']);
+    Route::post('letter-annexe-update',[LoanController::class,'updateLetterAnnexe']);
     //COTIZACIONES DE PRESTAMOS
     Route::resource('loans-quotations', LoanQuotationController::class);
     Route::get('report-loans-quotations', [LoanQuotationController::class, 'report'])->name('report-loans-quotations');
     Route::post('storeAdmin', [LoanQuotationController::class, 'storeAdmin']);
     Route::post('dowload-loan-quotation-pdf', [LoanQuotationController::class, 'downloadPdf'])->name('download-loan-quotation-pdf');
-    //Configuration for types of service
+    //CONFIGURACION DE PRESTAMOS Y COTIZACIONES
     Route::get('loans-settings',[LoanSettingsController::class,'index'])->name('loans-settings');
-  
+    Route::post('terms-update',[LoanSettingsController::class,'termsUpdate'])->name('terms-update');
+    //PAGOS PRESTAMOS
+    Route::resource('loan-payment',LoanPaymentController::class);
+    Route::get('generate-statemen/{id}',[LoanPaymentController::class,'statemenPDF'])->name('generate.statemen');
+    Route::post('pay-capital',[LoanPaymentController::class,'payCapital'])->name('pay.capital');
+    Route::post('loan/prices',[LoanController::class,'prices']);
+    Route::post('pay-late',[LoanPaymentController::class,'payLate']);
+    // Route::get('prueba-job',[LoanPaymentController::class,'pruebaJob']);
 
+    
+    
     Route::resource('types-of-service', TypesOfServiceController::class);
     Route::get('sells/edit-shipping/{id}', [SellController::class, 'editShipping']);
     Route::put('sells/update-shipping/{id}', [SellController::class, 'updateShipping']);

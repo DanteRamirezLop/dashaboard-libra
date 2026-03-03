@@ -1,11 +1,11 @@
 @extends('layouts.app')
-@section('title', __('loand.loan'))
+@section('title', __('loans.loan'))
 
 
 @section('content')
  <!-- Content Header (Page header) -->
 <section class="content-header no-print">
-    <h1  class="tw-text-xl md:tw-text-3xl tw-font-bold tw-text-black">@lang('loand.quotations')</h1>
+    <h1  class="tw-text-xl md:tw-text-3xl tw-font-bold tw-text-black">@lang('loans.quotations')</h1>
 </section>
 
 <!-- Main content -->
@@ -14,12 +14,12 @@
             <ul class="nav nav-tabs">
                 <li class="active">
                     <a href="#pending_job_sheet_tab" data-toggle="tab" aria-expanded="true">
-                        <i class="fas fa-credit-card text-orange"></i> @lang('loand.credit')
+                        <i class="fas fa-credit-card text-orange"></i> @lang('loans.credit')
                     </a>
                 </li>
                 <li>
                     <a href="#completed_job_sheet_tab" data-toggle="tab" aria-expanded="true">
-                        <i class="fa fas fa-money-bill-wave-alt text-success"></i> @lang('loand.cash')
+                        <i class="fa fas fa-money-bill-wave-alt text-success"></i> @lang('loans.cash')
                     </a>
                 </li>
             </ul>
