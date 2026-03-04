@@ -17,7 +17,7 @@ return [
     'add_edit_view_all_quotation_loands' => 'Agregar/Eliminar/Ver todos las cotizaciones de préstamos',
     'add_edit_view_own_quotation_loands' => 'Agregar/Eliminar/Ver mis cotizaciones de préstamos',
     'view_loands' => 'Ver préstamos',
-    'create_loands' => 'Crear préstamos',
+    'create_loands' => 'Agregar préstamos',
     'edit_loands' => 'Editar préstamos',
     'delete_loands' => 'Eliminar préstamos', 
     'access_loand_settings' => 'Acceder a la configuración de préstamos', 
@@ -62,6 +62,12 @@ return [
     'total_payments'=>'Total de pagos',
     'total_amount_payments'=>'Monto total de pagos',
     'total_amount_paid'=>'Monto total pagado',
+    'manage_arrears'=>'Gestionar moras',
+    'arrears'=>'Moras',
+    'add_payment'=>'Agregar pago',
+    'condone'=>'Condonar',
+    'delete_delay'=>'Eliminar mora',
+    'delete_delay_confirm'=>'¿Está seguro de que desea eliminar esta mora?',
  
 
 ];

@@ -432,7 +432,7 @@ class LoanPaymentController extends Controller
         }
 
         $initial =  bcsub($loan->initial_amount, $loan->initial_fraction,4); //Calcular la inicial pagada
-        $total_bills_payable = $total_paid - ($initial + $interest_paid + $loan->admin_fee + $loan->gps + $loan->insurance ); //Todos los pagos menos la Inicial y menos los intereses pagados
+        $total_bills_payable = $total_paid - ($initial + $interest_paid + $loan->initial_admin_fee + $loan->initial_gps + $loan->initial_insurance ); //Todos los pagos menos la Inicial y menos los intereses pagados
         $amount_months_late =  bcsub($total_month_now, $total_bills_payable, 4);  //Es el pago total de lo que debe incluido el mes actual (No esta incluido los intereses moratorio)
 
         if( $amount_months_late < 0)
@@ -450,11 +450,8 @@ class LoanPaymentController extends Controller
         $moras = Delay::where('loan_id',$loan->id)->where('status','late')->get();
         //Generar PDF
         $pdf = Pdf::loadView('loan.pdf',compact('moras','annexes','months_behind','amount_months_late','amount_to_pay','default_interest','paymentShedules','loan','customer','sell','dateNow','total_paid','endOfLoan'));
-        return $pdf->download($loan->type_product.'.pdf');
+        return $pdf->download($loan->customer_name.'.pdf');
     }
-
-
-    
 
     //  private function daysInPeriod(PaymentSchedule $current, string $loanStartDate){
 

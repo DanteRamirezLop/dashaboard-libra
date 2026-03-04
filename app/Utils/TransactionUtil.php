@@ -27,6 +27,10 @@ use App\VariationLocationDetails;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\CashRegister;
+use App\PaymentSchedule;
+use App\Loan;
+use App\ScheduleVersion;
+
 
 
 class TransactionUtil extends Util
@@ -6529,5 +6533,68 @@ class TransactionUtil extends Util
         }
 
         return $discount_amount;
+    }
+    //EXTRA FUNCTIONS
+    public function amountToPay(PaymentSchedule $payment_schedule){
+        $mount_partial = 0;
+        $transactionPayments = TransactionPayment::where('payment_schedule_id', $payment_schedule->id)->get();
+        if($transactionPayments){
+            foreach ($transactionPayments as $key => $transactionPayment) {
+                    $mount_partial =  $mount_partial + $transactionPayment->amount;
+            }
+        }
+  
+        //Pago del mes + pago del gps + pago del seguro + pago de admin 
+        $total_quote_mounth = $payment_schedule->mount_quota + $payment_schedule->gps_quota + $payment_schedule->sure_quota + $payment_schedule->admin_fee_quota + $payment_schedule->initial;
+        
+        $amount =  round($total_quote_mounth - $mount_partial,4);
+        return $amount;
+    }
+
+         /**
+     * Add Sell transaction
+     * @param  object  $transaction
+     * @param  float  $amount
+     * @param  int  $user_id
+     * @param  int  $payment_for
+     */
+
+    public function newTransaction(Transaction $transaction, $amount,$user_id,$payment_for,$note,$paid_on, $method,$payment_schedule_id=null,$account_id=null,$delay_id=null){
+        $ref_count = $this->setAndGetReferenceCount('sell_payment',$transaction->business_id);
+        //Generate reference number
+        $payment_ref_no = $this->generateReferenceNumber('sell_payment', $ref_count, $transaction->business_id);
+        $transactionPayment =  TransactionPayment::create([
+            'transaction_id'=> $transaction->id,
+            'business_id'=> $transaction->business_id,
+            'is_return'=> 0,
+            'amount'=> $amount,
+            'method'=> $method,
+            'payment_type'=> null,
+            'transaction_no'=> null,
+            'card_transaction_number'=> null,
+            'card_number'=> null,
+            'card_type'=> 'credit',
+            'card_holder_name'=> null,
+            'card_month'=> null,
+            'card_year'=> null,
+            'card_security'=> null,
+            'cheque_number'=> null,
+            'bank_account_number'=> null,
+            'paid_on'=>  $paid_on,
+            'created_by'=> $user_id,
+            'paid_through_link'=> 0,
+            'gateway'=> null,
+            'is_advance'=> 0,
+            'payment_for'=> $payment_for,
+            'parent_id'=> null,
+            'note'=> $note,
+            'document'=> null,
+            'payment_ref_no'=> $payment_ref_no,
+            'account_id'=> $account_id,
+            'payment_schedule_id'=>$payment_schedule_id,
+            'delay_id'=>$delay_id,
+        ]);
+
+        return $transactionPayment;
     }
 }

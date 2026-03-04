@@ -132,7 +132,7 @@
        
         @component('components.widget', ['class' => 'box-primary', 'title' => __('loans.all_lletters_payments')]) 
             <div class="box-tools grap-2">
-                <button class="tw-dw-btn tw-dw-btn-primary tw-dw-btn-sm tw-text-white" id="update-btn" data-id="{{$loan->id}}" > <i class="fa fa-redo-alt"></i> Actualizar Estados</button>  
+                <button class="tw-dw-btn tw-dw-btn-primary tw-dw-btn-sm tw-text-white" id="update-btn" data-id="{{$loan->id}}" > <i class="fa fa-sync "></i> Actualizar Estados</button>  
                 <span class="label label-default text-center ">
                     @if($countVersion)
                          Nuevo conograma de pagos versión <span class="label" style="background-color: #fff !important;color: #615ca8 !important;">{{$countVersion}}</span>
@@ -347,7 +347,6 @@
 
         $(document).ready(function () {
             $("#update-btn").on('click', function () {
-                console.log('boton 1111');
                 let id = $(this).data('id');
                 swal({
                     title: "Estás seguro?",

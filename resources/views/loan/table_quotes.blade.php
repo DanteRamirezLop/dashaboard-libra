@@ -29,20 +29,7 @@
                     {{$date}}
                 </td>
                 <td>
-                    @switch($item->status)
-                        @case("pending")
-                            <span class="label label-default">Pendiente</span>
-                            @break
-                        @case("overdue")
-                            <span class="label label-danger">Atrasado</span>
-                            @break
-                        @case("paid")
-                            <span class="label label-success">Pagado</span>
-                        @break
-                        @case("partial")
-                            <span class="label label-info">parcial</span>
-                        @break
-                    @endswitch
+                    {!!$item->getLoanStatus() !!}
                 </td>
                 
                 <td>@format_currency($item->opening_balance)</td>

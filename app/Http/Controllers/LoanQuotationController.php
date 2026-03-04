@@ -139,7 +139,12 @@ class LoanQuotationController extends Controller
         $filing_fee = (float) optional($goals->get('coste-tramite'))->amount_total ?? 0;
         $gps        = (float) optional($goals->get('gps'))->amount_total ?? 0;
         $insurance  = (float) optional($goals->get('seguro'))->amount_total ?? 0;
-        $data = compact('currency','customers', 'products', 'walk_in_customer', 'filing_fee', 'gps', 'insurance');
+
+        $filing_fee_initial = (float) optional($goals->get('coste-tramite'))->amount_inicial ?? 0;
+        $gps_initial        = (float) optional($goals->get('gps'))->amount_inicial ?? 0;
+        $insurance_initial = (float) optional($goals->get('seguro'))->amount_inicial ?? 0;
+
+        $data = compact('insurance_initial','gps_initial','filing_fee_initial','currency','customers', 'products', 'walk_in_customer', 'filing_fee', 'gps', 'insurance');
 
         if (auth()->user()->can('loand_settings.access')) {
             $waiters = $this->transactionUtil->getModuleStaff($business_id, 'customer.view_own', true);
@@ -642,6 +647,16 @@ class LoanQuotationController extends Controller
             }
             return $output;
         }
+    }
+
+    public function getPrices(Request $request){
+        $options = '';
+        $options .= '<option selected disabled >Selecciona un precio</option>';
+        $variations = Variation::where('product_id',$request->id)->get();
+        foreach ($variations as $key => $variation) {
+            $options .= "<option  value='".$variation->sell_price_inc_tax."'> ".  number_format($variation->sell_price_inc_tax, 2) ." </option>";
+        }
+        return response()->json(['status' => true, 'options' =>  $options]);
     }
 
 

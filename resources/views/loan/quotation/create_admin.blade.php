@@ -276,6 +276,12 @@
                             No
                         </label>
                     </div>
+                     <div class="form-group">
+                         <div style="margin-left:20px; font-size: small;">
+                            <strong>Inicial:</strong> @format_currency($filing_fee_initial) /
+                            <strong>Financiar:</strong> @format_currency($filing_fee - $filing_fee_initial)
+                        </div>    
+                    </div>
                 </div>
                 <div class="col-md-2">
                     <div class="form-group">
@@ -290,6 +296,12 @@
                             No
                         </label>
                     </div>
+                    <div class="form-group">
+                        <div style="margin-left:20px; font-size: small;">
+                            <strong>Inicial:</strong> @format_currency($gps_initial) /
+                            <strong>Financiar:</strong> @format_currency($gps - $gps_initial)
+                        </div>    
+                    </div>
                 </div>
                 <div class="col-md-2">
                     <div class="form-group">
@@ -302,6 +314,12 @@
                             {!! Form::radio('option_seguro', '2', false, [ 'class' => 'input-icheck', 'name'=>"option_seguro"]); !!}
                             No
                         </label>
+                    </div>
+                    <div class="form-group">
+                         <div style="margin-left:20px; font-size: small;">
+                            <strong>Inicial:</strong> @format_currency($insurance_initial) /
+                            <strong>Financiar:</strong> @format_currency($insurance - $insurance_initial)
+                        </div>    
                     </div>
                 </div>
             </div>
@@ -352,7 +370,6 @@
             submitHandler: function(form) {
                 form.submit();
             }
-
         });
 
         $('#mounth_fracction').on('change', function() {

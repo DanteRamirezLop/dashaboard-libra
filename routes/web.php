@@ -473,12 +473,12 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('loan/addPayment/{payment_schedules_id}', [LoanController::class,'addPayment'])->name('add.pay.loan');
     Route::get('loan/addCapital/{loan_id}/{type}', [LoanController::class,'addCapital'])->name('add.capital.loan');
     Route::post('get-customer-sunat',[LoanController::class,'getCustomerSunat']);
-    Route::post('get-prices',[LoanController::class,'getPrices']);
     Route::post('letter-annexe-update',[LoanController::class,'updateLetterAnnexe']);
 
     //COTIZACIONES DE PRESTAMOS
     Route::resource('loans-quotations', LoanQuotationController::class);
     Route::get('report-loans-quotations', [LoanQuotationController::class, 'report'])->name('report-loans-quotations');
+    Route::post('get-prices',[LoanQuotationController::class,'getPrices']);
     Route::post('storeAdmin', [LoanQuotationController::class, 'storeAdmin']);
     Route::post('dowload-loan-quotation-pdf', [LoanQuotationController::class, 'downloadPdf'])->name('download-loan-quotation-pdf');
     //CONFIGURACION DE PRESTAMOS Y COTIZACIONES

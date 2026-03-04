@@ -43,11 +43,8 @@ class DelayController extends Controller
         $this->notificationUtil = $notificationUtil;
     }
 
-    public function index(){
+    // public function index(){ }
 
-    }
-
-    
     public function show($id){
         $payment_schedule = PaymentSchedule::find($id);
         $loan =  $payment_schedule->loan;
@@ -58,12 +55,9 @@ class DelayController extends Controller
         return view('loan.delay.show',compact('delay','payment_schedule','customer','loan'));
     }
     
+    //public function create(){ }
 
-    public function create(){
-
-    }
-
-   public function store(Request $request){
+    public function store(Request $request){
         try {
             DB::beginTransaction();
 
@@ -167,9 +161,7 @@ class DelayController extends Controller
         } catch (\Exception $e) {
             \Log::emergency('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
 
-            $output = ['success' => false,
-                'msg' => __('messages.something_went_wrong'),
-            ];
+            $output = ['success' => false,'msg' => __('messages.something_went_wrong')];
         }
         return $output;
     }
@@ -186,7 +178,7 @@ class DelayController extends Controller
                 $view = view('loan.delay.pay_delay_row')->with(compact('delay','amount','paid_on','payment_types','accounts'))->render();
                 $output = ['status' => 'due','view' => $view, ];
             } else {
-                $output = ['status' => 'paid','view' => '','msg' => __('purchase.amount_already_paid'),  ];
+                $output = ['status' => 'paid','view' => '','msg' => __('purchase.amount_already_paid')];
             }
             return json_encode($output);
         }

@@ -139,7 +139,7 @@
             @endif
         </div>
         
-        @component('components.widget', ['class' => 'box-primary', 'title' => __( 'loan.all_quotes' )]) 
+        @component('components.widget', ['class' => 'box-primary', 'title' => __( 'loans.all_lletters_payments' )]) 
            <div class="tab-content">
                 <div class="table-responsive">        
                     <table class="table table-bordered table-striped dataTable" id="loans_table">
