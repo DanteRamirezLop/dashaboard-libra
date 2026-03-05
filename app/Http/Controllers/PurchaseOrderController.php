@@ -19,6 +19,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Spatie\Activitylog\Models\Activity;
 use Yajra\DataTables\Facades\DataTables;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use App\ExchangeRates;
+
 
 class PurchaseOrderController extends Controller
 {
@@ -46,19 +50,24 @@ class PurchaseOrderController extends Controller
 
         $this->purchaseOrderStatuses = [
             'ordered' => [
-                'label' => __('lang_v1.ordered'),
+                'label' => 'Solicitado',
                 'class' => 'bg-info',
             ],
             'partial' => [
-                'label' => __('lang_v1.partial'),
-                'class' => 'bg-yellow',
+                'label' => 'Aprobado',
+                'class' => 'bg-green',
             ],
             'completed' => [
-                'label' => __('restaurant.completed'),
-                'class' => 'bg-green',
+                'label' => 'Finalizado',
+                'class' => 'bg-primary',
             ],
         ];
 
+        $this->listStatus= [
+            'ordered' => 'Solicitado',
+            'partial' => 'Pendiente',
+            'completed' => 'Aprobado',
+        ];
         $this->shipping_status_colors = [
             'ordered' => 'bg-yellow',
             'packed' => 'bg-info',
@@ -308,7 +317,6 @@ class PurchaseOrderController extends Controller
             }
 
             $transaction_data = $request->only(['ref_no', 'contact_id', 'transaction_date', 'total_before_tax', 'location_id', 'discount_type', 'discount_amount', 'tax_id', 'tax_amount', 'shipping_details', 'shipping_charges', 'final_total', 'additional_notes', 'exchange_rate', 'pay_term_number', 'pay_term_type', 'shipping_address', 'shipping_status', 'delivered_to', 'delivery_date', 'purchase_requisition_ids']);
-
             $exchange_rate = $transaction_data['exchange_rate'];
 
             if ($request->has('shipping_custom_field_1')) {
@@ -396,6 +404,10 @@ class PurchaseOrderController extends Controller
 
             //Update reference count
             $ref_count = $this->productUtil->setAndGetReferenceCount($transaction_data['type']);
+           
+            $transaction_data['custom_field_4'] = $this->productUtil->generateReferencePurcharseOrder($ref_count);
+            
+           
             //Generate reference number
             if (empty($transaction_data['ref_no'])) {
                 $transaction_data['ref_no'] = $this->productUtil->generateReferenceNumber($transaction_data['type'], $ref_count);
@@ -587,8 +599,11 @@ class PurchaseOrderController extends Controller
                                         ->pluck('ref_no', 'id');
         }
 
+        $statuses = $this->purchaseOrderStatuses;
+
         return view('purchase_order.edit')
             ->with(compact(
+                'statuses',
                 'taxes',
                 'purchase',
                 'business_locations',
@@ -801,10 +816,8 @@ class PurchaseOrderController extends Controller
         }
 
         $business_id = request()->session()->get('user.business_id');
-
-        $taxes = TaxRate::where('business_id', $business_id)
-                                ->get();
-
+        $taxes = TaxRate::where('business_id', $business_id)->pluck('name','id');
+        
         $purchase = Transaction::where('business_id', $business_id)
                     ->where('id', $id)
                     ->with(
@@ -817,52 +830,36 @@ class PurchaseOrderController extends Controller
                         'purchase_lines.variations.product_variation',
                         'location',
                         'payment_lines'
-                    )
-                    ->first();
-
-
-        
-        foreach ($purchase->purchase_lines as $key => $value) {
-            if (! empty($value->sub_unit_id)) {
-                $formated_purchase_line = $this->productUtil->changePurchaseLineUnit($value, $business_id);
-                $purchase->purchase_lines[$key] = $formated_purchase_line;
-            }
-        }
+                    )->first();
 
         $location_details = BusinessLocation::find($purchase->location_id);
         $invoice_layout = $this->businessUtil->invoiceLayout($business_id, $location_details->invoice_layout_id);
-
-        //Logo
-        $logo = $invoice_layout->show_logo != 0 && ! empty($invoice_layout->logo) && file_exists(public_path('uploads/invoice_logos/'.$invoice_layout->logo)) ? asset('uploads/invoice_logos/'.$invoice_layout->logo) : false;
-
         $word_format = $invoice_layout->common_settings['num_to_word_format'] ? $invoice_layout->common_settings['num_to_word_format'] : 'international';
-        $total_in_words = $this->transactionUtil->numToWord($purchase->final_total, null, $word_format);
-
         $custom_labels = json_decode(session('business.custom_labels'), true);
-
         $last_purchase = Transaction::where('purchase_order_ids', 'like', '%"'.$purchase->id.'"%')->orderBy('transaction_date', 'desc')->first();
-        //Generate pdf
-        $body = view('purchase_order.receipts.download_pdf')
-                    ->with(compact('purchase', 'invoice_layout', 'location_details', 'logo', 'total_in_words', 'custom_labels', 'taxes', 'last_purchase'))
-                    ->render();
+        //Fecha de impresion
+        $date_print = Carbon::now()->format('d/m/Y');
+        $date_release = $purchase->transaction_date ? Carbon::parse($purchase->transaction_date)->format('d/m/Y') : null; 
+        $date_delivery = $purchase->delivery_date ? Carbon::parse($purchase->delivery_date)->format('d/m/Y') : null;
+        //Texto de Dolares -tax
+        $amount = $purchase->final_total;
+        $text_amount = $this->montoATexto($amount, 'USD');
+        //Obtener rentencion de 3% 
+        $search_date = Carbon::parse($purchase->transaction_date)->format('y-m-d');
+        $exchange_rate = ExchangeRates::where('search_date',$search_date)->first();
+         if($exchange_rate){
+            $exchange_rate_purchase = $exchange_rate->sale;
+            $seven_hundred_usa =  700 / $exchange_rate_purchase; // Seteciento soles convertidos a dolares
+            $three_percente = $purchase->final_total * 0.03;
+            $three_percent_withholding =  ($purchase->final_total >= $seven_hundred_usa) ? $three_percente : 0;
+        }else{
+            $exchange_rate_purchase = 0;
+            $three_percent_withholding = 0;
+        }
 
-        $mpdf = new \Mpdf\Mpdf(['tempDir' => public_path('uploads/temp'),
-            'mode' => 'utf-8',
-            'autoScriptToLang' => true,
-            'autoLangToFont' => true,
-            'autoVietnamese' => true,
-            'autoArabic' => true,
-            'margin_top' => 8,
-            'margin_bottom' => 8,
-            'format' => 'A4',
-        ]);
-
-        $mpdf->useSubstitutions = true;
-        $mpdf->SetWatermarkText($purchase->business->name, 0.1);
-        $mpdf->showWatermarkText = true;
-        $mpdf->SetTitle('PO-'.$purchase->ref_no.'.pdf');
-        $mpdf->WriteHTML($body);
-        $mpdf->Output('PO-'.$purchase->ref_no.'.pdf', 'I');
+        //Generate pdf 
+        $pdf = Pdf::set_option('isRemoteEnabled', true)->loadView('purchase_order.receipts.download',compact('exchange_rate_purchase','three_percent_withholding','taxes','location_details','date_delivery','date_release','purchase', 'invoice_layout', 'text_amount','date_print'));
+        return $pdf->download('Orden-Compra-'.$purchase->ref_no.'.pdf');
     }
 
     /**
@@ -872,7 +869,7 @@ class PurchaseOrderController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function getEditPurchaseOrderStatus(Request $request, $id)
+   public function getEditPurchaseOrderStatus(Request $request, $id)
     {
         $is_admin = $this->businessUtil->is_admin(auth()->user());
         if (! $is_admin) {
@@ -881,14 +878,16 @@ class PurchaseOrderController extends Controller
 
         if ($request->ajax()) {
             $business_id = request()->session()->get('user.business_id');
-            $transaction = Transaction::where('business_id', $business_id)
-                                ->findOrFail($id);
+            $transaction = Transaction::where('business_id', $business_id)->findOrFail($id);
 
             $status = $transaction->status;
             $statuses = $this->purchaseOrderStatuses;
+            $custom_field_2 = is_null($transaction->custom_field_2) ? '' : $transaction->custom_field_2;
+            $delivery_date = ! empty($transaction->delivery_date) ? $this->productUtil->format_date($transaction->delivery_date, true) : null;
+
 
             return view('purchase_order.edit_status_modal')
-                ->with(compact('id', 'status', 'statuses'));
+                ->with(compact('id', 'status', 'statuses','custom_field_2','delivery_date'));
         }
     }
 
@@ -897,7 +896,7 @@ class PurchaseOrderController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function postEditPurchaseOrderStatus(Request $request, $id)
+   public function postEditPurchaseOrderStatus(Request $request, $id)
     {
         $is_admin = $this->businessUtil->is_admin(auth()->user());
         if (! $is_admin) {
@@ -906,13 +905,18 @@ class PurchaseOrderController extends Controller
 
         if ($request->ajax()) {
             try {
+
                 $business_id = request()->session()->get('user.business_id');
                 $transaction = Transaction::where('business_id', $business_id)
                                 ->findOrFail($id);
 
-                $transaction_before = $transaction->replicate();
+               
+                $delivery_date = ! empty($request->input('delivery_date')) ? $this->productUtil->uf_date($request->input('delivery_date'), true) : null;
 
+                $transaction_before = $transaction->replicate();
                 $transaction->status = $request->input('status');
+                $transaction->custom_field_2 = $request->input('custom_field_2');
+                $transaction->delivery_date  = $delivery_date;
                 $transaction->save();
 
                 $activity_property = ['from' => $transaction_before->status, 'to' => $request->input('status')];
@@ -931,6 +935,77 @@ class PurchaseOrderController extends Controller
             }
 
             return $output;
+        }
+    }
+
+    private function montoATexto($monto, $moneda = 'PEN') {
+        // Separamos parte entera y decimales
+        $monto = number_format($monto, 2, '.', '');
+        list($entero, $decimal) = explode('.', $monto);
+
+        $entero = intval($entero);
+        $decimal = intval($decimal);
+
+        // Moneda
+        if ($moneda === 'PEN') {
+            $nombreSingular = "sol";
+            $nombrePlural = "soles";
+        } elseif ($moneda === 'USD') {
+            $nombreSingular = "dólar";
+            $nombrePlural = "dólares";
+        } else {
+            $nombreSingular = $moneda;
+            $nombrePlural = $moneda;
+        }
+        // Singular o plural
+        $nombreMoneda = ($entero == 1) ? $nombreSingular : $nombrePlural;
+        // Convertimos números a texto
+        $textoEntero = $this->numeroATexto($entero);
+        $textoDecimales =  $this->numeroATexto($decimal);
+
+        return trim("$textoEntero $nombreMoneda con $textoDecimales centavos");
+    }
+
+    private function numeroATexto($numero) {
+        $unidades = [
+            'cero', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve',
+            'diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete',
+            'dieciocho', 'diecinueve', 'veinte'
+        ];
+
+        $decenas = [
+            2 => 'veinti', 3 => 'treinta', 4 => 'cuarenta', 5 => 'cincuenta',
+            6 => 'sesenta', 7 => 'setenta', 8 => 'ochenta', 9 => 'noventa'
+        ];
+        $centenas = [
+            1 => 'cien', 2 => 'doscientos', 3 => 'trescientos', 4 => 'cuatrocientos',
+            5 => 'quinientos', 6 => 'seiscientos', 7 => 'setecientos',
+            8 => 'ochocientos', 9 => 'novecientos'
+        ];
+        if ($numero < 21) {
+            return $unidades[$numero];
+        } elseif ($numero < 30) {
+            return $decenas[2] . $unidades[$numero - 20];
+        } elseif ($numero < 100) {
+            $decena = intdiv($numero, 10);
+            $unidad = $numero % 10;
+            return $decenas[$decena] . ($unidad ? ' y ' . $unidades[$unidad] : '');
+        } elseif ($numero < 1000) {
+            $centena = intdiv($numero, 100);
+            $resto = $numero % 100;
+            if ($numero == 100) return "cien";
+            return $centenas[$centena] . ($resto ? ' ' . $this->numeroATexto($resto) : '');
+        } elseif ($numero < 1000000) {
+            $miles = intdiv($numero, 1000);
+            $resto = $numero % 1000;
+            $textoMiles = ($miles == 1) ? "mil" : $this->numeroATexto($miles) . " mil";
+            return $textoMiles . ($resto ? ' ' . $this->numeroATexto($resto) : '');
+        } else {
+            // Hasta millones
+            $millones = intdiv($numero, 1000000);
+            $resto = $numero % 1000000;
+            $textoMillones = ($millones == 1) ? "un millón" : $this->numeroATexto($millones) . " millones";
+            return $textoMillones . ($resto ? ' ' . $this->numeroATexto($resto) : '');
         }
     }
 }

@@ -68,6 +68,7 @@ return [
     'condone'=>'Condonar',
     'delete_delay'=>'Eliminar mora',
     'delete_delay_confirm'=>'¿Está seguro de que desea eliminar esta mora?',
+    'loan_destroy'=>'Prestamo eliminado'
  
 
 ];

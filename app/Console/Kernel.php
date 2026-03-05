@@ -19,6 +19,11 @@ class Kernel extends ConsoleKernel
         $email = config('mail.username');
 
         if ($env === 'live') {
+            //Loans - custom jobs
+            $schedule->command('pos:calculateStatusLoan')->dailyAt('00:05');
+            $schedule->command('pos:smsPagoVencer')->dailyAt('00:10');
+            $schedule->command('pos:exchangerate')->dailyAt('00:15');
+        
             //Scheduling backup, specify the time when the backup will get cleaned & time when it will run.
             $schedule->command('backup:clean')->daily()->at('01:00');
             $schedule->command('backup:run')->daily()->at('01:30');

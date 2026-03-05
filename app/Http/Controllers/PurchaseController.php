@@ -951,6 +951,11 @@ class PurchaseController extends Controller
                     $query->where('products.name', 'like', '%'.$term.'%');
                     $query->orWhere('sku', 'like', '%'.$term.'%');
                     $query->orWhere('sub_sku', 'like', '%'.$term.'%');
+
+                    $query->orWhere('product_custom_field1', 'like', '%'.$term.'%');
+                    $query->orWhere('product_custom_field2', 'like', '%'.$term.'%');
+                    $query->orWhere('product_custom_field3', 'like', '%'.$term.'%');
+                    $query->orWhere('product_custom_field4', 'like', '%'.$term.'%');
                 })
                 ->active()
                 ->where('business_id', $business_id)
@@ -959,6 +964,7 @@ class PurchaseController extends Controller
                     'products.id as product_id',
                     'products.name',
                     'products.type',
+                    'products.product_custom_field1',
                     // 'products.sku as sku',
                     'variations.id as variation_id',
                     'variations.name as variation',
@@ -984,6 +990,7 @@ class PurchaseController extends Controller
                     'variation_id' => $product->variation_id,
                     'variation_name' => $product->variation,
                     'sub_sku' => $product->sub_sku,
+                    'product_custom_field1' => $product->product_custom_field1,
                 ];
             }
 
@@ -1007,7 +1014,7 @@ class PurchaseController extends Controller
                         }
                         $i++;
                         $result[] = ['id' => $i,
-                            'text' => $text.' - '.$variation['sub_sku'],
+                            'text' => $variation['product_custom_field1'].' - '.$text.' - '.$variation['sub_sku'],
                             'product_id' => $key,
                             'variation_id' => $variation['variation_id'],
                         ];

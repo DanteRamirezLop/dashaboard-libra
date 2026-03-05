@@ -1912,4 +1912,13 @@ class Util
         return $waiters;
     }
 
+    // 
+    public function generateReferencePurcharseOrder($ref_count){
+        $prefix = 'CO-';
+        $ref_digits = str_pad($ref_count, 4, 0, STR_PAD_LEFT);
+        $year = \Carbon::now()->year;
+        $ref_number = $prefix.$ref_digits.'-'.$year;
+         return $ref_number;
+    }
+
 }

@@ -256,7 +256,13 @@ class AdminSidebarMenu
                             $sub->url(
                                 action([\App\Http\Controllers\PurchaseOrderController::class, 'index']),
                                 __('lang_v1.purchase_order'),
-                                ['icon' => '', 'active' => request()->segment(1) == 'purchase-order']
+                                ['icon' => '', 'active' => request()->segment(1) == 'purchase-order' && request()->segment(2) == null]
+                            );
+
+                            $sub->url(
+                                action([\App\Http\Controllers\PurchaseOrderController::class, 'create']),
+                                'Agregar orden de compra',
+                                ['icon' => '', 'active' => request()->segment(1) == 'purchase-order' && request()->segment(2) == 'create']
                             );
                         }
                         if (auth()->user()->can('purchase.view') || auth()->user()->can('view_own_purchase')) {
@@ -818,13 +824,13 @@ class AdminSidebarMenu
                                 ['icon' => '', 'active' => request()->segment(1) == 'loans' && request()->segment(2) == 'create']
                             );
                         }
-                        if(auth()->user()->can('loans.view')) {
-                            $sub->url(
-                                action([\App\Http\Controllers\LoanController::class, 'report']),
-                                __('loans.report_loans'),
-                                ['icon' => '', 'active' => request()->segment(1) == 'report-loans'  && request()->segment(2) == null]
-                            );
-                         }
+                        // if(auth()->user()->can('loans.view')) {
+                        //     $sub->url(
+                        //         action([\App\Http\Controllers\LoanController::class, 'report']),
+                        //         __('loans.report_loans'),
+                        //         ['icon' => '', 'active' => request()->segment(1) == 'report-loans'  && request()->segment(2) == null]
+                        //     );
+                        //  }
                         $sub->url(
                             action([\App\Http\Controllers\LoanQuotationController::class, 'index']),
                             __('loans.loan_quotation_list'),

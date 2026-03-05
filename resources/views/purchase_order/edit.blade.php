@@ -68,17 +68,7 @@
                 </div>
               </div>
             </div>
-            <div class="@if(!empty($default_purchase_status)) col-sm-4 @else col-sm-3 @endif">
-                <div class="form-group">
-                    {!! Form::label('delivery_date', __('lang_v1.delivery_date') . ':') !!}
-                    <div class="input-group">
-                        <span class="input-group-addon">
-                            <i class="fa fa-calendar"></i>
-                        </span>
-                        {!! Form::text('delivery_date', $delivery_date, ['class' => 'form-control']); !!}
-                    </div>
-                </div>
-            </div>
+           
 
             <div class="col-sm-3">
               <div class="form-group">
@@ -87,6 +77,78 @@
                 {!! Form::select('location_id', $business_locations, $purchase->location_id, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select'), 'disabled']); !!}
               </div>
             </div>
+
+            <div class="col-md-3 hide">
+                <div class="form-group">
+                  <div class="multi-input">
+                    {!! Form::label('pay_term_number', __('contact.pay_term') . ':') !!} @show_tooltip(__('tooltip.pay_term'))
+                    <br/>
+                    {!! Form::number('pay_term_number', $purchase->pay_term_number, ['class' => 'form-control width-40 pull-left', 'placeholder' => __('contact.pay_term')]); !!}
+
+                    {!! Form::select('pay_term_type', 
+                      ['months' => __('lang_v1.months'), 
+                        'days' => __('lang_v1.days')], 
+                        $purchase->pay_term_type, 
+                      ['class' => 'form-control width-60 pull-left','placeholder' => __('messages.please_select'), 'id' => 'pay_term_type']); !!}
+                  </div>
+              </div>
+          </div>
+
+            
+            <div class="col-sm-3 ">
+              <div class="form-group">
+                  {!! Form::label('custom_field_3', 'Forma de pago:*') !!}
+                  <select name="custom_field_3" id="custom_field_3" class="form-control" style="width: 100%;" required>
+                    <option value="0" @if($purchase->custom_field_3 == '0' || is_null($purchase->custom_field_3)) selected @endif>
+                        Contado
+                    </option>
+                    <option value="10" @if($purchase->custom_field_3 == '10') selected @endif>
+                        Credito 10%
+                    </option>
+                    <option value="15" @if($purchase->custom_field_3 == '15') selected @endif>
+                        Credito 15%
+                    </option>
+                    <option value="20" @if($purchase->custom_field_3 == '20') selected @endif>
+                        Credito 20%
+                    </option>
+                    <option value="30" @if($purchase->custom_field_3 == '30') selected @endif>
+                        Credito 30%
+                    </option>
+                    <option value="50" @if($purchase->custom_field_3 == '50') selected @endif>
+                        Credito 50%
+                    </option>
+                  </select>
+              </div>
+            </div>
+
+
+            <div class="col-sm-3">
+              <div class="form-group">
+                  {!! Form::label('custom_field_1', 'Tipo de proceso:*') !!}
+                  <select name="custom_field_1" id="custom_field_1" class="form-control" style="width: 100%;" required>
+                    <option value="" @if($purchase->custom_field_1 == '') selected @endif>
+                        Seleccione
+                    </option>
+                    <option value="Compra Nacional" @if($purchase->custom_field_1 == 'Compra Nacional') selected @endif>
+                        Compra Nacional
+                    </option>
+                    <option value="Compra Internacional" @if($purchase->custom_field_1 == 'Compra Internacional') selected @endif>
+                        Compra Internacional
+                    </option>
+                  </select>
+              </div>
+            </div>
+
+            <div class="col-sm-3">
+                <div class="form-group">
+                    {!! Form::label('document', __('purchase.attach_document') . ':') !!}
+                    {!! Form::file('document', ['id' => 'upload_document', 'accept' => implode(',', array_keys(config('constants.document_upload_mimes_types')))]); !!}
+                    <p class="help-block">@lang('purchase.max_file_size', ['size' => (config('constants.document_size_limit') / 1000000)])
+                    @includeIf('components.document_help_text')</p>
+                </div>
+            </div>
+
+
 
             <!-- Currency Exchange Rate -->
             <div class="col-sm-3 @if(!$currency_details->purchase_in_diff_currency) hide @endif">
@@ -105,30 +167,6 @@
               </div>
             </div>
 
-            <div class="col-md-3">
-                <div class="form-group">
-                  <div class="multi-input">
-                    {!! Form::label('pay_term_number', __('contact.pay_term') . ':') !!} @show_tooltip(__('tooltip.pay_term'))
-                    <br/>
-                    {!! Form::number('pay_term_number', $purchase->pay_term_number, ['class' => 'form-control width-40 pull-left', 'placeholder' => __('contact.pay_term')]); !!}
-
-                    {!! Form::select('pay_term_type', 
-                      ['months' => __('lang_v1.months'), 
-                        'days' => __('lang_v1.days')], 
-                        $purchase->pay_term_type, 
-                      ['class' => 'form-control width-60 pull-left','placeholder' => __('messages.please_select'), 'id' => 'pay_term_type']); !!}
-                  </div>
-              </div>
-          </div>
-
-            <div class="col-sm-3">
-                <div class="form-group">
-                    {!! Form::label('document', __('purchase.attach_document') . ':') !!}
-                    {!! Form::file('document', ['id' => 'upload_document', 'accept' => implode(',', array_keys(config('constants.document_upload_mimes_types')))]); !!}
-                    <p class="help-block">@lang('purchase.max_file_size', ['size' => (config('constants.document_size_limit') / 1000000)])
-                    @includeIf('components.document_help_text')</p>
-                </div>
-            </div>
         </div>
         @if(!empty($common_settings['enable_purchase_requisition']))
         <div class="row">
@@ -472,6 +510,50 @@
             </div>
         </div>
     @endcomponent
+
+
+    @component('components.widget', ['class' => 'box-solid'])
+      <div class="row">
+            <div class="@if(!empty($default_purchase_status)) col-sm-4 @else col-sm-4 @endif">
+              <div class="form-group">
+                  {!! Form::label('delivery_date', 'Fecha de aprobación:') !!}
+                  <div class="input-group">
+                      <span class="input-group-addon">
+                          <i class="fa fa-calendar"></i>
+                      </span>
+                      {!! Form::text('delivery_date', $delivery_date, ['class' => 'form-control', 'required']); !!}
+                  </div>
+              </div>
+          </div>
+
+          <div class="@if(!empty($default_purchase_status)) col-sm-4 @else col-sm-4 @endif">
+            <div class="form-group">
+              {!! Form::label('custom_field_2', 'Aprobado por:') !!}
+              <select name="custom_field_2" id="custom_field_2" class="form-control" style="width: 100%;" required>
+                    <option value="" @if($purchase->custom_field_2 == '') selected @endif>
+                        Seleccione
+                    </option>
+                    <option value="Ricardo Guillermo Li Bravo" @if($purchase->custom_field_2 == 'Ricardo Guillermo Li Bravo') selected @endif>
+                        Ricardo Guillermo Li Bravo
+                    </option>
+                </select>
+            </div>
+          </div>
+
+          <div class="col-sm-4 @if(!empty($default_purchase_status)) hide @endif">
+            <div class="form-group">
+              {!! Form::label('status', __('purchase.purchase_status')) !!} 
+                <select name="status" id="status" class="form-control" style="width: 100%;">
+                    @foreach($statuses as $key => $status)
+                        <option value="{{$key}}" @if($key == $purchase->status) selected @endif>
+                            {{$status['label']}} 
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+          </div>
+      </div> 
+	  @endcomponent
   
     <div class="row">
         <div class="col-sm-12 text-center">

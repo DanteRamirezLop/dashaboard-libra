@@ -492,8 +492,6 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::post('pay-late',[LoanPaymentController::class,'payLate']);
     // Route::get('prueba-job',[LoanPaymentController::class,'pruebaJob']);
 
-    
-    
     Route::resource('types-of-service', TypesOfServiceController::class);
     Route::get('sells/edit-shipping/{id}', [SellController::class, 'editShipping']);
     Route::put('sells/update-shipping/{id}', [SellController::class, 'updateShipping']);

@@ -151,35 +151,34 @@ $(document).ready( function(){
         },
     });
 
-    // $(document).on('click', 'button.delete_loan_button', function() {
-    //     swal({
-    //         title: LANG.sure,
-    //         text: LANG.confirm_delete_loan,
-    //         icon: 'warning',
-    //         buttons: true,
-    //         dangerMode: true,
-    //     }).then(willDelete => {
-    //         if (willDelete) {
-    //             var href = $(this).data('href');
-    //             var data = $(this).serialize();
-
-    //             $.ajax({
-    //                 method: 'DELETE',
-    //                 url: href,
-    //                 dataType: 'json',
-    //                 data: data,
-    //                 success: function(result) {
-    //                     if (result.success == true) {
-    //                         toastr.success(result.msg);
-    //                         loan_table.ajax.reload();
-    //                     } else {
-    //                         toastr.error(result.msg);
-    //                     }
-    //                 },
-    //             });
-    //         }
-    //     });
-    // });
+    $(document).on('click', '.delete_loan_button', function(e) {
+        e.preventDefault();
+        console.log('daddaan');
+        swal({
+            title: LANG.sure,
+            icon: 'warning',
+            buttons: true,
+            dangerMode: true,
+        }).then(willDelete => {
+            if (willDelete) {
+                var href = $(this).attr('href');
+                var is_suspended = $(this).hasClass('is_suspended');
+                $.ajax({
+                    method: 'DELETE',
+                    url: href,
+                    dataType: 'json',
+                    success: function(result) {
+                        if (result.success == true) {
+                            toastr.success(result.msg);
+                            loan_table.ajax.reload();
+                        } else {
+                            toastr.error(result.msg);
+                        }
+                    },
+                });
+            }
+        });
+    });
 
     //Metodo ajax para generear el pdf
     //  $(document).on('click', '.generate-pdf', function(e) {

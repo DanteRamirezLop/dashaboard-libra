@@ -168,7 +168,7 @@ class LoanController extends Controller {
                                 $html .= '<li><a href="#" class="print-invoice" data-href="'.route('sell.printInvoice', [$row->transaction_id]).'"><i class="fas fa-print" aria-hidden="true"></i> '.__('lang_v1.print_invoice').'</a></li>';
                                 $html .= '<li><a href="'.action([\App\Http\Controllers\TransactionPaymentController::class, 'show'], [$row->transaction_id]).'" class="view_payment_modal"><i class="fas fa-money-bill-alt"></i> '.__('purchase.view_payments').'</a></li>';
                                 $html .= '<li><a href="#" data-href="'.action([\App\Http\Controllers\SellController::class, 'show'], [$row->transaction_id]).'" class="btn-modal" data-container=".view_modal"><i class="fas fa-eye" aria-hidden="true"></i> '.__('messages.view').'</a></li>';
-                                $html .= '<li><a href="'.action([\App\Http\Controllers\LoanController::class, 'destroy'], [$row->id]).'" class="delete-sale"> <i class="fas fa-trash"></i> '.__('messages.delete').'</a></li>';
+                                $html .= '<li><a href="'.action([\App\Http\Controllers\LoanController::class, 'destroy'], [$row->id]).'" class="delete_loan_button"> <i class="fas fa-trash"></i> '.__('messages.delete').'</a></li>';
                         }else{
                           $html = '<div class="btn-group">
                                     <button type="button" class="btn btn-info dropdown-toggle btn-xs" 
@@ -898,7 +898,7 @@ class LoanController extends Controller {
                     if ($transaction_id) {
                         $output = $this->transactionUtil->deleteSale($business_id, $transaction_id); //Eliminar la transacción
                         $loan->delete(); //Eliminar el Prestamo y sus relaciones
-                        $output = ['success' => true,'msg' => __('loan.deleted_success'),];
+                        $output = ['success' => true,'msg' => __('loans.loan_destroy'),];
                     }else{
                          $output = ['success' => false,'msg' =>  __('lang_v1.loan_cannot_be_deleted'),];
                     }
@@ -910,9 +910,7 @@ class LoanController extends Controller {
             } catch (\Exception $e) {
                  DB::rollBack();
                 \Log::emergency('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
-                $output = ['success' => false,
-                    'msg' => '__("messages.something_went_wrong")',
-                ];
+                $output = ['success' => false,'msg' => __("messages.something_went_wrong")];
             }
             return $output;
         }

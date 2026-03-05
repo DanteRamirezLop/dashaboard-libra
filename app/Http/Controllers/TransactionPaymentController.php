@@ -319,55 +319,99 @@ class TransactionPaymentController extends Controller
      */
     public function destroy($id)
     {
-        if (! auth()->user()->can('delete_purchase_payment') && ! auth()->user()->can('delete_sell_payment') && ! auth()->user()->can('all_expense.access') && ! auth()->user()->can('view_own_expense') && !auth()->user()->can('hms.delete_booking_payment')) {
+        if (! auth()->user()->can('delete_purchase_payment') && ! auth()->user()->can('delete_sell_payment') && ! auth()->user()->can('all_expense.access') && ! auth()->user()->can('view_own_expense')) {
             abort(403, 'Unauthorized action.');
         }
 
         if (request()->ajax()) {
             try {
                 $payment = TransactionPayment::findOrFail($id);
-
                 DB::beginTransaction();
 
+                // Eliminar pago a capital
+                $there_is_pay_capital =  PaymentApplication::where('transaction_id',$payment->transaction_id)->whereNull('payment_schedule_id')->exists();
+                if($there_is_pay_capital){
+                    $output = ['success' => false,'msg' => 'Por ahora no se puede eliminar un pago a capital'];
+                    return $output;
+                }
+
+                //Eliminar pagos adelantado si es que lo tenga
+                $is_prepayment = PaymentApplication::where('transaction_id',$payment->transaction_id)->where('payment_schedule_id',$payment->payment_schedule_id)->exists();
+                if(!empty($is_prepayment)){
+                    $payment_application =  PaymentApplication::where('transaction_id',$payment->transaction_id)->where('payment_schedule_id',$payment->payment_schedule_id)->first();
+                    $interestSaved = $payment_application->amount_discounted;
+                    $transaction = Transaction::find($payment->transaction_id);
+                    $transaction->discount_amount =  $transaction->discount_amount - $interestSaved;
+                    $transaction->final_total = $transaction->final_total + $interestSaved;
+                    $transaction->save();
+                    $payment_application->delete();
+                }
+
+                //Eliminar pagos relacionados a una letra
+                if (! empty($payment->payment_schedule_id)) {
+                    $amount = 0.00;
+                    $tranasctionAuxs = TransactionPayment::where('payment_schedule_id',$payment->payment_schedule_id)->get();
+                    if($tranasctionAuxs){
+                        foreach($tranasctionAuxs as $items){
+                            $amount = $amount + $items->amount;
+                        }
+                        $amount = $amount - $payment->amount;
+                    }
+                    $payment_schedule = PaymentSchedule::find($payment->payment_schedule_id);
+                    if( round($amount,2) > 0.00 ){
+                        $payment_schedule->status = 'partial';
+                        $payment_schedule->save();
+                    }else{
+                        $payment_schedule->status = 'pending'; 
+                        $payment_schedule->save();
+                    }
+                }
+
+                //Si el pago esta relacionado a una mora, eliminar la mora tambien
+                if(! empty($payment->delay_id)){
+                    //Reducir la mora eliminada del total de la transaccion
+                    $transaction = Transaction::find($payment->transaction_id);
+                    $transaction->additional_expense_value_2 -= $payment->amount;
+                    $transaction->final_total -= $payment->amount;
+                    $transaction->save();
+                    //Eliminar registro de mora
+                    $delay = Delay::find($payment->delay_id);
+                    $delay->delete();
+                    $payment->delay_id = null;
+                    $payment->save();
+                }
+
+                //ELIMINACION DE LA TRANSACCION PROPIAMENTE DICHA 
                 if (! empty($payment->transaction_id)) {
                     TransactionPayment::deletePayment($payment);
-                } else { //advance payment
+                } else { 
                     $adjusted_payments = TransactionPayment::where('parent_id',
-                                                $payment->id)
-                                                ->get();
+                                                    $payment->id)
+                                                    ->get();
 
                     $total_adjusted_amount = $adjusted_payments->sum('amount');
-
+                    
                     //Get customer advance share from payment and deduct from advance balance
                     $total_customer_advance = $payment->amount - $total_adjusted_amount;
                     if ($total_customer_advance > 0) {
                         $this->transactionUtil->updateContactBalance($payment->payment_for, $total_customer_advance, 'deduct');
                     }
-
                     //Delete all child payments
                     foreach ($adjusted_payments as $adjusted_payment) {
                         //Make parent payment null as it will get deleted
                         $adjusted_payment->parent_id = null;
                         TransactionPayment::deletePayment($adjusted_payment);
                     }
-
                     //Delete advance payment
                     TransactionPayment::deletePayment($payment);
                 }
 
+                $output = ['success' => true,'msg' => __('purchase.payment_deleted_success')];
                 DB::commit();
-
-                $output = ['success' => true,
-                    'msg' => __('purchase.payment_deleted_success'),
-                ];
             } catch (\Exception $e) {
                 DB::rollBack();
-
                 \Log::emergency('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
-
-                $output = ['success' => false,
-                    'msg' => __('messages.something_went_wrong'),
-                ];
+                $output = ['success' => false,'msg' => __('messages.something_went_wrong')];
             }
 
             return $output;

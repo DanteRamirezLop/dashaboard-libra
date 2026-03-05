@@ -59,7 +59,7 @@
 				</div>
 			</div>
 
-			<div class="@if(!empty($default_purchase_status)) col-sm-4 @else col-sm-3 @endif">
+			<!-- <div class="@if(!empty($default_purchase_status)) col-sm-4 @else col-sm-3 @endif">
 				<div class="form-group">
 					{!! Form::label('delivery_date', __('lang_v1.delivery_date') . ':') !!}
 					<div class="input-group">
@@ -69,7 +69,7 @@
 						{!! Form::text('delivery_date', null, ['class' => 'form-control']); !!}
 					</div>
 				</div>
-			</div>
+			</div> -->
 				
 			@if(count($business_locations) == 1)
 				@php 
@@ -89,6 +89,47 @@
 				</div>
 			</div>
 
+
+			<div class="col-sm-3">
+				<div class="form-group">
+					{!! Form::label('custom_field_3', 'Forma de pago:*') !!}
+					{!! Form::select('custom_field_3',['0'=>'Contado','10'=>'Credito 10%','15'=>'Credito 15%','20'=>'Credito 20%','30'=>'Credito 30%','50'=>'Credito 50%'], null, ['class' => 'form-control','placeholder' => __('messages.please_select'), 'required']); !!}
+				</div>
+			</div>
+			<div class="col-sm-3">
+				<div class="form-group">
+					{!! Form::label('custom_field_1', 'Tipo de proceso:*') !!}
+					{!! Form::select('custom_field_1',['Compra Nacional'=>'Compra Nacional','Compra Internacional'=>'Compra Internacional'], null, ['class' => 'form-control','placeholder' => __('messages.please_select'), 'required']); !!}
+				</div>
+			</div> 
+
+			<!-- <div class="col-md-3">
+		          <div class="form-group">
+		            <div class="multi-input">
+		              {!! Form::label('pay_term_number', __('contact.pay_term') . ':') !!} @show_tooltip(__('tooltip.pay_term'))
+		              <br/>
+		              {!! Form::number('pay_term_number', null, ['class' => 'form-control width-40 pull-left', 'placeholder' => __('contact.pay_term')]); !!}
+
+		              {!! Form::select('pay_term_type', 
+		              	['months' => __('lang_v1.months'), 
+		              		'days' => __('lang_v1.days')], 
+		              		null, 
+		              	['class' => 'form-control width-60 pull-left','placeholder' => __('messages.please_select'), 'id' => 'pay_term_type']); !!}
+		            </div>
+		        </div>
+		    </div> -->
+
+			<div class="col-sm-3">
+                <div class="form-group">
+                    {!! Form::label('document', __('purchase.attach_document') . ':') !!}
+                    {!! Form::file('document', ['id' => 'upload_document', 'accept' => implode(',', array_keys(config('constants.document_upload_mimes_types')))]); !!}
+                    <p class="help-block">
+                    	@lang('purchase.max_file_size', ['size' => (config('constants.document_size_limit') / 1000000)])
+                    	@includeIf('components.document_help_text')
+                    </p>
+                </div>
+            </div>
+
 			<!-- Currency Exchange Rate -->
 			<div class="col-sm-3 @if(!$currency_details->purchase_in_diff_currency) hide @endif">
 				<div class="form-group">
@@ -106,32 +147,6 @@
 				</div>
 			</div>
 
-			<div class="col-md-3">
-		          <div class="form-group">
-		            <div class="multi-input">
-		              {!! Form::label('pay_term_number', __('contact.pay_term') . ':') !!} @show_tooltip(__('tooltip.pay_term'))
-		              <br/>
-		              {!! Form::number('pay_term_number', null, ['class' => 'form-control width-40 pull-left', 'placeholder' => __('contact.pay_term')]); !!}
-
-		              {!! Form::select('pay_term_type', 
-		              	['months' => __('lang_v1.months'), 
-		              		'days' => __('lang_v1.days')], 
-		              		null, 
-		              	['class' => 'form-control width-60 pull-left','placeholder' => __('messages.please_select'), 'id' => 'pay_term_type']); !!}
-		            </div>
-		        </div>
-		    </div>
-
-			<div class="col-sm-3">
-                <div class="form-group">
-                    {!! Form::label('document', __('purchase.attach_document') . ':') !!}
-                    {!! Form::file('document', ['id' => 'upload_document', 'accept' => implode(',', array_keys(config('constants.document_upload_mimes_types')))]); !!}
-                    <p class="help-block">
-                    	@lang('purchase.max_file_size', ['size' => (config('constants.document_size_limit') / 1000000)])
-                    	@includeIf('components.document_help_text')
-                    </p>
-                </div>
-            </div>
 		</div>
 		@if(!empty($common_settings['enable_purchase_requisition']))
 		<div class="row">
@@ -227,7 +242,7 @@
 		</div>
 	@endcomponent
 
-	@component('components.widget', ['class' => 'box-solid'])
+	@component('components.widget', ['class' => 'box-solid hide'])
 	<div class="row">
 		<div class="col-md-4">
 			<div class="form-group">
@@ -374,6 +389,7 @@
             </div>
         </div>        
 	</div>
+	
 	<div class="row">
 			<div class="col-md-12 text-center">
 				<button type="button" class="tw-dw-btn tw-dw-btn-primary tw-text-white tw-dw-btn-sm" id="toggle_additional_expense"> <i class="fas fa-plus"></i> @lang('lang_v1.add_additional_expenses') <i class="fas fa-chevron-down"></i></button>
