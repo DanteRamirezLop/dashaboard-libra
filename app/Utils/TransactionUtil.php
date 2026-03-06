@@ -3072,6 +3072,47 @@ class TransactionUtil extends Util
         return $currency;
     }
 
+
+
+      /**
+     * Purchase currency details
+     *
+     * @param  int  $business_id
+     * @return object
+     */
+    public function currencyDetails($business_id, $currency_id = false, $exchange_rate = false)
+    {
+        $business = Business::find($business_id);
+        $output = ['purchase_in_diff_currency' => false,
+            'p_exchange_rate' => 1,
+            'decimal_seperator' => '.',
+            'thousand_seperator' => ',',
+            'symbol' => '',
+        ];
+        //Check if diff currency is used or not.
+        if ($currency_id) {
+            $output['purchase_in_diff_currency'] = true;
+            $output['p_exchange_rate'] = $exchange_rate;
+             $output['currency_id'] = $currency_id;
+            $currency_id = $currency_id;
+        } else {
+            $output['purchase_in_diff_currency'] = false;
+            $output['p_exchange_rate'] = 1;
+            $output['currency_id'] = $business->currency_id;
+            $currency_id = $business->currency_id;
+        }
+
+        $currency = Currency::find($currency_id);
+        $output['thousand_separator'] = $currency->thousand_separator;
+        $output['decimal_separator'] = $currency->decimal_separator;
+        $output['symbol'] = $currency->symbol;
+        $output['code'] = $currency->code;
+        $output['name'] = $currency->currency;
+
+        return (object) $output;
+    }
+
+
     /**
      * Purchase currency details
      *
@@ -5092,6 +5133,7 @@ class TransactionUtil extends Util
                 ->where('transactions.type', $sale_type)
                 ->select(
                     'transactions.id',
+                    'transactions.created_at',
                     'transactions.transaction_date',
                     'transactions.type',
                     'transactions.is_direct_sale',

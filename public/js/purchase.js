@@ -713,9 +713,10 @@ $(document).ready(function() {
         var exchange_rate = $('input#exchange_rate').val();
         __write_number(
             row.find('input.default_sell_price'),
-            default_sell_price * exchange_rate,
+            default_sell_price / exchange_rate,  
             true
         );
+        // REVISAR AQUI SI ES * O / -> antes estaba * pero como ahora el cambio es con 3.66 formato y no 0.29 se cambio
     });
 
     $(document).on('change', '.default_sell_price', function() {
@@ -884,18 +885,18 @@ function update_row_price_for_exchange_rate(row) {
     }
 
     var purchase_unit_cost_without_discount =
-        __read_number(row.find('.purchase_unit_cost_without_discount'), true) / exchange_rate;
+        __read_number(row.find('.purchase_unit_cost_without_discount'), true) * exchange_rate;
     __write_number(
         row.find('.purchase_unit_cost_without_discount'),
         purchase_unit_cost_without_discount,
         true
     );
 
-    var purchase_unit_cost = __read_number(row.find('.purchase_unit_cost'), true) / exchange_rate;
+    var purchase_unit_cost = __read_number(row.find('.purchase_unit_cost'), true) * exchange_rate;
     __write_number(row.find('.purchase_unit_cost'), purchase_unit_cost, true);
 
     var row_subtotal_before_tax_hidden =
-        __read_number(row.find('.row_subtotal_before_tax_hidden'), true) / exchange_rate;
+        __read_number(row.find('.row_subtotal_before_tax_hidden'), true) * exchange_rate;
     row.find('.row_subtotal_before_tax').text(
         __currency_trans_from_en(row_subtotal_before_tax_hidden, false, true)
     );
@@ -906,14 +907,14 @@ function update_row_price_for_exchange_rate(row) {
     );
 
     var purchase_product_unit_tax =
-        __read_number(row.find('.purchase_product_unit_tax'), true) / exchange_rate;
+        __read_number(row.find('.purchase_product_unit_tax'), true) * exchange_rate;
     __write_number(row.find('input.purchase_product_unit_tax'), purchase_product_unit_tax, true);
     row.find('.purchase_product_unit_tax_text').text(
         __currency_trans_from_en(purchase_product_unit_tax, false, true)
     );
 
     var purchase_unit_cost_after_tax =
-        __read_number(row.find('.purchase_unit_cost_after_tax'), true) / exchange_rate;
+        __read_number(row.find('.purchase_unit_cost_after_tax'), true) * exchange_rate;
     __write_number(
         row.find('input.purchase_unit_cost_after_tax'),
         purchase_unit_cost_after_tax,
@@ -921,7 +922,7 @@ function update_row_price_for_exchange_rate(row) {
     );
 
     var row_subtotal_after_tax_hidden =
-        __read_number(row.find('.row_subtotal_after_tax_hidden'), true) / exchange_rate;
+        __read_number(row.find('.row_subtotal_after_tax_hidden'), true) * exchange_rate;
     __write_number(
         row.find('input.row_subtotal_after_tax_hidden'),
         row_subtotal_after_tax_hidden,
@@ -952,7 +953,7 @@ function update_inline_profit_percentage(row) {
     //Update Profit percentage
     var default_sell_price = __read_number(row.find('input.default_sell_price'), true);
     var exchange_rate = $('input#exchange_rate').val();
-    default_sell_price_in_base_currency = default_sell_price / parseFloat(exchange_rate);
+    default_sell_price_in_base_currency = default_sell_price * parseFloat(exchange_rate);
 
     var purchase_after_tax = __read_number(row.find('input.purchase_unit_cost_after_tax'), true);
     var profit_percent = __get_rate(purchase_after_tax, default_sell_price_in_base_currency);

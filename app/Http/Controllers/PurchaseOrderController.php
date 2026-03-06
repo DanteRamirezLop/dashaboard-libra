@@ -260,15 +260,12 @@ class PurchaseOrderController extends Controller
 
         $business_id = request()->session()->get('user.business_id');
 
-        $taxes = TaxRate::where('business_id', $business_id)
-                        ->ExcludeForTaxGroup()
-                        ->get();
+        $taxes = TaxRate::where('business_id', $business_id)->ExcludeForTaxGroup()->get();
 
         $business_locations = BusinessLocation::forDropdown($business_id, false, true);
         $bl_attributes = $business_locations['attributes'];
         $business_locations = $business_locations['locations'];
 
-        $currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
 
         $types = [];
         if (auth()->user()->can('supplier.create')) {
@@ -289,8 +286,19 @@ class PurchaseOrderController extends Controller
 
         //Added check because $users is of no use if enable_contact_assign if false
         $users = config('constants.enable_contact_assign') ? User::forDropdown($business_id, false, false, false, true) : [];
-
         $common_settings = ! empty(session('business.common_settings')) ? session('business.common_settings') : [];
+
+        // Cambio de moneda
+        $currency_id = request()->get('currency');
+        // 94 Es el ID de la moneda soles PE
+        if($currency_id == 94){
+            $search_date = Carbon::now()->format('y-m-d');
+            $exchange_rate = ExchangeRates::where('search_date',$search_date)->first();
+            $exchange_rate = $exchange_rate ?  $exchange_rate->sale  : 1;
+            $currency_details = $this->transactionUtil->currencyDetails($business_id, $currency_id, $exchange_rate);
+        }else{
+            $currency_details = $this->transactionUtil->currencyDetails($business_id);
+        }
 
         return view('purchase_order.create')
             ->with(compact('taxes', 'business_locations', 'currency_details', 'customer_groups', 'types', 'shortcuts', 'bl_attributes', 'shipping_statuses', 'users', 'common_settings'));
@@ -318,6 +326,17 @@ class PurchaseOrderController extends Controller
 
             $transaction_data = $request->only(['ref_no', 'contact_id', 'transaction_date', 'total_before_tax', 'location_id', 'discount_type', 'discount_amount', 'tax_id', 'tax_amount', 'shipping_details', 'shipping_charges', 'final_total', 'additional_notes', 'exchange_rate', 'pay_term_number', 'pay_term_type', 'shipping_address', 'shipping_status', 'delivered_to', 'delivery_date', 'purchase_requisition_ids']);
             $exchange_rate = $transaction_data['exchange_rate'];
+
+             if ($request->has('custom_field_1')) {
+                $transaction_data['custom_field_1'] = $request->input('custom_field_1');
+            }
+             if ($request->has('custom_field_2')) {
+                $transaction_data['custom_field_2'] = $request->input('custom_field_2');
+            }
+            
+             if ($request->has('custom_field_3')) {
+                $transaction_data['custom_field_3'] = $request->input('custom_field_3');
+            }
 
             if ($request->has('shipping_custom_field_1')) {
                 $transaction_data['shipping_custom_field_1'] = $request->input('shipping_custom_field_1');
@@ -515,6 +534,7 @@ class PurchaseOrderController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
+    //status
     public function edit($id)
     {
         if (! auth()->user()->can('purchase_order.update')) {
@@ -579,9 +599,7 @@ class PurchaseOrderController extends Controller
 
         //Added check because $users is of no use if enable_contact_assign if false
         $users = config('constants.enable_contact_assign') ? User::forDropdown($business_id, false, false, false, true) : [];
-
         $delivery_date = ! empty($purchase->delivery_date) ? $this->productUtil->format_date($purchase->delivery_date, true) : null;
-
         $common_settings = ! empty(session('business.common_settings')) ? session('business.common_settings') : [];
 
         $purchase_requisitions = null;
@@ -626,6 +644,7 @@ class PurchaseOrderController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
+
     public function update(Request $request, $id)
     {
         if (! auth()->user()->can('purchase_order.update')) {
@@ -635,7 +654,7 @@ class PurchaseOrderController extends Controller
         try {
             $transaction = Transaction::findOrFail($id);
 
-            //Validate document size
+            //Validate document size 
             $request->validate([
                 'document' => 'file|max:'.(config('constants.document_size_limit') / 1000),
             ]);
@@ -652,6 +671,9 @@ class PurchaseOrderController extends Controller
                 'shipping_charges', 'final_total',
                 'additional_notes', 'exchange_rate', 'pay_term_number', 'pay_term_type', 'shipping_address', 'shipping_status', 'delivered_to', 'delivery_date', 'purchase_requisition_ids', ]);
 
+            $update_data['custom_field_1'] = $request->has('custom_field_1') ? $request->input('custom_field_1') : null;
+            $update_data['custom_field_2'] = $request->has('custom_field_2') ? $request->input('custom_field_2') : null;
+            $update_data['custom_field_3'] = $request->has('custom_field_3') ? $request->input('custom_field_3') : null;
             $update_data['shipping_custom_field_1'] = $request->has('shipping_custom_field_1') ? $request->input('shipping_custom_field_1') : null;
             $update_data['shipping_custom_field_2'] = $request->has('shipping_custom_field_2') ? $request->input('shipping_custom_field_2') : null;
             $update_data['shipping_custom_field_3'] = $request->has('shipping_custom_field_3') ? $request->input('shipping_custom_field_3') : null;
@@ -698,9 +720,15 @@ class PurchaseOrderController extends Controller
             if (! empty($document_name)) {
                 $update_data['document'] = $document_name;
             }
+            //status
+            if ($request->has('status')) {
+                $update_data['status'] = $request->input('status');
+            }else{
+                $update_data['status'] = 'ordered';
+            }
 
+           
             $transaction_before = $transaction->replicate();
-
             $purchase_requisition_ids = $transaction->purchase_requisition_ids ?? [];
 
             DB::beginTransaction();
@@ -713,9 +741,7 @@ class PurchaseOrderController extends Controller
             $purchases = $request->input('purchases');
 
             $delete_purchase_lines = $this->productUtil->createOrUpdatePurchaseLines($transaction, $purchases, $currency_details, false);
-
-            $this->transactionUtil->updatePurchaseOrderStatus([$transaction->id]);
-
+            //$this->transactionUtil->updatePurchaseOrderStatus([$transaction->id]);
             $new_purchase_requisition_ids = $transaction->purchase_requisition_ids ?? [];
             $purchase_requisition_ids = array_merge($purchase_requisition_ids, $new_purchase_requisition_ids);
             if (! empty($purchase_requisition_ids)) {
@@ -727,7 +753,7 @@ class PurchaseOrderController extends Controller
             DB::commit();
 
             $output = ['success' => 1,
-                'msg' => __('purchase.purchase_update_success'),
+                'msg' => __('purchase.purchase_update_success').$transaction->status,
             ];
         } catch (\Exception $e) {
             DB::rollBack();

@@ -330,7 +330,7 @@
 		        @endif
 
 				<!-- Currency Exchange Rate -->
-				<div class="col-sm-3 @if(!$currency_details->purchase_in_diff_currency) hide @endif">
+				<!-- <div class="col-sm-3 @if(!$currency_details->purchase_in_diff_currency) hide @endif">
 					<div class="form-group">
 						{!! Form::label('exchange_rate', __('purchase.p_exchange_rate') . ':*') !!}
 						@show_tooltip(__('tooltip.currency_exchange_factor'))
@@ -344,7 +344,7 @@
 							@lang('purchase.diff_purchase_currency_help', ['currency' => $currency_details->name])
 						</span>
 					</div>
-				</div>
+				</div> -->
 
 
 

@@ -130,7 +130,15 @@
                 </div>
             </div>
 
+			<div class="col-sm-3">
+				<div class="form-group">
+					{!! Form::label('currecy_type', 'Moneda'.':*') !!}
+					{!! Form::select('currecy_type',['2'=>'Dolar (USD)','94'=>'Sol (PE)'], $currency_details->currency_id, ['class' => 'form-control', 'required']); !!}
+				</div>
+			</div>
+
 			<!-- Currency Exchange Rate -->
+			 
 			<div class="col-sm-3 @if(!$currency_details->purchase_in_diff_currency) hide @endif">
 				<div class="form-group">
 					{!! Form::label('exchange_rate', __('purchase.p_exchange_rate') . ':*') !!}
@@ -139,7 +147,7 @@
 						<span class="input-group-addon">
 							<i class="fa fa-info"></i>
 						</span>
-						{!! Form::number('exchange_rate', $currency_details->p_exchange_rate, ['class' => 'form-control', 'required', 'step' => 0.001]); !!}
+						{!! Form::number('exchange_rate', $currency_details->p_exchange_rate, ['class' => 'form-control', 'required']); !!}
 					</div>
 					<span class="help-block text-danger">
 						@lang('purchase.diff_purchase_currency_help', ['currency' => $currency_details->name])
@@ -542,6 +550,20 @@
 			if($('#location_id').length){
 				$('#location_id').change();
 			}
+
+
+			$('#currecy_type').on('change', function() {
+				 window.onbeforeunload = null; 
+				var valor = $(this).val();
+				if(valor !== ''){
+					var url = new URL(window.location.href);
+					url.searchParams.set('currency', valor); // nombre del parámetro
+					window.location.href = url.toString();
+				}else{
+
+				}
+			});
+
     	});
 	</script>
 	@include('purchase.partials.keyboard_shortcuts')

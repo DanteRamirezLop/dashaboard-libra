@@ -536,6 +536,7 @@ class SellController extends Controller
                         return '<span class="total-discount" data-orig-value="' . $discount . '">' . $this->transactionUtil->num_f($discount, true) . '</span>';
                     }
                 )
+                ->editColumn('created_at', '{{@format_datetime($created_at)}}')
                 ->editColumn('transaction_date', '{{@format_datetime($transaction_date)}}')
                 ->editColumn(
                     'payment_status',

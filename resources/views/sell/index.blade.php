@@ -67,8 +67,10 @@
                     <thead>
                         <tr>
                             <th>@lang('messages.action')</th>
-                            <th>@lang('messages.date')</th>
+                            <th>Fecha venta</th>
+                            <th>Creado en</th>
                             <th>@lang('sale.invoice_no')</th>
+                            <th>{{ $custom_labels['sell']['custom_field_1'] ?? '' }}</th>
                             <th>@lang('sale.customer_name')</th>
                             <th>@lang('lang_v1.contact_no')</th>
                             <th>@lang('sale.location')</th>
@@ -81,9 +83,7 @@
                             <th>@lang('lang_v1.shipping_status')</th>
                             <th>@lang('lang_v1.total_items')</th>
                             <th>@lang('lang_v1.types_of_service')</th>
-                            <th>{{ $custom_labels['types_of_service']['custom_field_1'] ?? __('lang_v1.service_custom_field_1') }}
-                            </th>
-                            <th>{{ $custom_labels['sell']['custom_field_1'] ?? '' }}</th>
+                            <th>{{ $custom_labels['types_of_service']['custom_field_1'] ?? __('lang_v1.service_custom_field_1') }}</th>
                             <th>{{ $custom_labels['sell']['custom_field_2'] ?? '' }}</th>
                             <th>{{ $custom_labels['sell']['custom_field_3'] ?? '' }}</th>
                             <th>{{ $custom_labels['sell']['custom_field_4'] ?? '' }}</th>
@@ -203,10 +203,19 @@
                         data: 'transaction_date',
                         name: 'transaction_date'
                     },
+                      { data: 'created_at', name: 'created_at'},
                     {
                         data: 'invoice_no',
                         name: 'invoice_no'
                     },
+                    {
+                        data: 'custom_field_1',
+                        name: 'transactions.custom_field_1',
+                        @if (empty($custom_labels['sell']['custom_field_1']))
+                            visible: false
+                        @endif
+                    },
+
                     {
                         data: 'conatct_name',
                         name: 'conatct_name'
@@ -269,13 +278,7 @@
                             visible: false
                         @endif
                     },
-                    {
-                        data: 'custom_field_1',
-                        name: 'transactions.custom_field_1',
-                        @if (empty($custom_labels['sell']['custom_field_1']))
-                            visible: false
-                        @endif
-                    },
+
                     {
                         data: 'custom_field_2',
                         name: 'transactions.custom_field_2',
