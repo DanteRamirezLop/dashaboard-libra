@@ -1074,7 +1074,7 @@ class TransactionUtil extends Util
         //Shop Contact Info
         $output['contact'] = '';
         if ($il->show_mobile_number == 1 && ! empty($location_details->mobile)) {
-            $output['contact'] .= '<b>'.__('contact.mobile').':</b> '.$location_details->mobile;
+            $output['contact'] .= ''.__('contact.mobile').': '.$location_details->mobile;
         }
         if ($il->show_alternate_number == 1 && ! empty($location_details->alternate_number)) {
             if (empty($output['contact'])) {
@@ -1093,8 +1093,6 @@ class TransactionUtil extends Util
         //Customer show_customer
         $customer = Contact::find($transaction->contact_id);
 
-        $output['contact_id'] = $customer->contact_id;
-        $output['contact_name'] = $customer->name;
         $output['customer_info'] = '';
         $output['customer_tax_number'] = '';
         $output['customer_tax_label'] = '';
@@ -1109,7 +1107,7 @@ class TransactionUtil extends Util
                 if (! empty($customer->contact_address)) {
                     $output['customer_info'] .= '<br>';
                 }
-                $output['customer_info'] .= '<b>'.__('contact.mobile').'</b>: '.$customer->mobile;
+                $output['customer_info'] .= ''.__('contact.mobile').': '.$customer->mobile;
                 if (! empty($customer->landline)) {
                     $output['customer_info'] .= ', '.$customer->landline;
                 }
@@ -1204,10 +1202,6 @@ class TransactionUtil extends Util
             $output['client_id'] = ! empty($customer->contact_id) ? $customer->contact_id : '';
         }
 
-        // added by 
-        $user = \App\User::find($transaction->created_by);
-        $output['added_by'] = $user ? trim("{$user->surname} {$user->first_name} {$user->last_name}") : '';
-
         //Sales person info
         $output['sales_person'] = '';
         $output['sales_person_label'] = '';
@@ -1223,6 +1217,9 @@ class TransactionUtil extends Util
             $output['commission_agent_label'] = ! empty($il->commission_agent_label) ? $il->commission_agent_label : '';
             $output['commission_agent'] = ! empty($transaction->sale_commission_agent->user_full_name) ? $transaction->sale_commission_agent->user_full_name : '';
         }
+        
+        // GRUPO DE PRECIO - PRECIO CREDITO
+        $output['selling_price_group_id']= $transaction->selling_price_group_id;
 
         //Invoice info
         $output['invoice_no'] = $transaction->invoice_no;
@@ -1366,7 +1363,7 @@ class TransactionUtil extends Util
         } elseif ($transaction_type == 'sell_return') {
             $parent_sell = Transaction::find($transaction->return_parent_id);
             $lines = $parent_sell->sell_lines;
-            $total_line_taxes = 0;
+
             foreach ($lines as $key => $value) {
                 if (! empty($value->sub_unit_id)) {
                     $formated_sell_line = $this->recalculateSellLineTotals($business_details->id, $value);
@@ -1388,8 +1385,6 @@ class TransactionUtil extends Util
                         $output['taxes'][$tax_group_detail['name']] += $tax_group_detail['calculated_tax'];
                     }
                 }
-
-                $total_line_taxes += ($line['tax_unformatted'] * $line['quantity']);
             }
         }
 
@@ -1424,8 +1419,6 @@ class TransactionUtil extends Util
             $discount = $transaction->discount_amount;
         }
         $output['discount'] = ($discount != 0) ? $this->num_f($discount, $show_currency, $business_details) : 0;
-
-        $output['discount_amount_unformatted'] = $discount;
 
         //reward points
         if ($business_details->enable_rp == 1 && ! empty($transaction->rp_redeemed)) {
@@ -1602,10 +1595,7 @@ class TransactionUtil extends Util
 
             if ($zatca_qr) {
                 $total_order_tax = $transaction->tax_amount + $total_line_taxes;
-
-                $zatca_phase = ! empty($il->common_settings['zatca_phase']) ? $il->common_settings['zatca_phase'] : '';
-                $qr_code_text = $this->_zatca_qr_text($business_details->name, $business_details->tax_number_1, $transaction, $total_order_tax, $zatca_phase);
-                // $qr_code_text = $this->_zatca_qr_text( $transaction);
+                $qr_code_text = $this->_zatca_qr_text($business_details->name, $business_details->tax_number_1, $transaction->transaction_date, $transaction->final_total, $total_order_tax);
             } else {
                 $is_label_enabled = ! empty($il->common_settings['show_qr_code_label']) ? true : false;
                 $qr_code_details = [];
@@ -1652,20 +1642,6 @@ class TransactionUtil extends Util
 
                 $qr_code_text = $is_label_enabled ? implode(', ', $qr_code_details) : implode(' ', $qr_code_details);
             }
-
-            if ($transaction->status == 'final') {
-                $output['qr_code_text'] = $qr_code_text;
-            }
-        // add this seprate for sell retuen qr text of zatca
-        }else if(in_array($transaction_type, ['sell_return'])){
-
-            $output['show_qr_code'] = ! empty($il->show_qr_code) ? true : false;
-            $zatca_qr = ! empty($il->common_settings['zatca_qr']) ? true : false;
-            if ($zatca_qr) {
-                $total_order_tax = $transaction->tax_amount + $total_line_taxes;
-                $zatca_phase = ! empty($il->common_settings['zatca_phase']) ? $il->common_settings['zatca_phase'] : '';
-                $qr_code_text = $this->_zatca_qr_text($business_details->name, $business_details->tax_number_1, $transaction, $total_order_tax, $zatca_phase);
-            } 
 
             if ($transaction->status == 'final') {
                 $output['qr_code_text'] = $qr_code_text;
@@ -1854,32 +1830,25 @@ class TransactionUtil extends Util
             $output['shipping_custom_field_5_value'] = $transaction['shipping_custom_field_5'];
         }
 
-
-        $is_show_sell_custom_fields1 = ! empty($il->common_settings['sell_custom_fields1']) ? true : false;
-        if (! empty($custom_labels->sell->custom_field_1) && $is_show_sell_custom_fields1) {
+        if (! empty($custom_labels->sell->custom_field_1)) {
             $output['sell_custom_field_1_label'] = $custom_labels->sell->custom_field_1;
             $output['sell_custom_field_1_value'] = $transaction['custom_field_1'];
         }
 
-        $is_show_sell_custom_fields2 = ! empty($il->common_settings['sell_custom_fields2']) ? true : false;
-        if (! empty($custom_labels->sell->custom_field_2) && $is_show_sell_custom_fields2) {
+        if (! empty($custom_labels->sell->custom_field_2)) {
             $output['sell_custom_field_2_label'] = $custom_labels->sell->custom_field_2;
             $output['sell_custom_field_2_value'] = $transaction['custom_field_2'];
         }
 
-        $is_show_sell_custom_fields3 = ! empty($il->common_settings['sell_custom_fields3']) ? true : false;
-        if (! empty($custom_labels->sell->custom_field_3) && $is_show_sell_custom_fields3) {
+        if (! empty($custom_labels->sell->custom_field_3)) {
             $output['sell_custom_field_3_label'] = $custom_labels->sell->custom_field_3;
             $output['sell_custom_field_3_value'] = $transaction['custom_field_3'];
         }
 
-        $is_show_sell_custom_fields4 = ! empty($il->common_settings['sell_custom_fields4']) ? true : false;
-        if (! empty($custom_labels->sell->custom_field_4) && $is_show_sell_custom_fields4) {
+        if (! empty($custom_labels->sell->custom_field_4)) {
             $output['sell_custom_field_4_label'] = $custom_labels->sell->custom_field_4;
             $output['sell_custom_field_4_value'] = $transaction['custom_field_4'];
         }
-
-        
 
         // location custom fields
         if (in_array('custom_field1', $location_custom_field_settings) && ! empty($location_details->custom_field1) && ! empty($custom_labels->location->custom_field_1)) {
@@ -1946,6 +1915,7 @@ class TransactionUtil extends Util
         return (object) $output;
     }
 
+
     /**
      * This QR code is used in saudi arabia, TLV format
      * https://github.com/SallaApp/ZATCA/blob/master/src/Tag.php
@@ -2001,7 +1971,7 @@ class TransactionUtil extends Util
      *
      * @return array
      */
-    protected function _receiptDetailsSellLines($lines, $il, $business_details)
+   protected function _receiptDetailsSellLines($lines, $il, $business_details)
     {
         $is_lot_number_enabled = $business_details->enable_lot_number;
         $is_product_expiry_enabled = $business_details->enable_product_expiry;
@@ -2066,10 +2036,6 @@ class TransactionUtil extends Util
                 'line_total_exc_tax' => $this->num_f($line->unit_price * $line->quantity, false, $business_details),
                 'line_total_exc_tax_uf' => $line->unit_price * $line->quantity,
                 'variation_id' => $variation->id,
-
-                // add for zatca pdf
-                'line_discount_amount_uf' => $line->line_discount_amount,
-                'line_discount_type_uf' => $line->line_discount_type,
             ];
 
             $temp = [];
@@ -2089,7 +2055,13 @@ class TransactionUtil extends Util
             if (! empty($temp)) {
                 $line_array['product_custom_fields'] = implode(',', $temp);
             }
-
+            
+             if (! empty($product->product_custom_field1)) {
+                $line_array['product_custom_field7'] =  $product->product_custom_field1; //agregar Codigo libra   
+            }else{
+                $line_array['product_custom_field7'] =  '-'; // Sin código Libra
+            }
+           
 
             //Group product taxes by name.
             if (! empty($tax_details)) {

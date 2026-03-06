@@ -732,7 +732,8 @@ class SellPosController extends Controller
         $is_package_slip = false,
         $from_pos_screen = true,
         $invoice_layout_id = null,
-        $is_delivery_note = false
+        $is_delivery_note = false,
+        $is_draft = false,
     ) {
         $output = ['is_enabled' => false,
             'print_type' => 'browser',
@@ -785,7 +786,13 @@ class SellPosController extends Controller
             $output['printer_config'] = $this->businessUtil->printerConfig($business_id, $location_details->printer_id);
             $output['data'] = $receipt_details;
         } else {
-            $layout = !empty($receipt_details->design) ? 'sale_pos.receipts.' . $receipt_details->design : 'sale_pos.receipts.classic';
+            //$layout = !empty($receipt_details->design) ? 'sale_pos.receipts.' . $receipt_details->design : 'sale_pos.receipts.classic';
+
+            if($is_draft){
+                $layout = 'sale_pos.receipts.draft';
+            }else{    
+                $layout = ! empty($receipt_details->design) ? 'sale_pos.receipts.'.$receipt_details->design : 'sale_pos.receipts.classic';
+            }
 
             $output['html_content'] = view($layout, compact('receipt_details'))->render();
         }
@@ -1501,7 +1508,7 @@ class SellPosController extends Controller
             DB::rollBack();
             \Log::emergency('File:' . $e->getFile() . 'Line:' . $e->getLine() . 'Message:' . $e->getMessage());
             $output = ['success' => 0,
-                'msg' => __('messages.something_went_wrong'.'datnte3333'),
+                'msg' => __('messages.something_went_wrong'),
             ];
         }
 
@@ -1948,7 +1955,13 @@ class SellPosController extends Controller
                 $is_delivery_note = !empty($request->input('delivery_note')) ? true : false;
 
                 $invoice_layout_id = $transaction->is_direct_sale ? $transaction->location->sale_invoice_layout_id : null;
-                $receipt = $this->receiptContent($business_id, $transaction->location_id, $transaction_id, $printer_type, $is_package_slip, false, $invoice_layout_id, $is_delivery_note);
+                //$receipt = $this->receiptContent($business_id, $transaction->location_id, $transaction_id, $printer_type, $is_package_slip, false, $invoice_layout_id, $is_delivery_note);
+
+                if($transaction->status == 'draft'){ 
+                    $receipt = $this->receiptContent($business_id, $transaction->location_id, $transaction_id, $printer_type, $is_package_slip, false, $invoice_layout_id, $is_delivery_note, true);
+                }else{
+                    $receipt = $this->receiptContent($business_id, $transaction->location_id, $transaction_id, $printer_type, $is_package_slip, false, $invoice_layout_id, $is_delivery_note);
+                }
 
                 if (!empty($receipt)) {
                     $output = ['success' => 1, 'receipt' => $receipt];

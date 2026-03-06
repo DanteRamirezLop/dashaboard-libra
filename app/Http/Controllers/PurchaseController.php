@@ -187,7 +187,6 @@ class PurchaseController extends Controller
                     'payment_status',
                     function ($row) {
                         $payment_status = Transaction::getPaymentStatus($row);
-
                         return (string) view('sell.partials.payment_status', ['payment_status' => $payment_status, 'id' => $row->id, 'for_purchase' => true]);
                     }
                 )
