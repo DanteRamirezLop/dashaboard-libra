@@ -69,7 +69,6 @@
               </div>
             </div>
            
-
             <div class="col-sm-3">
               <div class="form-group">
                 {!! Form::label('location_id', __('purchase.business_location').':*') !!}
@@ -94,8 +93,7 @@
               </div>
           </div>
 
-            
-            <div class="col-sm-3 ">
+          <div class="col-sm-3 ">
               <div class="form-group">
                   {!! Form::label('custom_field_3', 'Forma de pago:*') !!}
                   <select name="custom_field_3" id="custom_field_3" class="form-control" style="width: 100%;" required>
@@ -147,8 +145,6 @@
                     @includeIf('components.document_help_text')</p>
                 </div>
             </div>
-
-
 
             <!-- Currency Exchange Rate -->
             <div class="col-sm-3 @if(!$currency_details->purchase_in_diff_currency) hide @endif">
@@ -223,9 +219,9 @@
                   <tr>
                     <th class="col-md-7 text-right">@lang( 'purchase.net_total_amount' ):</th>
                     <td class="col-md-5 text-left">
-                      <span id="total_subtotal" class="display_currency">{{$purchase->total_before_tax/$purchase->exchange_rate}}</span>
+                      <span id="total_subtotal" class="display_currency">{{$purchase->total_before_tax * $purchase->exchange_rate}}</span>
                       <!-- This is total before purchase tax-->
-                      <input type="hidden" id="total_subtotal_input" value="{{$purchase->total_before_tax/$purchase->exchange_rate}}" name="total_before_tax">
+                      <input type="hidden" id="total_subtotal_input" value="{{$purchase->total_before_tax * $purchase->exchange_rate}}" name="total_before_tax">
                     </td>
                   </tr>
                 </table>
@@ -256,7 +252,7 @@
             <span class="input-group-addon">
             <i class="fa fa-info"></i>
             </span>
-            {!!Form::text('shipping_charges',number_format($purchase->shipping_charges/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator),['class'=>'form-control input_number','placeholder'=> __('sale.shipping_charges')]);!!}
+            {!!Form::text('shipping_charges',number_format($purchase->shipping_charges * $purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator),['class'=>'form-control input_number','placeholder'=> __('sale.shipping_charges')]);!!}
             </div>
           </div>
         </div>
@@ -273,104 +269,9 @@
                   {!! Form::text('delivered_to', $purchase->delivered_to, ['class' => 'form-control','placeholder' => __('lang_v1.delivered_to')]); !!}
               </div>
           </div>
-          @php
-            $custom_labels = json_decode(session('business.custom_labels'), true);
-              $shipping_custom_label_1 = !empty($custom_labels['shipping']['custom_field_1']) ? $custom_labels['shipping']['custom_field_1'] : '';
+           
 
-              $is_shipping_custom_field_1_required = !empty($custom_labels['shipping']['is_custom_field_1_required']) && $custom_labels['shipping']['is_custom_field_1_required'] == 1 ? true : false;
-
-              $shipping_custom_label_2 = !empty($custom_labels['shipping']['custom_field_2']) ? $custom_labels['shipping']['custom_field_2'] : '';
-
-              $is_shipping_custom_field_2_required = !empty($custom_labels['shipping']['is_custom_field_2_required']) && $custom_labels['shipping']['is_custom_field_2_required'] == 1 ? true : false;
-
-              $shipping_custom_label_3 = !empty($custom_labels['shipping']['custom_field_3']) ? $custom_labels['shipping']['custom_field_3'] : '';
-              
-              $is_shipping_custom_field_3_required = !empty($custom_labels['shipping']['is_custom_field_3_required']) && $custom_labels['shipping']['is_custom_field_3_required'] == 1 ? true : false;
-
-              $shipping_custom_label_4 = !empty($custom_labels['shipping']['custom_field_4']) ? $custom_labels['shipping']['custom_field_4'] : '';
-              
-              $is_shipping_custom_field_4_required = !empty($custom_labels['shipping']['is_custom_field_4_required']) && $custom_labels['shipping']['is_custom_field_4_required'] == 1 ? true : false;
-
-              $shipping_custom_label_5 = !empty($custom_labels['shipping']['custom_field_5']) ? $custom_labels['shipping']['custom_field_5'] : '';
-              
-              $is_shipping_custom_field_5_required = !empty($custom_labels['shipping']['is_custom_field_5_required']) && $custom_labels['shipping']['is_custom_field_5_required'] == 1 ? true : false;
-            @endphp
-
-            @if(!empty($shipping_custom_label_1))
-              @php
-                $label_1 = $shipping_custom_label_1 . ':';
-                if($is_shipping_custom_field_1_required) {
-                  $label_1 .= '*';
-                }
-              @endphp
-
-              <div class="col-md-4">
-                <div class="form-group">
-                    {!! Form::label('shipping_custom_field_1', $label_1 ) !!}
-                    {!! Form::text('shipping_custom_field_1', $purchase->shipping_custom_field_1, ['class' => 'form-control','placeholder' => $shipping_custom_label_1, 'required' => $is_shipping_custom_field_1_required]); !!}
-                </div>
-            </div>
-            @endif
-            @if(!empty($shipping_custom_label_2))
-              @php
-                $label_2 = $shipping_custom_label_2 . ':';
-                if($is_shipping_custom_field_2_required) {
-                  $label_2 .= '*';
-                }
-              @endphp
-
-              <div class="col-md-4">
-                <div class="form-group">
-                    {!! Form::label('shipping_custom_field_2', $label_2 ) !!}
-                    {!! Form::text('shipping_custom_field_2', $purchase->shipping_custom_field_2, ['class' => 'form-control','placeholder' => $shipping_custom_label_2, 'required' => $is_shipping_custom_field_2_required]); !!}
-                </div>
-            </div>
-            @endif
-            @if(!empty($shipping_custom_label_3))
-              @php
-                $label_3 = $shipping_custom_label_3 . ':';
-                if($is_shipping_custom_field_3_required) {
-                  $label_3 .= '*';
-                }
-              @endphp
-
-              <div class="col-md-4">
-                <div class="form-group">
-                    {!! Form::label('shipping_custom_field_3', $label_3 ) !!}
-                    {!! Form::text('shipping_custom_field_3', $purchase->shipping_custom_field_3, ['class' => 'form-control','placeholder' => $shipping_custom_label_3, 'required' => $is_shipping_custom_field_3_required]); !!}
-                </div>
-            </div>
-            @endif
-            @if(!empty($shipping_custom_label_4))
-              @php
-                $label_4 = $shipping_custom_label_4 . ':';
-                if($is_shipping_custom_field_4_required) {
-                  $label_4 .= '*';
-                }
-              @endphp
-
-              <div class="col-md-4">
-                <div class="form-group">
-                    {!! Form::label('shipping_custom_field_4', $label_4 ) !!}
-                    {!! Form::text('shipping_custom_field_4', $purchase->shipping_custom_field_4, ['class' => 'form-control','placeholder' => $shipping_custom_label_4, 'required' => $is_shipping_custom_field_4_required]); !!}
-                </div>
-            </div>
-            @endif
-            @if(!empty($shipping_custom_label_5))
-              @php
-                $label_5 = $shipping_custom_label_5 . ':';
-                if($is_shipping_custom_field_5_required) {
-                  $label_5 .= '*';
-                }
-              @endphp
-
-              <div class="col-md-4">
-                <div class="form-group">
-                    {!! Form::label('shipping_custom_field_5', $label_5 ) !!}
-                    {!! Form::text('shipping_custom_field_5', $purchase->shipping_custom_field_4, ['class' => 'form-control','placeholder' => $shipping_custom_label_5, 'required' => $is_shipping_custom_field_5_required]); !!}
-                </div>
-            </div>
-            @endif
+            
             <div class="col-md-4">
                 <div class="form-group">
                     {!! Form::label('shipping_documents', __('lang_v1.shipping_documents') . ':') !!}
@@ -404,7 +305,7 @@
                       {!! Form::text('additional_expense_key_1', $purchase->additional_expense_key_1, ['class' => 'form-control']); !!}
                     </td>
                     <td>
-                      {!! Form::text('additional_expense_value_1', number_format($purchase->additional_expense_value_1/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_1']); !!}
+                      {!! Form::text('additional_expense_value_1', number_format($purchase->additional_expense_value_1 * $purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_1']); !!}
                     </td>
                   </tr>
                   <tr>
@@ -412,7 +313,7 @@
                       {!! Form::text('additional_expense_key_2', $purchase->additional_expense_key_2, ['class' => 'form-control']); !!}
                     </td>
                     <td>
-                      {!! Form::text('additional_expense_value_2', number_format($purchase->additional_expense_value_2/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_2']); !!}
+                      {!! Form::text('additional_expense_value_2', number_format($purchase->additional_expense_value_2 * $purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_2']); !!}
                     </td>
                   </tr>
                   <tr>
@@ -420,7 +321,7 @@
                       {!! Form::text('additional_expense_key_3', $purchase->additional_expense_key_3, ['class' => 'form-control']); !!}
                     </td>
                     <td>
-                      {!! Form::text('additional_expense_value_3', number_format($purchase->additional_expense_value_3/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_3']); !!}
+                      {!! Form::text('additional_expense_value_3', number_format($purchase->additional_expense_value_3 * $purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_3']); !!}
                     </td>
                   </tr>
                   <tr>
@@ -428,7 +329,7 @@
                       {!! Form::text('additional_expense_key_4', $purchase->additional_expense_key_4, ['class' => 'form-control']); !!}
                     </td>
                     <td>
-                      {!! Form::text('additional_expense_value_4', number_format($purchase->additional_expense_value_4/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_4']); !!}
+                      {!! Form::text('additional_expense_value_4', number_format($purchase->additional_expense_value_4 * $purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_4']); !!}
                     </td>
                   </tr>
                 </tbody>
@@ -459,7 +360,7 @@
                       {!! Form::text('discount_amount', 
 
                       ($purchase->discount_type == 'fixed' ? 
-                        number_format($purchase->discount_amount/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)
+                        number_format($purchase->discount_amount * $purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)
                       :
                         number_format($purchase->discount_amount, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)
                       )

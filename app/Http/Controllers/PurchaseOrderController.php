@@ -374,20 +374,20 @@ class PurchaseOrderController extends Controller
             $currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
 
             //unformat input values
-            $transaction_data['total_before_tax'] = $this->productUtil->num_uf($transaction_data['total_before_tax'], $currency_details) * $exchange_rate;
+            $transaction_data['total_before_tax'] = $this->productUtil->num_uf($transaction_data['total_before_tax'], $currency_details) / $exchange_rate;
 
             // If discount type is fixed them multiply by exchange rate, else don't
             if ($transaction_data['discount_type'] == 'fixed') {
-                $transaction_data['discount_amount'] = $this->productUtil->num_uf($transaction_data['discount_amount'], $currency_details) * $exchange_rate;
+                $transaction_data['discount_amount'] = $this->productUtil->num_uf($transaction_data['discount_amount'], $currency_details) / $exchange_rate;
             } elseif ($transaction_data['discount_type'] == 'percentage') {
                 $transaction_data['discount_amount'] = $this->productUtil->num_uf($transaction_data['discount_amount'], $currency_details);
             } else {
                 $transaction_data['discount_amount'] = 0;
             }
 
-            $transaction_data['tax_amount'] = $this->productUtil->num_uf($transaction_data['tax_amount'], $currency_details) * $exchange_rate;
-            $transaction_data['shipping_charges'] = $this->productUtil->num_uf($transaction_data['shipping_charges'], $currency_details) * $exchange_rate;
-            $transaction_data['final_total'] = $this->productUtil->num_uf($transaction_data['final_total'], $currency_details) * $exchange_rate;
+            $transaction_data['tax_amount'] = $this->productUtil->num_uf($transaction_data['tax_amount'], $currency_details) / $exchange_rate;
+            $transaction_data['shipping_charges'] = $this->productUtil->num_uf($transaction_data['shipping_charges'], $currency_details) / $exchange_rate;
+            $transaction_data['final_total'] = $this->productUtil->num_uf($transaction_data['final_total'], $currency_details) / $exchange_rate;
 
             $transaction_data['business_id'] = $business_id;
             $transaction_data['created_by'] = $user_id;
@@ -398,22 +398,22 @@ class PurchaseOrderController extends Controller
 
             if ($request->input('additional_expense_value_1') != '') {
                 $transaction_data['additional_expense_key_1'] = $request->input('additional_expense_key_1');
-                $transaction_data['additional_expense_value_1'] = $this->productUtil->num_uf($request->input('additional_expense_value_1'), $currency_details) * $exchange_rate;
+                $transaction_data['additional_expense_value_1'] = $this->productUtil->num_uf($request->input('additional_expense_value_1'), $currency_details) / $exchange_rate;
             }
 
             if ($request->input('additional_expense_value_2') != '') {
                 $transaction_data['additional_expense_key_2'] = $request->input('additional_expense_key_2');
-                $transaction_data['additional_expense_value_2'] = $this->productUtil->num_uf($request->input('additional_expense_value_2'), $currency_details) * $exchange_rate;
+                $transaction_data['additional_expense_value_2'] = $this->productUtil->num_uf($request->input('additional_expense_value_2'), $currency_details) / $exchange_rate;
             }
 
             if ($request->input('additional_expense_value_3') != '') {
                 $transaction_data['additional_expense_key_3'] = $request->input('additional_expense_key_3');
-                $transaction_data['additional_expense_value_3'] = $this->productUtil->num_uf($request->input('additional_expense_value_3'), $currency_details) * $exchange_rate;
+                $transaction_data['additional_expense_value_3'] = $this->productUtil->num_uf($request->input('additional_expense_value_3'), $currency_details) / $exchange_rate;
             }
 
             if ($request->input('additional_expense_value_4') != '') {
                 $transaction_data['additional_expense_key_4'] = $request->input('additional_expense_key_1');
-                $transaction_data['additional_expense_value_4'] = $this->productUtil->num_uf($request->input('additional_expense_value_4'), $currency_details) * $exchange_rate;
+                $transaction_data['additional_expense_value_4'] = $this->productUtil->num_uf($request->input('additional_expense_value_4'), $currency_details) / $exchange_rate;
             }
 
             //upload document
@@ -689,20 +689,20 @@ class PurchaseOrderController extends Controller
             $update_data['delivery_date'] = ! empty($update_data['delivery_date']) ? $this->productUtil->uf_date($update_data['delivery_date'], true) : null;
 
             //unformat input values
-            $update_data['total_before_tax'] = $this->productUtil->num_uf($update_data['total_before_tax'], $currency_details) * $exchange_rate;
+            $update_data['total_before_tax'] = $this->productUtil->num_uf($update_data['total_before_tax'], $currency_details) / $exchange_rate;
 
             // If discount type is fixed them multiply by exchange rate, else don't
             if ($update_data['discount_type'] == 'fixed') {
-                $update_data['discount_amount'] = $this->productUtil->num_uf($update_data['discount_amount'], $currency_details) * $exchange_rate;
+                $update_data['discount_amount'] = $this->productUtil->num_uf($update_data['discount_amount'], $currency_details) / $exchange_rate;
             } elseif ($update_data['discount_type'] == 'percentage') {
                 $update_data['discount_amount'] = $this->productUtil->num_uf($update_data['discount_amount'], $currency_details);
             } else {
                 $update_data['discount_amount'] = 0;
             }
 
-            $update_data['tax_amount'] = $this->productUtil->num_uf($update_data['tax_amount'], $currency_details) * $exchange_rate;
-            $update_data['shipping_charges'] = $this->productUtil->num_uf($update_data['shipping_charges'], $currency_details) * $exchange_rate;
-            $update_data['final_total'] = $this->productUtil->num_uf($update_data['final_total'], $currency_details) * $exchange_rate;
+            $update_data['tax_amount'] = $this->productUtil->num_uf($update_data['tax_amount'], $currency_details) / $exchange_rate;
+            $update_data['shipping_charges'] = $this->productUtil->num_uf($update_data['shipping_charges'], $currency_details) / $exchange_rate;
+            $update_data['final_total'] = $this->productUtil->num_uf($update_data['final_total'], $currency_details) / $exchange_rate;
             //unformat input values ends
 
             $update_data['additional_expense_key_1'] = $request->input('additional_expense_key_1');
@@ -710,10 +710,10 @@ class PurchaseOrderController extends Controller
             $update_data['additional_expense_key_3'] = $request->input('additional_expense_key_3');
             $update_data['additional_expense_key_4'] = $request->input('additional_expense_key_4');
 
-            $update_data['additional_expense_value_1'] = $request->input('additional_expense_value_1') != '' ? $this->productUtil->num_uf($request->input('additional_expense_value_1'), $currency_details) * $exchange_rate : 0;
-            $update_data['additional_expense_value_2'] = $request->input('additional_expense_value_2') != '' ? $this->productUtil->num_uf($request->input('additional_expense_value_2'), $currency_details) * $exchange_rate : 0;
-            $update_data['additional_expense_value_3'] = $request->input('additional_expense_value_3') != '' ? $this->productUtil->num_uf($request->input('additional_expense_value_3'), $currency_details) * $exchange_rate : 0;
-            $update_data['additional_expense_value_4'] = $request->input('additional_expense_value_4') != '' ? $this->productUtil->num_uf($request->input('additional_expense_value_4'), $currency_details) * $exchange_rate : 0;
+            $update_data['additional_expense_value_1'] = $request->input('additional_expense_value_1') != '' ? $this->productUtil->num_uf($request->input('additional_expense_value_1'), $currency_details) / $exchange_rate : 0;
+            $update_data['additional_expense_value_2'] = $request->input('additional_expense_value_2') != '' ? $this->productUtil->num_uf($request->input('additional_expense_value_2'), $currency_details) / $exchange_rate : 0;
+            $update_data['additional_expense_value_3'] = $request->input('additional_expense_value_3') != '' ? $this->productUtil->num_uf($request->input('additional_expense_value_3'), $currency_details) / $exchange_rate : 0;
+            $update_data['additional_expense_value_4'] = $request->input('additional_expense_value_4') != '' ? $this->productUtil->num_uf($request->input('additional_expense_value_4'), $currency_details) / $exchange_rate : 0;
 
             //upload document
             $document_name = $this->transactionUtil->uploadFile($request, 'document', 'documents');
