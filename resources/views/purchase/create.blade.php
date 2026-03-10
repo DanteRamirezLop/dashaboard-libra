@@ -87,23 +87,6 @@
 				</div>
 			</div>
 
-			<!-- Currency Exchange Rate -->
-			<div class="col-sm-3 @if(!$currency_details->purchase_in_diff_currency) hide @endif">
-				<div class="form-group">
-					{!! Form::label('exchange_rate', __('purchase.p_exchange_rate') . ':*') !!}
-					@show_tooltip(__('tooltip.currency_exchange_factor'))
-					<div class="input-group">
-						<span class="input-group-addon">
-							<i class="fa fa-info"></i>
-						</span>
-						{!! Form::number('exchange_rate', $currency_details->p_exchange_rate, ['class' => 'form-control', 'required', 'step' => 0.001]); !!}
-					</div>
-					<span class="help-block text-danger">
-						@lang('purchase.diff_purchase_currency_help', ['currency' => $currency_details->name])
-					</span>
-				</div>
-			</div>
-
 			<div class="col-md-3">
 		          <div class="form-group">
 		            <div class="multi-input">
@@ -218,8 +201,34 @@
 					{!! Form::select('purchase_order_ids[]', [], null, ['class' => 'form-control select2', 'multiple', 'id' => 'purchase_order_ids']); !!}
 				</div>
 			</div>
+			<div class="col-sm-3">
+				<div class="form-group">
+					{!! Form::label('currecy_type', 'Moneda'.':*') !!}
+					{!! Form::select('currecy_type',['2'=>'Dolar (USD)','94'=>'Sol (PE)'], $currency_details->currency_id, ['class' => 'form-control', 'required']); !!}
+				</div>
+			</div>
+
+			<!-- Currency Exchange Rate -->
+			<div class="col-sm-3 @if(!$currency_details->purchase_in_diff_currency) hide @endif">
+				<div class="form-group">
+					{!! Form::label('exchange_rate', __('purchase.p_exchange_rate') . ':*') !!}
+					@show_tooltip(__('tooltip.currency_exchange_factor'))
+					<div class="input-group">
+						<span class="input-group-addon">
+							<i class="fa fa-info"></i>
+						</span>
+						{!! Form::number('exchange_rate', $currency_details->p_exchange_rate, ['class' => 'form-control', 'required', 'step' => 0.001]); !!}
+					</div>
+					<span class="help-block text-danger">
+						@lang('purchase.diff_purchase_currency_help', ['currency' => $currency_details->name])
+					</span>
+				</div>
+			</div>
 		</div>
 		@endif
+
+
+
 	@endcomponent
 
 	@component('components.widget', ['class' => 'box-primary'])
@@ -268,13 +277,13 @@
 								<th class="{{$hide_tax}}">@lang( 'purchase.product_tax' )</th>
 								<th class="{{$hide_tax}}">@lang( 'purchase.net_cost' )</th>
 								<th>@lang( 'purchase.line_total' )</th>
-								<th class="@if(!session('business.enable_editing_product_from_purchase')) hide @endif">
+								<!-- <th class="@if(!session('business.enable_editing_product_from_purchase')) hide @endif">
 									@lang( 'lang_v1.profit_margin' )
-								</th>
-								<th>
+								</th> -->
+								<!-- <th>
 									@lang( 'purchase.unit_selling_price' )
 									<small>(@lang('product.inc_of_tax'))</small>
-								</th>
+								</th> -->
 								@if(session('business.enable_lot_number'))
 									<th>
 										@lang('lang_v1.lot_number')
@@ -604,6 +613,16 @@
 			set_payment_type_dropdown();
 			$('select#location_id').change(function() {
 				set_payment_type_dropdown();
+			});
+
+			$('#currecy_type').on('change', function() {
+				 window.onbeforeunload = null; 
+				var valor = $(this).val();
+				if(valor !== ''){
+					var url = new URL(window.location.href);
+					url.searchParams.set('currency', valor); // nombre del parámetro
+					window.location.href = url.toString();
+				}
 			});
     	});
     	$(document).on('change', '.payment_types_dropdown, #location_id', function(e) {

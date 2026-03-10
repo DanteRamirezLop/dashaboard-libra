@@ -220,7 +220,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         //Blade directive to format currency.
-        Blade::directive('format_currency', function ($number) {
+        Blade::directive('currency_format', function ($number) {
             return '<?php 
             $formated_number = "";
             if (session("business.currency_symbol_placement") == "before") {
@@ -232,6 +232,73 @@ class AppServiceProvider extends ServiceProvider
                 $formated_number .= " " . session("currency")["symbol"];
             }
             echo $formated_number; ?>';
+        });
+
+        Blade::directive('format_currency', function ($expression) {
+            $parts = explode(',', $expression, 2);
+
+            $number = trim($parts[0]);
+            $currency = isset($parts[1]) ? trim($parts[1]) : 'null';
+
+            return "<?php
+                \$__currency = {$currency};
+                \$__symbolPlacement = session('business.currency_symbol_placement', 'before');
+                \$__precision = session('business.currency_precision', 2);
+
+                \$__symbol = '';
+                \$__decimalSeparator = '.';
+                \$__thousandSeparator = ',';
+
+                if (\$__currency) {
+                    if (is_object(\$__currency)) {
+                        \$__symbol = \$__currency->symbol ?? '';
+                        \$__decimalSeparator = \$__currency->decimal_separator ?? '.';
+                        \$__thousandSeparator = \$__currency->thousand_separator ?? ',';
+
+                        if (isset(\$__currency->currency_symbol_placement)) {
+                            \$__symbolPlacement = \$__currency->currency_symbol_placement;
+                        }
+                    } elseif (is_array(\$__currency)) {
+                        \$__symbol = \$__currency['symbol'] ?? '';
+                        \$__decimalSeparator = \$__currency['decimal_separator'] ?? '.';
+                        \$__thousandSeparator = \$__currency['thousand_separator'] ?? ',';
+
+                        if (isset(\$__currency['currency_symbol_placement'])) {
+                            \$__symbolPlacement = \$__currency['currency_symbol_placement'];
+                        }
+                    }
+                } else {
+                    \$__currencySession = session('currency', []);
+                    \$__symbol = \$__currencySession['symbol'] ?? '';
+                    \$__decimalSeparator = \$__currencySession['decimal_separator'] ?? '.';
+                    \$__thousandSeparator = \$__currencySession['thousand_separator'] ?? ',';
+                }
+
+                \$formated_number = number_format((float) {$number}, \$__precision, \$__decimalSeparator, \$__thousandSeparator);
+
+                if (\$__symbolPlacement === 'before') {
+                    echo trim(\$__symbol . ' ' . \$formated_number);
+                } else {
+                    echo trim(\$formated_number . ' ' . \$__symbol);
+                }
+            ?>";
+        });
+
+
+        Blade::directive('format_currency_pdf', function ($expression) {
+            $parts = explode(',', $expression, 2);
+
+            $number = trim($parts[0]);
+            $currency = trim($parts[1]);
+
+            return "<?php
+                \$symbol = {$currency}->symbol ?? '';
+                \$decimal = {$currency}->decimal_separator ?? '.';
+                \$thousand = {$currency}->thousand_separator ?? ',';
+                \$precision = session('business.currency_precision', 2);
+
+                echo trim(\$symbol . ' ' . number_format((float) {$number}, \$precision, \$decimal, \$thousand));
+            ?>";
         });
 
         $this->registerCommands();

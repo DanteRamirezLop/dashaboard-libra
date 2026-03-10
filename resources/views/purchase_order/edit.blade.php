@@ -487,6 +487,6 @@
             removeLabel: LANG.remove,
         });
     });
-  </script>
+  </script>  
   @include('purchase.partials.keyboard_shortcuts')
 @endsection

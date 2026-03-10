@@ -23,6 +23,8 @@ use Illuminate\Support\Facades\DB;
 use Spatie\Activitylog\Models\Activity;
 use Yajra\DataTables\Facades\DataTables;
 use App\Events\PurchaseCreatedOrModified;
+use Carbon\Carbon;
+use App\ExchangeRates;
 
 class PurchaseController extends Controller
 {
@@ -247,7 +249,17 @@ class PurchaseController extends Controller
         $bl_attributes = $business_locations['attributes'];
         $business_locations = $business_locations['locations'];
 
-        $currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
+        //$currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
+        $currency_change_id = Business::find($business_id)->purchase_currency_id;
+        $currency_id = request()->get('currency');   // 94 Es el ID de la moneda soles PE
+        if($currency_id == $currency_change_id){
+            $search_date = Carbon::now()->format('y-m-d');
+            $exchange_rate = ExchangeRates::where('search_date',$search_date)->first();
+            $exchange_rate = $exchange_rate ?  $exchange_rate->sale  : 1;
+            $currency_details = $this->transactionUtil->currencyDetails($business_id, $currency_id, $exchange_rate);
+        }else{
+            $currency_details = $this->transactionUtil->currencyDetails($business_id);
+        }
 
         $default_purchase_status = null;
         if (request()->session()->get('business.enable_purchase_status') != 1) {
@@ -1235,6 +1247,11 @@ class PurchaseController extends Controller
         }
     }
 
+    /**
+     * Importar la lista de productos de la orden de compra
+     */
+
+    //change
     public function getPurchaseOrderLines($purchase_order_id)
     {
         $business_id = request()->session()->get('user.business_id');
@@ -1254,9 +1271,14 @@ class PurchaseController extends Controller
             $sub_units_array[$pl->id] = $this->productUtil->getSubUnits($business_id, $pl->product->unit->id, false, $pl->product_id);
         }
         $hide_tax = request()->session()->get('business.enable_inline_tax') == 1 ? '' : 'hide';
-        $currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
-        $row_count = request()->input('row_count');
+        //$currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
 
+        //AQUI
+        $exchange_rate =  $purchase_order->exchange_rate;
+        $currency_id =  ($exchange_rate == 1)?  2 : 94;
+        $currency_details = $this->transactionUtil->currencyDetails($business_id, $currency_id, $exchange_rate);
+
+        $row_count = request()->input('row_count');
         $html = view('purchase.partials.purchase_order_lines')
                 ->with(compact(
                     'purchase_order',

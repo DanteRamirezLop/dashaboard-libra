@@ -105,6 +105,7 @@ class PurchaseOrderController extends Controller
                     ->where('transactions.type', 'purchase_order')
                     ->select(
                         'transactions.id',
+                        'transactions.exchange_rate',
                         'transactions.document',
                         'transactions.transaction_date',
                         'transactions.ref_no',
@@ -174,6 +175,7 @@ class PurchaseOrderController extends Controller
                     }
                     if ((auth()->user()->can('purchase_order.view_all') || auth()->user()->can('purchase_order.view_own'))) {
                         $html .= '<li><a href="'.route('purchaseOrder.downloadPdf', [$row->id]).'" target="_blank"><i class="fas fa-print" aria-hidden="true"></i> '.__('lang_v1.download_pdf').'</a></li>';
+                        
                     }
                     if (auth()->user()->can('purchase_order.update')) {
                         $html .= '<li><a href="'.action([\App\Http\Controllers\PurchaseOrderController::class, 'edit'], [$row->id]).'"><i class="fas fa-edit"></i>'.__('messages.edit').'</a></li>';
@@ -288,10 +290,10 @@ class PurchaseOrderController extends Controller
         $users = config('constants.enable_contact_assign') ? User::forDropdown($business_id, false, false, false, true) : [];
         $common_settings = ! empty(session('business.common_settings')) ? session('business.common_settings') : [];
 
+        $currency_change_id = Business::find($business_id)->purchase_currency_id;
         // Cambio de moneda
-        $currency_id = request()->get('currency');
-        // 94 Es el ID de la moneda soles PE
-        if($currency_id == 94){
+        $currency_id = request()->get('currency');   // 94 Es el ID de la moneda soles PE
+        if($currency_id == $currency_change_id){
             $search_date = Carbon::now()->format('y-m-d');
             $exchange_rate = ExchangeRates::where('search_date',$search_date)->first();
             $exchange_rate = $exchange_rate ?  $exchange_rate->sale  : 1;
@@ -371,7 +373,8 @@ class PurchaseOrderController extends Controller
             $user_id = $request->session()->get('user.id');
             $enable_product_editing = $request->session()->get('business.enable_editing_product_from_purchase');
 
-            $currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
+            //aquí
+           // $currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
 
             //unformat input values
             $transaction_data['total_before_tax'] = $this->productUtil->num_uf($transaction_data['total_before_tax'], $currency_details) / $exchange_rate;
@@ -545,7 +548,7 @@ class PurchaseOrderController extends Controller
 
         $business = Business::find($business_id);
 
-        $currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
+        //$currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
 
         $taxes = TaxRate::where('business_id', $business_id)
                             ->ExcludeForTaxGroup()
@@ -578,6 +581,10 @@ class PurchaseOrderController extends Controller
             }
         }
 
+        //Determinar la moneda de la compra - transaccion
+        $currency_change_id = $business->purchase_currency_id; 
+        $currency_id = ($purchase->exchange_rate == 1) ? 0 : $currency_change_id; //Si el tipo de cambio es 1 entonces se usa la moneda base 
+        $currency_details = $this->transactionUtil->currencyDetails($business_id, $currency_id, $purchase->exchange_rate);
         $business_locations = BusinessLocation::forDropdown($business_id);
 
         $types = [];
@@ -869,22 +876,36 @@ class PurchaseOrderController extends Controller
         $date_delivery = $purchase->delivery_date ? Carbon::parse($purchase->delivery_date)->format('d/m/Y') : null;
         //Texto de Dolares -tax
         $amount = $purchase->final_total;
-        $text_amount = $this->montoATexto($amount, 'USD');
+        //$text_amount = $this->montoATexto($amount, 'USD');
+
         //Obtener rentencion de 3% 
-        $search_date = Carbon::parse($purchase->transaction_date)->format('y-m-d');
-        $exchange_rate = ExchangeRates::where('search_date',$search_date)->first();
-         if($exchange_rate){
-            $exchange_rate_purchase = $exchange_rate->sale;
+        $is_currency_base =  ($purchase->exchange_rate == 1)? true : false;
+        if($is_currency_base){
+            $search_date = Carbon::parse($purchase->transaction_date)->format('y-m-d');
+            $exchange_rate = ExchangeRates::where('search_date',$search_date)->first();
+            if($exchange_rate){
+                $exchange_rate_purchase =  $exchange_rate->sale;
+                $seven_hundred_usa =  700 /  $exchange_rate_purchase; // Seteciento soles convertidos a dolares
+                $three_percente = $purchase->final_total * 0.03;
+                $three_percent_withholding =  ($purchase->final_total >= $seven_hundred_usa) ? $three_percente : 0;
+            }else{
+                $exchange_rate_purchase = 0;
+                $three_percent_withholding = 0;
+            }
+        }else{
+            $exchange_rate_purchase =  $purchase->exchange_rate;
             $seven_hundred_usa =  700 / $exchange_rate_purchase; // Seteciento soles convertidos a dolares
             $three_percente = $purchase->final_total * 0.03;
             $three_percent_withholding =  ($purchase->final_total >= $seven_hundred_usa) ? $three_percente : 0;
-        }else{
-            $exchange_rate_purchase = 0;
-            $three_percent_withholding = 0;
         }
 
+        //Determinar la moneda de la compra - transaccion
+        $currency_change_id = Business::find($business_id)->purchase_currency_id; 
+        $currency_id = ($purchase->exchange_rate == 1) ? 0 : $currency_change_id; //Si el tipo de cambio es 1 entonces se usa la moneda base 
+        $currency_details = $this->transactionUtil->currencyDetails($business_id, $currency_id, $purchase->exchange_rate);
+
         //Generate pdf 
-        $pdf = Pdf::set_option('isRemoteEnabled', true)->loadView('purchase_order.receipts.download',compact('exchange_rate_purchase','three_percent_withholding','taxes','location_details','date_delivery','date_release','purchase', 'invoice_layout', 'text_amount','date_print'));
+        $pdf = Pdf::set_option('isRemoteEnabled', true)->loadView('purchase_order.receipts.download',compact('exchange_rate_purchase','three_percent_withholding','taxes','location_details','date_delivery','date_release','purchase', 'invoice_layout', 'date_print','currency_details'));
         return $pdf->download('Orden-Compra-'.$purchase->ref_no.'.pdf');
     }
 
@@ -936,7 +957,6 @@ class PurchaseOrderController extends Controller
                 $transaction = Transaction::where('business_id', $business_id)
                                 ->findOrFail($id);
 
-               
                 $delivery_date = ! empty($request->input('delivery_date')) ? $this->productUtil->uf_date($request->input('delivery_date'), true) : null;
 
                 $transaction_before = $transaction->replicate();
@@ -964,74 +984,74 @@ class PurchaseOrderController extends Controller
         }
     }
 
-    private function montoATexto($monto, $moneda = 'PEN') {
-        // Separamos parte entera y decimales
-        $monto = number_format($monto, 2, '.', '');
-        list($entero, $decimal) = explode('.', $monto);
+    // private function montoATexto($monto, $moneda = 'PEN') {
+    //     // Separamos parte entera y decimales
+    //     $monto = number_format($monto, 2, '.', '');
+    //     list($entero, $decimal) = explode('.', $monto);
 
-        $entero = intval($entero);
-        $decimal = intval($decimal);
+    //     $entero = intval($entero);
+    //     $decimal = intval($decimal);
 
-        // Moneda
-        if ($moneda === 'PEN') {
-            $nombreSingular = "sol";
-            $nombrePlural = "soles";
-        } elseif ($moneda === 'USD') {
-            $nombreSingular = "dólar";
-            $nombrePlural = "dólares";
-        } else {
-            $nombreSingular = $moneda;
-            $nombrePlural = $moneda;
-        }
-        // Singular o plural
-        $nombreMoneda = ($entero == 1) ? $nombreSingular : $nombrePlural;
-        // Convertimos números a texto
-        $textoEntero = $this->numeroATexto($entero);
-        $textoDecimales =  $this->numeroATexto($decimal);
+    //     // Moneda
+    //     if ($moneda === 'PEN') {
+    //         $nombreSingular = "sol";
+    //         $nombrePlural = "soles";
+    //     } elseif ($moneda === 'USD') {
+    //         $nombreSingular = "dólar";
+    //         $nombrePlural = "dólares";
+    //     } else {
+    //         $nombreSingular = $moneda;
+    //         $nombrePlural = $moneda;
+    //     }
+    //     // Singular o plural
+    //     $nombreMoneda = ($entero == 1) ? $nombreSingular : $nombrePlural;
+    //     // Convertimos números a texto
+    //     $textoEntero = $this->numeroATexto($entero);
+    //     $textoDecimales =  $this->numeroATexto($decimal);
 
-        return trim("$textoEntero $nombreMoneda con $textoDecimales centavos");
-    }
+    //     return trim("$textoEntero $nombreMoneda con $textoDecimales centavos");
+    // }
 
-    private function numeroATexto($numero) {
-        $unidades = [
-            'cero', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve',
-            'diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete',
-            'dieciocho', 'diecinueve', 'veinte'
-        ];
+    // private function numeroATexto($numero) {
+    //     $unidades = [
+    //         'cero', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve',
+    //         'diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete',
+    //         'dieciocho', 'diecinueve', 'veinte'
+    //     ];
 
-        $decenas = [
-            2 => 'veinti', 3 => 'treinta', 4 => 'cuarenta', 5 => 'cincuenta',
-            6 => 'sesenta', 7 => 'setenta', 8 => 'ochenta', 9 => 'noventa'
-        ];
-        $centenas = [
-            1 => 'cien', 2 => 'doscientos', 3 => 'trescientos', 4 => 'cuatrocientos',
-            5 => 'quinientos', 6 => 'seiscientos', 7 => 'setecientos',
-            8 => 'ochocientos', 9 => 'novecientos'
-        ];
-        if ($numero < 21) {
-            return $unidades[$numero];
-        } elseif ($numero < 30) {
-            return $decenas[2] . $unidades[$numero - 20];
-        } elseif ($numero < 100) {
-            $decena = intdiv($numero, 10);
-            $unidad = $numero % 10;
-            return $decenas[$decena] . ($unidad ? ' y ' . $unidades[$unidad] : '');
-        } elseif ($numero < 1000) {
-            $centena = intdiv($numero, 100);
-            $resto = $numero % 100;
-            if ($numero == 100) return "cien";
-            return $centenas[$centena] . ($resto ? ' ' . $this->numeroATexto($resto) : '');
-        } elseif ($numero < 1000000) {
-            $miles = intdiv($numero, 1000);
-            $resto = $numero % 1000;
-            $textoMiles = ($miles == 1) ? "mil" : $this->numeroATexto($miles) . " mil";
-            return $textoMiles . ($resto ? ' ' . $this->numeroATexto($resto) : '');
-        } else {
-            // Hasta millones
-            $millones = intdiv($numero, 1000000);
-            $resto = $numero % 1000000;
-            $textoMillones = ($millones == 1) ? "un millón" : $this->numeroATexto($millones) . " millones";
-            return $textoMillones . ($resto ? ' ' . $this->numeroATexto($resto) : '');
-        }
-    }
+    //     $decenas = [
+    //         2 => 'veinti', 3 => 'treinta', 4 => 'cuarenta', 5 => 'cincuenta',
+    //         6 => 'sesenta', 7 => 'setenta', 8 => 'ochenta', 9 => 'noventa'
+    //     ];
+    //     $centenas = [
+    //         1 => 'cien', 2 => 'doscientos', 3 => 'trescientos', 4 => 'cuatrocientos',
+    //         5 => 'quinientos', 6 => 'seiscientos', 7 => 'setecientos',
+    //         8 => 'ochocientos', 9 => 'novecientos'
+    //     ];
+    //     if ($numero < 21) {
+    //         return $unidades[$numero];
+    //     } elseif ($numero < 30) {
+    //         return $decenas[2] . $unidades[$numero - 20];
+    //     } elseif ($numero < 100) {
+    //         $decena = intdiv($numero, 10);
+    //         $unidad = $numero % 10;
+    //         return $decenas[$decena] . ($unidad ? ' y ' . $unidades[$unidad] : '');
+    //     } elseif ($numero < 1000) {
+    //         $centena = intdiv($numero, 100);
+    //         $resto = $numero % 100;
+    //         if ($numero == 100) return "cien";
+    //         return $centenas[$centena] . ($resto ? ' ' . $this->numeroATexto($resto) : '');
+    //     } elseif ($numero < 1000000) {
+    //         $miles = intdiv($numero, 1000);
+    //         $resto = $numero % 1000;
+    //         $textoMiles = ($miles == 1) ? "mil" : $this->numeroATexto($miles) . " mil";
+    //         return $textoMiles . ($resto ? ' ' . $this->numeroATexto($resto) : '');
+    //     } else {
+    //         // Hasta millones
+    //         $millones = intdiv($numero, 1000000);
+    //         $resto = $numero % 1000000;
+    //         $textoMillones = ($millones == 1) ? "un millón" : $this->numeroATexto($millones) . " millones";
+    //         return $textoMillones . ($resto ? ' ' . $this->numeroATexto($resto) : '');
+    //     }
+    // }
 }

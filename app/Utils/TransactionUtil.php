@@ -3093,7 +3093,7 @@ class TransactionUtil extends Util
         if ($currency_id) {
             $output['purchase_in_diff_currency'] = true;
             $output['p_exchange_rate'] = $exchange_rate;
-             $output['currency_id'] = $currency_id;
+            $output['currency_id'] = $currency_id;
             $currency_id = $currency_id;
         } else {
             $output['purchase_in_diff_currency'] = false;

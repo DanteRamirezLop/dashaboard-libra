@@ -98,6 +98,7 @@
 
 <body>
     <main>
+
         <table width="100%" class="color-white" cellpadding='2' border='0' >
             <tr>
                 <td style="width: 35%;" class="color-white">
@@ -228,10 +229,10 @@
                        {{ $purchase_line->product->unit->actual_name }}
                     </td>
                     <td style="width: 10% !important; text-align: center; font-size: 12px;">
-                        @format_currency($purchase_line->purchase_price_inc_tax)
+                        @format_currency(($purchase_line->purchase_price_inc_tax * $purchase->exchange_rate) , $currency_details)
                     </td>
                     <td style="width: 10% !important; text-align: center; font-size: 12px;">
-                         @format_currency( $purchase_line->purchase_price_inc_tax * $purchase_line->quantity)  
+                         @format_currency( ($purchase_line->purchase_price_inc_tax * $purchase_line->quantity * $purchase->exchange_rate), $currency_details)  
                     </td>
                 </tr>
                 @php 
@@ -256,31 +257,31 @@
                 @endfor
                 <tr style="border-top: 2px solid black;">
                     <td colspan="2"></td>
-                    <td style="text-align: center; font-size: 13px;"colspan="2"><b>Subtotal:</b></td>  <td  colspan="2" style="width: 10% !important; text-align: center; font-size: 12px;"> @format_currency($total_before_tax)</td>
+                    <td style="text-align: center; font-size: 13px;"colspan="2"><b>Subtotal:</b></td>  <td  colspan="2" style="width: 10% !important; text-align: center; font-size: 12px;"> @format_currency(($total_before_tax * $purchase->exchange_rate), $currency_details)</td>
                 </tr>
                 <tr>
                     <td colspan="2"></td>
                     <td style="text-align: center; font-size: 13px;"colspan="2">
                     <b>@if(!empty($taxes[$purchase_line->tax_id])) {{ $taxes[$purchase_line->tax_id]}}</b>@endif </td> 
                     <td style="width: 10% !important; text-align: center; font-size: 12px;" colspan="2">
-                        @format_currency($total_tax)   
+                        @format_currency(($total_tax * $purchase->exchange_rate), $currency_details)   
                     </td>
                 </tr>
                 <tr>
-                    <td colspan="2" style="text-align: center; font-size: 12px;">{{$text_amount}}</td>
+                    <td colspan="2" style="text-align: center; font-size: 12px;"></td>
                     <td style="text-align: center; font-size: 13px;" colspan="2"><b>Total</b></td> 
-                     <td colspan="2" style="width: 10% !important; text-align: center; font-size: 12px;">@format_currency($purchase->final_total)</td>
+                    <td colspan="2" style="width: 10% !important; text-align: center; font-size: 12px;">@format_currency(($purchase->final_total * $purchase->exchange_rate), $currency_details)</td>
                 </tr>
                 @if($three_percent_withholding)
                 <tr>
                     <td style="text-align: center; font-size: 12px;" colspan="2">
-                        retencióm minima de  S/.700 con tipo de cambio SUNAT.  <b>Venta: {{number_format($exchange_rate_purchase,3)}}</b> 
+                        Retencióm minima de  S/.700 con tipo de cambio <b> {{number_format($exchange_rate_purchase,3)}}</b> 
                     </td>
                     <td style="text-align: center; font-size: 13px;"colspan="2">
                         <b>Retención 3%</b> 
                     </td> 
                     <td style="width: 10% !important; text-align: center; font-size: 12px;" colspan="2">
-                       @format_currency($three_percent_withholding)
+                       @format_currency(($three_percent_withholding * $purchase->exchange_rate), $currency_details)
                     </td>
                 </tr>
                 @endif
@@ -290,7 +291,7 @@
                         <b>Importe neto a cancelar</b> 
                     </td> 
                     <td style="width: 10% !important; text-align: center; font-size: 12px;" colspan="2">
-                       @format_currency($total_neto)
+                       @format_currency(($total_neto * $purchase->exchange_rate), $currency_details)
                     </td>
                 </tr>
                 <tr>
@@ -300,7 +301,7 @@
                             Contado
                         @else
                             Credito con inicial al {{$purchase->custom_field_3}}% 
-                            <b style="margin-left:3px"> @format_currency($amount_pay) </b>
+                            <b style="margin-left:3px"> @format_currency(($amount_pay * $purchase->exchange_rate), $currency_details) </b>
                         @endif
                     </td> 
                 </tr>
@@ -365,8 +366,6 @@
                 </tr>
             </table>
              <p class="text-center" style="font-size: 11px;">Incorporado al Régimen de Agente de Retención de IGV (R.S N.º 000367-2025/SUNAT) a partir del 01 de febrero del 2026</p>
-    
-           
     </main>
 </body>
 

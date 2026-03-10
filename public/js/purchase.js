@@ -797,6 +797,7 @@ function get_purchase_entry_row(product_id, variation_id) {
             dataType: 'html',
             data: data,
             success: function(result) {
+        
                 append_purchase_lines(result, row_count);
             },
         });
@@ -1219,12 +1220,14 @@ $(document).on('change', '#supplier_id', function(){
 $("#purchase_order_ids").on("select2:select", function (e) {
     var purchase_order_id = e.params.data.id;
     var row_count = $('#row_count').val();
+
     $.ajax({
         url: '/get-purchase-order-lines/' + purchase_order_id + '?row_count=' + row_count,
         dataType: 'json',
         success: function(data) {
             set_po_values(data.po);
             append_purchase_lines(data.html, row_count);
+
         },
     });
 

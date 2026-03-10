@@ -551,16 +551,13 @@
 				$('#location_id').change();
 			}
 
-
 			$('#currecy_type').on('change', function() {
-				 window.onbeforeunload = null; 
+				window.onbeforeunload = null; 
 				var valor = $(this).val();
 				if(valor !== ''){
 					var url = new URL(window.location.href);
 					url.searchParams.set('currency', valor); // nombre del parámetro
 					window.location.href = url.toString();
-				}else{
-
 				}
 			});
 
