@@ -12,12 +12,11 @@ use App\PurchaseLine;
 use App\TaxRate;
 use App\Transaction;
 use App\User;
+use App\Variation;
 use App\Utils\BusinessUtil;
 use App\Utils\ModuleUtil;
 use App\Utils\ProductUtil;
 use App\Utils\TransactionUtil;
-use App\Variation;
-use Excel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Spatie\Activitylog\Models\Activity;
@@ -25,6 +24,7 @@ use Yajra\DataTables\Facades\DataTables;
 use App\Events\PurchaseCreatedOrModified;
 use Carbon\Carbon;
 use App\ExchangeRates;
+use Excel;
 
 class PurchaseController extends Controller
 {
@@ -65,10 +65,11 @@ class PurchaseController extends Controller
             abort(403, 'Unauthorized action.');
         }
         $business_id = request()->session()->get('user.business_id');
+
         if (request()->ajax()) {
             $purchases = $this->transactionUtil->getListPurchases($business_id);
-
             $permitted_locations = auth()->user()->permitted_locations();
+
             if ($permitted_locations != 'all') {
                 $purchases->whereIn('transactions.location_id', $permitted_locations);
             }
@@ -235,7 +236,6 @@ class PurchaseController extends Controller
         }
 
         $business_id = request()->session()->get('user.business_id');
-
         //Check if subscribed or not
         if (! $this->moduleUtil->isSubscribed($business_id)) {
             return $this->moduleUtil->expiredResponse();
@@ -251,11 +251,11 @@ class PurchaseController extends Controller
 
         //$currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
         $currency_change_id = Business::find($business_id)->purchase_currency_id;
-        $currency_id = request()->get('currency');   // 94 Es el ID de la moneda soles PE
+        $currency_id = request()->get('currency');   
+        $search_date = Carbon::now()->format('y-m-d');
+        $exchange_rate = ExchangeRates::where('search_date',$search_date)->first();
+        $exchange_rate = $exchange_rate ?  $exchange_rate->sale  : 1;
         if($currency_id == $currency_change_id){
-            $search_date = Carbon::now()->format('y-m-d');
-            $exchange_rate = ExchangeRates::where('search_date',$search_date)->first();
-            $exchange_rate = $exchange_rate ?  $exchange_rate->sale  : 1;
             $currency_details = $this->transactionUtil->currencyDetails($business_id, $currency_id, $exchange_rate);
         }else{
             $currency_details = $this->transactionUtil->currencyDetails($business_id);
@@ -290,7 +290,7 @@ class PurchaseController extends Controller
         $common_settings = ! empty(session('business.common_settings')) ? session('business.common_settings') : [];
 
         return view('purchase.create')
-            ->with(compact('taxes', 'orderStatuses', 'business_locations', 'currency_details', 'default_purchase_status', 'customer_groups', 'types', 'shortcuts', 'payment_line', 'payment_types', 'accounts', 'bl_attributes', 'common_settings'));
+            ->with(compact('exchange_rate','taxes', 'orderStatuses', 'business_locations', 'currency_details', 'default_purchase_status', 'customer_groups', 'types', 'shortcuts', 'payment_line', 'payment_types', 'accounts', 'bl_attributes', 'common_settings'));
     }
 
     /**
@@ -307,19 +307,14 @@ class PurchaseController extends Controller
 
         try {
             $business_id = $request->session()->get('user.business_id');
-
             //Check if subscribed or not
             if (! $this->moduleUtil->isSubscribed($business_id)) {
                 return $this->moduleUtil->expiredResponse(action([\App\Http\Controllers\PurchaseController::class, 'index']));
             }
-
-            $transaction_data = $request->only(['ref_no', 'status', 'contact_id', 'transaction_date', 'total_before_tax', 'location_id', 'discount_type', 'discount_amount', 'tax_id', 'tax_amount', 'shipping_details', 'shipping_charges', 'final_total', 'additional_notes', 'exchange_rate', 'pay_term_number', 'pay_term_type', 'purchase_order_ids']);
-
+            $transaction_data = $request->only(['currency_id','ref_no', 'status', 'contact_id', 'transaction_date', 'total_before_tax', 'location_id', 'discount_type', 'discount_amount', 'tax_id', 'tax_amount', 'shipping_details', 'shipping_charges', 'final_total', 'additional_notes', 'exchange_rate', 'pay_term_number', 'pay_term_type', 'purchase_order_ids']);
             $exchange_rate = $transaction_data['exchange_rate'];
-
             //Reverse exchange rate and save it.
             //$transaction_data['exchange_rate'] = $transaction_data['exchange_rate'];
-
             //TODO: Check for "Undefined index: total_before_tax" issue
             //Adding temporary fix by validating
             $request->validate([
@@ -341,21 +336,20 @@ class PurchaseController extends Controller
             $currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
 
             //unformat input values
-            $transaction_data['total_before_tax'] = $this->productUtil->num_uf($transaction_data['total_before_tax'], $currency_details) * $exchange_rate;
+            $transaction_data['total_before_tax'] = $this->productUtil->num_uf($transaction_data['total_before_tax'], $currency_details) / $exchange_rate;
 
             // If discount type is fixed them multiply by exchange rate, else don't
             if ($transaction_data['discount_type'] == 'fixed') {
-                $transaction_data['discount_amount'] = $this->productUtil->num_uf($transaction_data['discount_amount'], $currency_details) * $exchange_rate;
+                $transaction_data['discount_amount'] = $this->productUtil->num_uf($transaction_data['discount_amount'], $currency_details) / $exchange_rate;
             } elseif ($transaction_data['discount_type'] == 'percentage') {
                 $transaction_data['discount_amount'] = $this->productUtil->num_uf($transaction_data['discount_amount'], $currency_details);
             } else {
                 $transaction_data['discount_amount'] = 0;
             }
 
-            $transaction_data['tax_amount'] = $this->productUtil->num_uf($transaction_data['tax_amount'], $currency_details) * $exchange_rate;
-            $transaction_data['shipping_charges'] = $this->productUtil->num_uf($transaction_data['shipping_charges'], $currency_details) * $exchange_rate;
-            $transaction_data['final_total'] = $this->productUtil->num_uf($transaction_data['final_total'], $currency_details) * $exchange_rate;
-
+            $transaction_data['tax_amount'] = $this->productUtil->num_uf($transaction_data['tax_amount'], $currency_details) / $exchange_rate;
+            $transaction_data['shipping_charges'] = $this->productUtil->num_uf($transaction_data['shipping_charges'], $currency_details) / $exchange_rate;
+            $transaction_data['final_total'] = $this->productUtil->num_uf($transaction_data['final_total'], $currency_details) / $exchange_rate;
             $transaction_data['business_id'] = $business_id;
             $transaction_data['created_by'] = $user_id;
             $transaction_data['type'] = 'purchase';
@@ -378,22 +372,22 @@ class PurchaseController extends Controller
 
             if ($request->input('additional_expense_value_1') != '') {
                 $transaction_data['additional_expense_key_1'] = $request->input('additional_expense_key_1');
-                $transaction_data['additional_expense_value_1'] = $this->productUtil->num_uf($request->input('additional_expense_value_1'), $currency_details) * $exchange_rate;
+                $transaction_data['additional_expense_value_1'] = $this->productUtil->num_uf($request->input('additional_expense_value_1'), $currency_details) / $exchange_rate;
             }
 
             if ($request->input('additional_expense_value_2') != '') {
                 $transaction_data['additional_expense_key_2'] = $request->input('additional_expense_key_2');
-                $transaction_data['additional_expense_value_2'] = $this->productUtil->num_uf($request->input('additional_expense_value_2'), $currency_details) * $exchange_rate;
+                $transaction_data['additional_expense_value_2'] = $this->productUtil->num_uf($request->input('additional_expense_value_2'), $currency_details) / $exchange_rate;
             }
 
             if ($request->input('additional_expense_value_3') != '') {
                 $transaction_data['additional_expense_key_3'] = $request->input('additional_expense_key_3');
-                $transaction_data['additional_expense_value_3'] = $this->productUtil->num_uf($request->input('additional_expense_value_3'), $currency_details) * $exchange_rate;
+                $transaction_data['additional_expense_value_3'] = $this->productUtil->num_uf($request->input('additional_expense_value_3'), $currency_details) / $exchange_rate;
             }
 
             if ($request->input('additional_expense_value_4') != '') {
                 $transaction_data['additional_expense_key_4'] = $request->input('additional_expense_key_4');
-                $transaction_data['additional_expense_value_4'] = $this->productUtil->num_uf($request->input('additional_expense_value_4'), $currency_details) * $exchange_rate;
+                $transaction_data['additional_expense_value_4'] = $this->productUtil->num_uf($request->input('additional_expense_value_4'), $currency_details) / $exchange_rate;
             }
 
             DB::beginTransaction();
@@ -411,24 +405,17 @@ class PurchaseController extends Controller
             $purchases = $request->input('purchases');
 
             $this->productUtil->createOrUpdatePurchaseLines($transaction, $purchases, $currency_details, $enable_product_editing);
-
             //Add Purchase payments
             $this->transactionUtil->createOrUpdatePaymentLines($transaction, $request->input('payment'));
-
             //update payment status
             $this->transactionUtil->updatePaymentStatus($transaction->id, $transaction->final_total);
-
             if (! empty($transaction->purchase_order_ids)) {
                 $this->transactionUtil->updatePurchaseOrderStatus($transaction->purchase_order_ids);
             }
-
             //Adjust stock over selling if found
             $this->productUtil->adjustStockOverSelling($transaction);
-
             $this->transactionUtil->activityLog($transaction, 'added');
-
             PurchaseCreatedOrModified::dispatch($transaction);
-
             DB::commit();
 
             $output = ['success' => 1,
@@ -1273,10 +1260,11 @@ class PurchaseController extends Controller
         $hide_tax = request()->session()->get('business.enable_inline_tax') == 1 ? '' : 'hide';
         //$currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
 
-        //AQUI
-        $exchange_rate =  $purchase_order->exchange_rate;
-        $currency_id =  ($exchange_rate == 1)?  2 : 94;
-        $currency_details = $this->transactionUtil->currencyDetails($business_id, $currency_id, $exchange_rate);
+        //$exchange_rate =  $purchase_order->exchange_rate;
+        // $currency_change_id = Business::find($business_id)->purchase_currency_id; 
+        // $currency_id =  ($exchange_rate == 1)?  $business_id : $currency_change_id;
+        // $currency_details = $this->transactionUtil->currencyDetails($business_id, $currency_id, $exchange_rate);
+        $currency_details = $this->transactionUtil->currencyDetails($business_id, $purchase_order->currency_id, $purchase_order->exchange_rate);
 
         $row_count = request()->input('row_count');
         $html = view('purchase.partials.purchase_order_lines')
@@ -1292,6 +1280,7 @@ class PurchaseController extends Controller
         return [
             'html' => $html,
             'po' => $purchase_order,
+            'currency'=>$currency_details,
         ];
     }
 

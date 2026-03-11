@@ -4981,6 +4981,8 @@ class TransactionUtil extends Util
      * @param  int  $business_id
      * @return object
      */
+
+    //final_total 
     public function getListPurchases($business_id)
     {
         $purchases = Transaction::leftJoin('contacts', 'transactions.contact_id', '=', 'contacts.id')

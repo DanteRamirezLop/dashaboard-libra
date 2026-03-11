@@ -23,7 +23,6 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use App\ExchangeRates;
 
-
 class PurchaseOrderController extends Controller
 {
     /**
@@ -292,7 +291,7 @@ class PurchaseOrderController extends Controller
 
         $currency_change_id = Business::find($business_id)->purchase_currency_id;
         // Cambio de moneda
-        $currency_id = request()->get('currency');   // 94 Es el ID de la moneda soles PE
+        $currency_id = request()->get('currency');   
         if($currency_id == $currency_change_id){
             $search_date = Carbon::now()->format('y-m-d');
             $exchange_rate = ExchangeRates::where('search_date',$search_date)->first();
@@ -312,6 +311,8 @@ class PurchaseOrderController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
+
+    //$currency_details  
     public function store(Request $request)
     {
         if (! auth()->user()->can('purchase_order.create')) {
@@ -326,7 +327,7 @@ class PurchaseOrderController extends Controller
                 return $this->moduleUtil->expiredResponse(action([\App\Http\Controllers\PurchaseController::class, 'index']));
             }
 
-            $transaction_data = $request->only(['ref_no', 'contact_id', 'transaction_date', 'total_before_tax', 'location_id', 'discount_type', 'discount_amount', 'tax_id', 'tax_amount', 'shipping_details', 'shipping_charges', 'final_total', 'additional_notes', 'exchange_rate', 'pay_term_number', 'pay_term_type', 'shipping_address', 'shipping_status', 'delivered_to', 'delivery_date', 'purchase_requisition_ids']);
+            $transaction_data = $request->only(['currency_id','ref_no', 'contact_id', 'transaction_date', 'total_before_tax', 'location_id', 'discount_type', 'discount_amount', 'tax_id', 'tax_amount', 'shipping_details', 'shipping_charges', 'final_total', 'additional_notes', 'exchange_rate', 'pay_term_number', 'pay_term_type', 'shipping_address', 'shipping_status', 'delivered_to', 'delivery_date', 'purchase_requisition_ids']);
             $exchange_rate = $transaction_data['exchange_rate'];
 
              if ($request->has('custom_field_1')) {
@@ -373,8 +374,8 @@ class PurchaseOrderController extends Controller
             $user_id = $request->session()->get('user.id');
             $enable_product_editing = $request->session()->get('business.enable_editing_product_from_purchase');
 
-            //aquí
-           // $currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
+            
+            $currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
 
             //unformat input values
             $transaction_data['total_before_tax'] = $this->productUtil->num_uf($transaction_data['total_before_tax'], $currency_details) / $exchange_rate;
@@ -581,10 +582,11 @@ class PurchaseOrderController extends Controller
             }
         }
 
+        //ESTO SE P
         //Determinar la moneda de la compra - transaccion
-        $currency_change_id = $business->purchase_currency_id; 
-        $currency_id = ($purchase->exchange_rate == 1) ? 0 : $currency_change_id; //Si el tipo de cambio es 1 entonces se usa la moneda base 
-        $currency_details = $this->transactionUtil->currencyDetails($business_id, $currency_id, $purchase->exchange_rate);
+        //$currency_change_id = $business->purchase_currency_id; 
+        //$currency_id = ($purchase->exchange_rate == 1) ? 0 : $currency_change_id; //Si el tipo de cambio es 1 entonces se usa la moneda base 
+        $currency_details = $this->transactionUtil->currencyDetails($business_id,  $purchase->currency_id, $purchase->exchange_rate);
         $business_locations = BusinessLocation::forDropdown($business_id);
 
         $types = [];
@@ -898,12 +900,12 @@ class PurchaseOrderController extends Controller
             $three_percente = $purchase->final_total * 0.03;
             $three_percent_withholding =  ($purchase->final_total >= $seven_hundred_usa) ? $three_percente : 0;
         }
-
         //Determinar la moneda de la compra - transaccion
-        $currency_change_id = Business::find($business_id)->purchase_currency_id; 
-        $currency_id = ($purchase->exchange_rate == 1) ? 0 : $currency_change_id; //Si el tipo de cambio es 1 entonces se usa la moneda base 
-        $currency_details = $this->transactionUtil->currencyDetails($business_id, $currency_id, $purchase->exchange_rate);
+        //$currency_change_id = Business::find($business_id)->purchase_currency_id; 
+        //$currency_id = ($purchase->exchange_rate == 1) ? 0 : $currency_change_id; //Si el tipo de cambio es 1 entonces se usa la moneda base 
+        //$currency_details = $this->transactionUtil->currencyDetails($business_id, $currency_id, $purchase->exchange_rate);
 
+        $currency_details = $this->transactionUtil->currencyDetails($business_id,$purchase->currency_id, $purchase->exchange_rate);
         //Generate pdf 
         $pdf = Pdf::set_option('isRemoteEnabled', true)->loadView('purchase_order.receipts.download',compact('exchange_rate_purchase','three_percent_withholding','taxes','location_details','date_delivery','date_release','purchase', 'invoice_layout', 'date_print','currency_details'));
         return $pdf->download('Orden-Compra-'.$purchase->ref_no.'.pdf');

@@ -119,7 +119,6 @@
               </div>
             </div>
 
-
             <div class="col-sm-3">
               <div class="form-group">
                   {!! Form::label('custom_field_1', 'Tipo de proceso:*') !!}
@@ -132,6 +131,9 @@
                     </option>
                     <option value="Compra Internacional" @if($purchase->custom_field_1 == 'Compra Internacional') selected @endif>
                         Compra Internacional
+                    </option>
+                    <option value="Compra Internacional" @if($purchase->custom_field_1 == 'Servicios') selected @endif>
+                        Servicios
                     </option>
                   </select>
               </div>

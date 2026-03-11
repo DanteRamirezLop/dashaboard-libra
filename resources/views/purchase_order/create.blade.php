@@ -99,7 +99,7 @@
 			<div class="col-sm-3">
 				<div class="form-group">
 					{!! Form::label('custom_field_1', 'Tipo de proceso:*') !!}
-					{!! Form::select('custom_field_1',['Compra Nacional'=>'Compra Nacional','Compra Internacional'=>'Compra Internacional'], null, ['class' => 'form-control','placeholder' => __('messages.please_select'), 'required']); !!}
+					{!! Form::select('custom_field_1',['Compra Nacional'=>'Compra Nacional','Compra Internacional'=>'Compra Internacional','Servicios'=>'Servicios'], null, ['class' => 'form-control','placeholder' => __('messages.please_select'), 'required']); !!}
 				</div>
 			</div> 
 
@@ -109,7 +109,6 @@
 		              {!! Form::label('pay_term_number', __('contact.pay_term') . ':') !!} @show_tooltip(__('tooltip.pay_term'))
 		              <br/>
 		              {!! Form::number('pay_term_number', null, ['class' => 'form-control width-40 pull-left', 'placeholder' => __('contact.pay_term')]); !!}
-
 		              {!! Form::select('pay_term_type', 
 		              	['months' => __('lang_v1.months'), 
 		              		'days' => __('lang_v1.days')], 
@@ -132,13 +131,12 @@
 
 			<div class="col-sm-3">
 				<div class="form-group">
-					{!! Form::label('currecy_type', 'Moneda'.':*') !!}
-					{!! Form::select('currecy_type',['2'=>'Dolar (USD)','94'=>'Sol (PE)'], $currency_details->currency_id, ['class' => 'form-control', 'required']); !!}
+					{!! Form::label('currency_id', 'Moneda'.':*') !!}
+					{!! Form::select('currency_id',['2'=>'Dolar (USD)','94'=>'Sol (PE)'], $currency_details->currency_id, ['class' => 'form-control', 'required']); !!}
 				</div>
 			</div>
 
 			<!-- Currency Exchange Rate -->
-			 
 			<div class="col-sm-3 @if(!$currency_details->purchase_in_diff_currency) hide @endif">
 				<div class="form-group">
 					{!! Form::label('exchange_rate', __('purchase.p_exchange_rate') . ':*') !!}
@@ -154,7 +152,6 @@
 					</span>
 				</div>
 			</div>
-
 		</div>
 		@if(!empty($common_settings['enable_purchase_requisition']))
 		<div class="row">
@@ -551,7 +548,7 @@
 				$('#location_id').change();
 			}
 
-			$('#currecy_type').on('change', function() {
+			$('#currency_id').on('change', function() {
 				window.onbeforeunload = null; 
 				var valor = $(this).val();
 				if(valor !== ''){

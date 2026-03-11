@@ -1226,11 +1226,15 @@ $("#purchase_order_ids").on("select2:select", function (e) {
         dataType: 'json',
         success: function(data) {
             set_po_values(data.po);
+            
+            if (data.currency) {
+                set_page_currency(data.currency);
+            }
+
             append_purchase_lines(data.html, row_count);
 
         },
     });
-
 });
 
 $("#purchase_order_ids").on("select2:unselect", function (e) {
@@ -1242,6 +1246,26 @@ $("#purchase_order_ids").on("select2:unselect", function (e) {
         }
     });
 });
+
+function set_page_currency(currency) {
+
+    if (!currency) {
+        return;
+    }
+
+    $('#p_code').val(currency.code || '');
+    $('#p_symbol').val(currency.symbol || '');
+    $('#p_thousand').val(currency.thousand_separator || ',');
+    $('#p_decimal').val(currency.decimal_separator || '.');
+
+    __p_currency_symbol = $('#p_symbol').val();
+    __p_currency_thousand_separator = $('#p_thousand').val();
+    __p_currency_decimal_separator = $('#p_decimal').val();
+
+    $('#currency_id').val(currency.currency_id);
+    $('#section_exchange_rate').removeClass('hide');
+    $('#exchange_rate').val(currency.p_exchange_rate);
+}
 
 function set_po_values(po) {
     $('#shipping_details').val(po.shipping_details);

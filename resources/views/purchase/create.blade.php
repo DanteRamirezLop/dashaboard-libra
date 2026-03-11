@@ -22,6 +22,10 @@
 	<input type="hidden" id="p_thousand" value="{{$currency_details->thousand_separator}}">
 	<input type="hidden" id="p_decimal" value="{{$currency_details->decimal_separator}}">
 
+
+	<input type="hidden" id="p_currency_id" value="{{$currency_details->currency_id}}">
+	<input type="hidden" id="diff_currency" value="{{$currency_details->purchase_in_diff_currency}}">
+
 	@include('layouts.partials.error')
 
 	{!! Form::open(['url' => action([\App\Http\Controllers\PurchaseController::class, 'store']), 'method' => 'post', 'id' => 'add_purchase_form', 'files' => true ]) !!}
@@ -201,15 +205,16 @@
 					{!! Form::select('purchase_order_ids[]', [], null, ['class' => 'form-control select2', 'multiple', 'id' => 'purchase_order_ids']); !!}
 				</div>
 			</div>
+			
 			<div class="col-sm-3">
 				<div class="form-group">
-					{!! Form::label('currecy_type', 'Moneda'.':*') !!}
-					{!! Form::select('currecy_type',['2'=>'Dolar (USD)','94'=>'Sol (PE)'], $currency_details->currency_id, ['class' => 'form-control', 'required']); !!}
+					{!! Form::label('currency_id', 'Moneda'.':*') !!}
+					{!! Form::select('currency_id',['2'=>'Dolar (USD)','94'=>'Sol (PE)'], $currency_details->currency_id, ['class' => 'form-control', 'required']); !!}
 				</div>
 			</div>
 
 			<!-- Currency Exchange Rate -->
-			<div class="col-sm-3 @if(!$currency_details->purchase_in_diff_currency) hide @endif">
+			<div id="section_exchange_rate" class="col-sm-3 @if(!$currency_details->purchase_in_diff_currency) hide @endif">
 				<div class="form-group">
 					{!! Form::label('exchange_rate', __('purchase.p_exchange_rate') . ':*') !!}
 					@show_tooltip(__('tooltip.currency_exchange_factor'))
@@ -217,7 +222,7 @@
 						<span class="input-group-addon">
 							<i class="fa fa-info"></i>
 						</span>
-						{!! Form::number('exchange_rate', $currency_details->p_exchange_rate, ['class' => 'form-control', 'required', 'step' => 0.001]); !!}
+						{!! Form::number('exchange_rate', @number_format($currency_details->p_exchange_rate,3), ['class' => 'form-control', 'required', 'step' => 0.001]); !!}
 					</div>
 					<span class="help-block text-danger">
 						@lang('purchase.diff_purchase_currency_help', ['currency' => $currency_details->name])
@@ -569,6 +574,7 @@
 				</div>
 			</div>
 			@include('sale_pos.partials.payment_row_form', ['row_index' => 0, 'show_date' => true, 'show_denomination' => true])
+			
 			<hr>
 			<div class="row">
 				<div class="col-sm-12">
@@ -615,7 +621,7 @@
 				set_payment_type_dropdown();
 			});
 
-			$('#currecy_type').on('change', function() {
+			$('#currency_id').on('change', function() {
 				 window.onbeforeunload = null; 
 				var valor = $(this).val();
 				if(valor !== ''){
@@ -623,6 +629,40 @@
 					url.searchParams.set('currency', valor); // nombre del parámetro
 					window.location.href = url.toString();
 				}
+			});
+
+			//Cambios de Soles a dolares en pago
+			$(document).on('change', '.currency_exchange_to_pay_dropdown', function(e) {
+
+				var diff_currency = $('#diff_currency').val();
+				var p_currency_id = $('#p_currency_id').val();
+				var payment_currency_id = $('.currency_exchange_to_pay_dropdown').val();
+				 exchange_rate_for_payment = $("#exchange_rate_for_payment");
+				if(p_currency_id == payment_currency_id){
+					console.log('la moneda es igual en la transaccion y el pago');
+					if(diff_currency === ''){
+						console.log('La transaccion es la moneda base');
+						exchange_rate_for_payment.addClass('hide');
+					}else{
+						console.log('la transasccion no es en la moneda base');
+						exchange_rate_for_payment.removeClass('hide');
+					}
+				}else{
+					console.log('la moneda es diferente en la transaccion y el pago');
+					console.log(p_currency_id);
+					console.log(payment_currency_id);
+					exchange_rate_for_payment.removeClass('hide');
+				}
+
+				// calculate_dollars = $('#calculate_dollars');
+				// amount = $('#amount');
+				// if(payment_type == 'Dolar'){
+				// 	calculate_dollars.addClass('hide');
+				// 	amount.prop('readonly', false);
+				// }else{
+				// 	calculate_dollars.removeClass('hide');
+				// 	amount.prop('readonly', true);
+				// }
 			});
     	});
     	$(document).on('change', '.payment_types_dropdown, #location_id', function(e) {

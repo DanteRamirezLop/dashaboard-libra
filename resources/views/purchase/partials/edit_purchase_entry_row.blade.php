@@ -21,11 +21,11 @@
                 <th class="{{$hide_tax}}">@lang( 'purchase.product_tax' )</th>
                 <th class="{{$hide_tax}}">@lang( 'purchase.net_cost' )</th>
                 <th>@lang( 'purchase.line_total' )</th>
-                <th class="@if(!session('business.enable_editing_product_from_purchase') || !empty($is_purchase_order)) hide @endif">
+                <!-- <th class="@if(!session('business.enable_editing_product_from_purchase') || !empty($is_purchase_order)) hide @endif">
                     @lang( 'lang_v1.profit_margin' )
-                </th>
+                </th> -->
                 @if(empty($is_purchase_order))
-                    <th>@lang( 'purchase.unit_selling_price') <small>(@lang('product.inc_of_tax'))</small></th>
+                    <!-- <th>@lang( 'purchase.unit_selling_price') <small>(@lang('product.inc_of_tax'))</small></th> -->
                     @if(session('business.enable_lot_number'))
                         <th>
                             @lang('lang_v1.lot_number')
@@ -165,7 +165,7 @@
                 <input type="hidden" class="row_subtotal_after_tax_hidden" value="{{number_format($purchase_line->purchase_price_inc_tax * $purchase_line->quantity * $purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)}}">
             </td>
 
-            <td class="@if(!session('business.enable_editing_product_from_purchase') || !empty($is_purchase_order)) hide @endif">
+            <!-- <td class="@if(!session('business.enable_editing_product_from_purchase') || !empty($is_purchase_order)) hide @endif">
                 @php
                     $pp = $purchase_line->purchase_price_inc_tax;
                     $sp = $purchase_line->variations->sell_price_inc_tax;
@@ -182,16 +182,15 @@
                 {!! Form::text('purchases[' . $loop->index . '][profit_percent]', 
                 number_format($profit_percent, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), 
                 ['class' => 'form-control input-sm input_number profit_percent', 'required']); !!}
-            </td>
+            </td> -->
             @if(empty($is_purchase_order))
-            <td>
-                @if(session('business.enable_editing_product_from_purchase'))
+            <!-- <td>
+                 @if(session('business.enable_editing_product_from_purchase'))
                     {!! Form::text('purchases[' . $loop->index . '][default_sell_price]', number_format($sp, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm input_number default_sell_price', 'required']); !!}
                 @else
                     {{number_format($sp, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)}}
-                @endif
-
-            </td>
+                @endif 
+            </td> -->
             @if(session('business.enable_lot_number'))
                 <td>
                     {!! Form::text('purchases[' . $loop->index . '][lot_number]', $purchase_line->lot_number, ['class' => 'form-control input-sm']); !!}
