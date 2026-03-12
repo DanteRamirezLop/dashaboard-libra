@@ -1030,8 +1030,10 @@ function update_grand_total() {
 $(document).on('change', 'input.payment-amount', function() {
     var payment = __read_number($(this), true);
     var grand_total = __read_number($('input#grand_total_hidden'), true);
+    console.log(grand_total);
     var bal = grand_total - payment;
     $('#payment_due').text(__currency_trans_from_en(bal, true, true));
+
 });
 
 function update_table_sr_number() {

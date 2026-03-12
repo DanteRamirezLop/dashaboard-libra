@@ -23,6 +23,8 @@ use App\Utils\ProductUtil;
 use App\Utils\TransactionUtil;
 use App\Variation;
 use App\Warranty;
+use App\ExchangeRates;
+use Carbon\Carbon;
 use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -35,11 +37,8 @@ class SellController extends Controller
      * All Utils instance.
      */
     protected $contactUtil;
-
     protected $businessUtil;
-
     protected $transactionUtil;
-
     protected $productUtil;
 
     /**
@@ -825,7 +824,17 @@ class SellController extends Controller
 
         $change_return = $this->dummyPaymentLine;
         // Moneda de cambio
-        $currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
+        //$currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
+        $currency_change_id = Business::find($business_id)->purchase_currency_id;
+        $currency_id = request()->get('currency');   
+        $search_date = Carbon::now()->format('y-m-d');
+        $exchange_rate = ExchangeRates::where('search_date',$search_date)->first();
+        $exchange_rate = $exchange_rate ?  $exchange_rate->sale  : 1;
+        if($currency_id == $currency_change_id){
+            $currency_details = $this->transactionUtil->currencyDetails($business_id, $currency_id, $exchange_rate);
+        }else{
+            $currency_details = $this->transactionUtil->currencyDetails($business_id);
+        }
 
         return view('sell.create')
             ->with(compact(

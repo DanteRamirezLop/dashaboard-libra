@@ -478,7 +478,6 @@
             $('#pay_initial').on('input', function() {
                 //let precio = parseFloat($('#variation').val());
                 let precio = $('#variation option:selected').data('price');
-                console.log(precio);
                 let inicial = parseFloat($(this).val());
                 if (!isNaN(precio) && precio > 0 && !isNaN(inicial)) {
                     let porcentaje = (inicial / precio) * 100;

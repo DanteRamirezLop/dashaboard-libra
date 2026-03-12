@@ -231,9 +231,6 @@
 			</div>
 		</div>
 		@endif
-
-
-
 	@endcomponent
 
 	@component('components.widget', ['class' => 'box-primary'])
@@ -631,39 +628,67 @@
 				}
 			});
 
-			//Cambios de Soles a dolares en pago
+			//Gestionar los pagos mixtos
 			$(document).on('change', '.currency_exchange_to_pay_dropdown', function(e) {
-
 				var diff_currency = $('#diff_currency').val();
 				var p_currency_id = $('#p_currency_id').val();
 				var payment_currency_id = $('.currency_exchange_to_pay_dropdown').val();
-				 exchange_rate_for_payment = $("#exchange_rate_for_payment");
-				if(p_currency_id == payment_currency_id){
-					console.log('la moneda es igual en la transaccion y el pago');
-					if(diff_currency === ''){
-						console.log('La transaccion es la moneda base');
+				exchange_rate_for_payment = $("#exchange_rate_for_payment");
+				if(diff_currency === ''){
+					console.log('La transaccion es la moneda base - Dolares');
+					if(p_currency_id == payment_currency_id){
+						console.log('la moneda es igual en la transaccion y el pago');
+						$('.payment-amount').prop('readonly',false);
 						exchange_rate_for_payment.addClass('hide');
 					}else{
-						console.log('la transasccion no es en la moneda base');
+						console.log('la moneda es diferente en la transaccion y el pago');
+						$('.payment-amount').prop('readonly',true);
 						exchange_rate_for_payment.removeClass('hide');
 					}
 				}else{
-					console.log('la moneda es diferente en la transaccion y el pago');
-					console.log(p_currency_id);
-					console.log(payment_currency_id);
-					exchange_rate_for_payment.removeClass('hide');
+					console.log('la transasccion no es en la moneda base -  Soles');
+					if(p_currency_id == payment_currency_id){
+						$('#amount_to_change').prop('readonly',true);
+						$('.payment-amount').prop('readonly',false);
+						console.log('la moneda es igual en la transaccion y el pago');
+					}else{
+						console.log('la moneda es diferente en la transaccion y el pago');
+						$('#amount_to_change').prop('readonly',false);
+						$('.payment-amount').prop('readonly',true);
+						exchange_rate_for_payment.removeClass('hide');
+					}
+				}
+			});
+
+			//Calcular monto a pagar con tipo de cambio
+			$('#amount_to_change').on('input',function(){
+
+			console.log('danteeee');
+
+				const exchange_rate_sell = $("#exchange_rate_sell").val();
+				const amount = parseFloat($(this).val());
+
+				console.log(exchange_rate_sell);
+
+				console.log(amount);
+				if (isNaN(exchange_rate_sell) || isNaN(amount)) {
+					console.log('Ingresar valores');
+					return;
 				}
 
-				// calculate_dollars = $('#calculate_dollars');
-				// amount = $('#amount');
-				// if(payment_type == 'Dolar'){
-				// 	calculate_dollars.addClass('hide');
-				// 	amount.prop('readonly', false);
-				// }else{
-				// 	calculate_dollars.removeClass('hide');
-				// 	amount.prop('readonly', true);
-				// }
+				const amount_chagen = amount / exchange_rate_sell;
+				$('.payment-amount').val(amount_chagen.toFixed(3));
+				var payment = __number_uf(amount_chagen.toFixed(3),false);
+				var grand_total = __read_number($('input#grand_total_hidden'), true);
+				var bal = grand_total - payment;
+				if(bal > 0){
+					blas = 0;
+				}
+				$('#payment_due').text(__currency_trans_from_en(bal, true, true));
+
 			});
+
+
     	});
     	$(document).on('change', '.payment_types_dropdown, #location_id', function(e) {
 		    var default_accounts = $('select#location_id').length ? 
@@ -720,6 +745,7 @@
 				});
 			}
 		}
+
 	</script>
 	@include('purchase.partials.keyboard_shortcuts')
 @endsection

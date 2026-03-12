@@ -255,7 +255,7 @@ class PurchaseController extends Controller
         $search_date = Carbon::now()->format('y-m-d');
         $exchange_rate = ExchangeRates::where('search_date',$search_date)->first();
         $exchange_rate = $exchange_rate ?  $exchange_rate->sale  : 1;
-        if($currency_id == $currency_change_id){
+        if($currency_id){
             $currency_details = $this->transactionUtil->currencyDetails($business_id, $currency_id, $exchange_rate);
         }else{
             $currency_details = $this->transactionUtil->currencyDetails($business_id);

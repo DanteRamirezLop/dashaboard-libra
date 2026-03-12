@@ -2830,6 +2830,7 @@ function calculateExpensePaymentDue() {
     var payment_amount = __read_number($('#add_expense_modal_form input.payment-amount'));
     var payment_due = final_total - payment_amount;
     $('#expense_payment_due').text(__currency_trans_from_en(payment_due, true, false));
+
 }
 
 $(document).on('shown.bs.dropdown', '.btn-group', function(){

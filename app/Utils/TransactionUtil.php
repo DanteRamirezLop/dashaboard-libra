@@ -769,6 +769,8 @@ class TransactionUtil extends Util
                         'payment_for' => $transaction->contact_id,
                         'payment_ref_no' => $payment_ref_no,
                         'account_id' => ! empty($payment['account_id']) && $payment['method'] != 'advance' ? $payment['account_id'] : null,
+                        'currency_id' => isset($payment['currency']) ? $payment['currency'] : null,
+                        'exchange_rate' => isset($payment['exchange_rate_sell']) ? $payment['exchange_rate_sell'] : null,
                     ];
 
                     for ($i = 1; $i < 8; $i++) {
