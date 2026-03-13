@@ -7,7 +7,7 @@
 		}
 		$readonly = $payment_line['method'] == 'advance' ? true : false;
 	@endphp
-
+	
 	@if(!empty($show_date))
 	<div class="{{$col_class}}">
 		<div class="form-group">
@@ -41,7 +41,7 @@
 		</div>
 	</div>
 
-	@php
+		@php
             $pos_settings = !empty(session()->get('business.pos_settings')) ? json_decode(session()->get('business.pos_settings'), true) : [];
             $enable_cash_denomination_for_payment_methods = !empty($pos_settings['enable_cash_denomination_for_payment_methods']) ? $pos_settings['enable_cash_denomination_for_payment_methods'] : [];
         @endphp
@@ -111,47 +111,50 @@
             <div class="clearfix"></div>
         @endif
 
-
-			<!-- PAGOS mixtos  -->
-			<div class="col-md-4">
-				<div class="form-group">
-					{!! Form::label('currency', 'Moneda' . ':*') !!} 
-					<div class="input-group">
-						<span class="input-group-addon">
-						<i class="fas fa-money-bill-alt"></i>
-						</span>
-						{!! Form::select("payment[$row_index][currency]",['2'=>'Dolar (USD)','94'=>'Sol (PE)'], $currency_details->currency_id, ['class' => 'form-control currency_exchange_to_pay_dropdown', 'required']); !!}
-					</div>
+	<!-- PAGOS mixtos  -->
+		<div class="col-md-4">
+			<div class="form-group">
+				{!! Form::label('currency', 'Moneda' . ':*') !!} 
+				<div class="input-group">
+					<span class="input-group-addon">
+					<i class="fas fa-money-bill-alt"></i>
+					</span>
+					{!! Form::select("payment[$row_index][currency]",['2'=>'Dolar (USD)','94'=>'Sol (PE)'], $currency_details->currency_id, ['class' => 'form-control currency_exchange_to_pay_dropdown', 'required']); !!}
 				</div>
 			</div>
+		</div>
 
-			<div id="exchange_rate_for_payment" class="col-md-8 @if(!$currency_details->purchase_in_diff_currency) hide @endif">
-				<div class="row">
-					<div class="col-md-6 ">
-						<div class="form-group">
-							{!! Form::label('exchange_rate_sell', 'Tasa de cambio' . ':*') !!} 
-							<div class="input-group">
-								<span class="input-group-addon">
-								<i class="fas fa-money-bill-alt"></i>
-								</span>
-								{!! Form::number("payment[$row_index][exchange_rate_sell]", @number_format($exchange_rate,3), ['id'=>'exchange_rate_sell','class' => 'form-control']); !!}
-							</div>
-						</div>
-					</div>
-					<div class="col-md-6">
-						<div class="form-group">
-							{!! Form::label("amount_to_change" , 'Cantidad a cambiar'. ':*' ) !!}
-							<div class="input-group">
+		<div id="exchange_rate_for_payment" class="col-md-8 hide">
+			<div class="row">
+				<div class="col-md-6 ">
+					<div class="form-group">
+						{!! Form::label('exchange_rate_sell', 'Tasa de cambio' . ':*') !!} 
+						<div class="input-group">
 							<span class="input-group-addon">
-								<i class="fas fa-money-bill-alt"></i>
+							<i class="fas fa-money-bill-alt"></i>
 							</span>
-							{!! Form::text("amount_to_change",  0, ['class' => 'form-control','readonly' => $currency_details->purchase_in_diff_currency]); !!}
-							</div>
+							{!! Form::number("payment[$row_index][exchange_rate_sell]", @number_format($exchange_rate,3), ['id'=>'exchange_rate_sell','class' => 'form-control']); !!}
+						</div>
+					</div>
+				</div>
+				<div class="col-md-6">
+					<div class="form-group">
+						{!! Form::label("amount_to_change" , 'Cantidad a cambiar'. ':*' ) !!}
+						<div class="input-group">
+						<span class="input-group-addon">
+							<i class="fas fa-money-bill-alt"></i>
+						</span>
+						{!! Form::text("amount_to_change",  0, ['class' => 'form-control']); !!}
 						</div>
 					</div>
 				</div>
 			</div>
-		<!-- FIN  -->
+		</div>
+
+		<div class="@if(!$currency_details->purchase_in_diff_currency) hide @endif">
+			{!! Form::hidden("payment[$row_index][diff_currency]", 1); !!}
+		</div>
+	<!-- FIN  -->
 
 	<div class="{{$col_class}}">
 		<div class="form-group">
@@ -164,7 +167,7 @@
 			</div>
 		</div>
 	</div>
-	
+
 	@if(!empty($accounts))
 		<div class="{{$col_class}}">
 			<div class="form-group @if($readonly) hide @endif">

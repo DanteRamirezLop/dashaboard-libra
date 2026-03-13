@@ -725,6 +725,7 @@ class TransactionUtil extends Util
         $contact_balance = Contact::where('id', $transaction->contact_id)->value('balance');
         $denominations = [];
         foreach ($payments as $payment) {
+
             //Check if transaction_sell_lines_id is set.
             if (! empty($payment['payment_id'])) {
                 $edit_ids[] = $payment['payment_id'];
@@ -750,6 +751,14 @@ class TransactionUtil extends Util
                         $paid_on = \Carbon::now()->toDateTimeString();
                     }
 
+                    $is_different_base_currency = isset($payment['diff_currency']) ? $payment['diff_currency'] : null;
+                    if($is_different_base_currency){
+                        $exchange_rate = $transaction->exchange_rate; //Si la venta es en soles el tipo de cambio es el mismo en la transaccion y el pago
+                        $payment_amount = round($payment_amount / $exchange_rate,2);
+                    }else{
+                        $exchange_rate = isset($payment['exchange_rate_sell']) ? $payment['exchange_rate_sell'] : null;
+                    }
+
                     $payment_data = [
                         'amount' => $payment_amount,
                         'method' => $payment['method'],
@@ -770,7 +779,7 @@ class TransactionUtil extends Util
                         'payment_ref_no' => $payment_ref_no,
                         'account_id' => ! empty($payment['account_id']) && $payment['method'] != 'advance' ? $payment['account_id'] : null,
                         'currency_id' => isset($payment['currency']) ? $payment['currency'] : null,
-                        'exchange_rate' => isset($payment['exchange_rate_sell']) ? $payment['exchange_rate_sell'] : null,
+                        'exchange_rate' => $exchange_rate,
                     ];
 
                     for ($i = 1; $i < 8; $i++) {
@@ -3091,9 +3100,14 @@ class TransactionUtil extends Util
             'thousand_seperator' => ',',
             'symbol' => '',
         ];
+
         //Check if diff currency is used or not.
         if ($currency_id) {
-            $output['purchase_in_diff_currency'] = true;
+            if($business->currency_id == $currency_id){
+                $output['purchase_in_diff_currency'] = false;
+            }else{
+                $output['purchase_in_diff_currency'] = true;
+            }
             $output['p_exchange_rate'] = $exchange_rate;
             $output['currency_id'] = $currency_id;
             $currency_id = $currency_id;
