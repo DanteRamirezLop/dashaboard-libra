@@ -155,14 +155,21 @@
                     {!! Form::hidden('purchases[' . $loop->index . '][item_tax]', number_format($purchase_line->item_tax * $purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'purchase_product_unit_tax']); !!}
                 </div>
             </td>
+
+            @php
+                $multiple = 0.1;
+                $rounded_number =  $purchase_line->purchase_price_inc_tax * $purchase_line->quantity * $purchase->exchange_rate;
+                $purchase_unit_cost_after_tax = round($rounded_number / $multiple) * $multiple;
+            @endphp
+            
             <td class="{{$hide_tax}}">
                 {!! Form::text('purchases[' . $loop->index . '][purchase_price_inc_tax]', number_format($purchase_line->purchase_price_inc_tax * $purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm purchase_unit_cost_after_tax input_number', 'required']); !!}
             </td>
             <td>
                 <span class="row_subtotal_after_tax">
-                {{number_format($purchase_line->purchase_price_inc_tax * $purchase_line->quantity * $purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)}}
+                {{number_format( $purchase_unit_cost_after_tax, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)}}
                 </span>
-                <input type="hidden" class="row_subtotal_after_tax_hidden" value="{{number_format($purchase_line->purchase_price_inc_tax * $purchase_line->quantity * $purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)}}">
+                <input type="hidden" class="row_subtotal_after_tax_hidden" value="{{number_format( $purchase_unit_cost_after_tax, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)}}">
             </td>
 
             <!-- <td class="@if(!session('business.enable_editing_product_from_purchase') || !empty($is_purchase_order)) hide @endif">

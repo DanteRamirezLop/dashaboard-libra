@@ -97,7 +97,7 @@
                   <span class="input-group-addon">
                     <i class="fa fa-info"></i>
                   </span>
-                  {!! Form::number('exchange_rate', $purchase->exchange_rate, ['class' => 'form-control', 'required', 'step' => 0.001]); !!}
+                  {!! Form::number('exchange_rate', $purchase->exchange_rate, ['class' => 'form-control disabled_input', 'required', 'step' => 0.001]); !!}
                 </div>
                 <span class="help-block text-danger">
                   @lang('purchase.diff_purchase_currency_help', ['currency' => $currency_details->name])
@@ -267,9 +267,9 @@
                   <tr>
                     <th class="col-md-7 text-right">@lang( 'purchase.net_total_amount' ):</th>
                     <td class="col-md-5 text-left">
-                      <span id="total_subtotal" class="display_currency">{{$purchase->total_before_tax/$purchase->exchange_rate}}</span>
+                      <span id="total_subtotal" class="display_currency">{{$purchase->total_before_tax * $purchase->exchange_rate}}</span>
                       <!-- This is total before purchase tax-->
-                      <input type="hidden" id="total_subtotal_input" value="{{$purchase->total_before_tax/$purchase->exchange_rate}}" name="total_before_tax">
+                      <input type="hidden" id="total_subtotal_input" value="{{$purchase->total_before_tax * $purchase->exchange_rate}}" name="total_before_tax">
                     </td>
                   </tr>
                 </table>
@@ -278,6 +278,7 @@
             </div>
         </div>
     @endcomponent
+
 
     @component('components.widget', ['class' => 'box-primary'])
         <div class="row">
@@ -291,14 +292,20 @@
                       </div>
                     </td>
                     <td class="col-md-3">
+                      @php
+                          $multiple = 0.1;
+                          $rounded_number =  $purchase->discount_amount * $purchase->exchange_rate;
+                          $discount_amount = round($rounded_number / $multiple) * $multiple;
+                      @endphp
+
                       <div class="form-group">
                       {!! Form::label('discount_amount', __( 'purchase.discount_amount' ) . ':') !!}
                       {!! Form::text('discount_amount', 
 
                       ($purchase->discount_type == 'fixed' ? 
-                        number_format($purchase->discount_amount/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)
+                        number_format($discount_amount, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)
                       :
-                        number_format($purchase->discount_amount, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)
+                        number_format($discount_amount, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)
                       )
                       , ['class' => 'form-control input_number']); !!}
                       </div>
@@ -333,7 +340,7 @@
                       <b>@lang( 'purchase.purchase_tax' ):</b>(+) 
                       <span id="tax_calculated_amount" class="display_currency">0</span>
                     </td>
-                  </tr>
+                  </tr> 
                   <tr>
                     <td colspan="4">
                       <div class="form-group">
@@ -358,7 +365,7 @@
       <div class="col-md-4 col-md-offset-4">
         <div class="form-group">
           {!! Form::label('shipping_charges','(+) ' . __( 'purchase.additional_shipping_charges') . ':') !!}
-          {!! Form::text('shipping_charges', number_format($purchase->shipping_charges/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input_number']); !!}
+          {!! Form::text('shipping_charges', number_format($purchase->shipping_charges * $purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input_number']); !!}
           </div>
       </div>
     </div>
@@ -480,7 +487,7 @@
                 {!! Form::text('additional_expense_key_1', $purchase->additional_expense_key_1, ['class' => 'form-control', 'id' => 'additional_expense_key_1']); !!}
               </td>
               <td>
-                {!! Form::text('additional_expense_value_1', number_format($purchase->additional_expense_value_1/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_1']); !!}
+                {!! Form::text('additional_expense_value_1', number_format($purchase->additional_expense_value_1 * $purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_1']); !!}
               </td>
             </tr>
             <tr>
@@ -488,7 +495,7 @@
                 {!! Form::text('additional_expense_key_2', $purchase->additional_expense_key_2, ['class' => 'form-control', 'id' => 'additional_expense_key_2']); !!}
               </td>
               <td>
-                {!! Form::text('additional_expense_value_2', number_format($purchase->additional_expense_value_2/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_2']); !!}
+                {!! Form::text('additional_expense_value_2', number_format($purchase->additional_expense_value_2 * $purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_2']); !!}
               </td>
             </tr>
             <tr>
@@ -496,7 +503,7 @@
                 {!! Form::text('additional_expense_key_3', $purchase->additional_expense_key_3, ['class' => 'form-control', 'id' => 'additional_expense_key_3']); !!}
               </td>
               <td>
-                {!! Form::text('additional_expense_value_3', number_format($purchase->additional_expense_value_3/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_3']); !!}
+                {!! Form::text('additional_expense_value_3', number_format($purchase->additional_expense_value_3 * $purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_3']); !!}
               </td>
             </tr>
             <tr>
@@ -504,7 +511,7 @@
                 {!! Form::text('additional_expense_key_4', $purchase->additional_expense_key_4, ['class' => 'form-control', 'id' => 'additional_expense_key_4']); !!}
               </td>
               <td>
-                {!! Form::text('additional_expense_value_4', number_format($purchase->additional_expense_value_4/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_4']); !!}
+                {!! Form::text('additional_expense_value_4', number_format($purchase->additional_expense_value_4 * $purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_4']); !!}
               </td>
             </tr>
           </tbody>

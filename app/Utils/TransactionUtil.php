@@ -3149,7 +3149,6 @@ class TransactionUtil extends Util
         if ($business->purchase_in_diff_currency == 1) {
             $output['purchase_in_diff_currency'] = true;
             $output['p_exchange_rate'] = $business->p_exchange_rate;
-
             $currency_id = $business->purchase_currency_id;
         } else {
             $output['purchase_in_diff_currency'] = false;

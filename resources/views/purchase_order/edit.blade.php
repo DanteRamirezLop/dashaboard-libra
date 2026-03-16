@@ -139,15 +139,6 @@
               </div>
             </div>
 
-            <div class="col-sm-3">
-                <div class="form-group">
-                    {!! Form::label('document', __('purchase.attach_document') . ':') !!}
-                    {!! Form::file('document', ['id' => 'upload_document', 'accept' => implode(',', array_keys(config('constants.document_upload_mimes_types')))]); !!}
-                    <p class="help-block">@lang('purchase.max_file_size', ['size' => (config('constants.document_size_limit') / 1000000)])
-                    @includeIf('components.document_help_text')</p>
-                </div>
-            </div>
-
             <!-- Currency Exchange Rate -->
             <div class="col-sm-3 @if(!$currency_details->purchase_in_diff_currency) hide @endif">
               <div class="form-group">
@@ -157,13 +148,24 @@
                   <span class="input-group-addon">
                     <i class="fa fa-info"></i>
                   </span>
-                  {!! Form::number('exchange_rate', $purchase->exchange_rate, ['class' => 'form-control', 'required', 'step' => 0.001]); !!}
+                  {!! Form::number('exchange_rate', $purchase->exchange_rate, ['class' => 'form-control disabled_input', 'required', 'step' => 0.001]); !!}
                 </div>
                 <span class="help-block text-danger">
                   @lang('purchase.diff_purchase_currency_help', ['currency' => $currency_details->name])
                 </span>
               </div>
             </div>
+
+            <div class="col-sm-3">
+                <div class="form-group">
+                    {!! Form::label('document', __('purchase.attach_document') . ':') !!}
+                    {!! Form::file('document', ['id' => 'upload_document', 'accept' => implode(',', array_keys(config('constants.document_upload_mimes_types')))]); !!}
+                    <p class="help-block">@lang('purchase.max_file_size', ['size' => (config('constants.document_size_limit') / 1000000)])
+                    @includeIf('components.document_help_text')</p>
+                </div>
+            </div>
+
+            
 
         </div>
         @if(!empty($common_settings['enable_purchase_requisition']))

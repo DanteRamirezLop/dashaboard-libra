@@ -23,6 +23,31 @@
 	@component('components.widget', ['class' => 'box-solid'])
 		<input type="hidden" id="is_purchase_order">
 		<div class="row">
+			<div class="col-sm-3">
+				<div class="form-group">
+					{!! Form::label('currency_id', 'Moneda'.':*') !!}
+					{!! Form::select('currency_id',[''=>'Dolar (USD)','94'=>'Sol (PE)'], $currency_details->currency_id, ['class' => 'form-control', 'required']); !!}
+				</div>
+			</div>
+
+			<!-- Currency Exchange Rate -->
+			<div class="col-sm-3 @if(!$currency_details->purchase_in_diff_currency) hide @endif">
+				<div class="form-group">
+					{!! Form::label('exchange_rate', __('purchase.p_exchange_rate') . ':*') !!}
+					@show_tooltip(__('tooltip.currency_exchange_factor'))
+					<div class="input-group">
+						<span class="input-group-addon">
+							<i class="fa fa-info"></i>
+						</span>
+						{!! Form::number('exchange_rate', @number_format($currency_details->p_exchange_rate,3), ['class' => 'form-control', 'required']); !!}
+					</div>
+					<span class="help-block text-danger">
+						@lang('purchase.diff_purchase_currency_help', ['currency' => $currency_details->name])
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="row">
 			<div class="@if(!empty($default_purchase_status)) col-sm-4 @else col-sm-3 @endif">
 				<div class="form-group">
 					{!! Form::label('supplier_id', __('purchase.supplier') . ':*') !!}
@@ -129,29 +154,7 @@
                 </div>
             </div>
 
-			<div class="col-sm-3">
-				<div class="form-group">
-					{!! Form::label('currency_id', 'Moneda'.':*') !!}
-					{!! Form::select('currency_id',['2'=>'Dolar (USD)','94'=>'Sol (PE)'], $currency_details->currency_id, ['class' => 'form-control', 'required']); !!}
-				</div>
-			</div>
-
-			<!-- Currency Exchange Rate -->
-			<div class="col-sm-3 @if(!$currency_details->purchase_in_diff_currency) hide @endif">
-				<div class="form-group">
-					{!! Form::label('exchange_rate', __('purchase.p_exchange_rate') . ':*') !!}
-					@show_tooltip(__('tooltip.currency_exchange_factor'))
-					<div class="input-group">
-						<span class="input-group-addon">
-							<i class="fa fa-info"></i>
-						</span>
-						{!! Form::number('exchange_rate', $currency_details->p_exchange_rate, ['class' => 'form-control', 'required']); !!}
-					</div>
-					<span class="help-block text-danger">
-						@lang('purchase.diff_purchase_currency_help', ['currency' => $currency_details->name])
-					</span>
-				</div>
-			</div>
+		
 		</div>
 		@if(!empty($common_settings['enable_purchase_requisition']))
 		<div class="row">
@@ -551,9 +554,13 @@
 			$('#currency_id').on('change', function() {
 				window.onbeforeunload = null; 
 				var valor = $(this).val();
+				var url = new URL(window.location.href);
 				if(valor !== ''){
-					var url = new URL(window.location.href);
 					url.searchParams.set('currency', valor); // nombre del parámetro
+					window.location.href = url.toString();
+				}else{
+					// eliminar el parámetro
+					url.searchParams.delete('currency');
 					window.location.href = url.toString();
 				}
 			});

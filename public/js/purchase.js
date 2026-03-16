@@ -797,13 +797,13 @@ function get_purchase_entry_row(product_id, variation_id) {
             dataType: 'html',
             data: data,
             success: function(result) {
-        
                 append_purchase_lines(result, row_count);
             },
         });
     }
 }
 
+//AQUI - row_subtotal_after_tax
 function append_purchase_lines(data, row_count, trigger_change = false) {
     $(data)
         .find('.purchase_quantity')
@@ -841,6 +841,7 @@ function update_purchase_entry_row_values(row) {
     if (typeof row != 'undefined') {
         var quantity = __read_number(row.find('.purchase_quantity'), true);
         var unit_cost_price = __read_number(row.find('.purchase_unit_cost'), true);
+
         var row_subtotal_before_tax = quantity * unit_cost_price;
 
         var tax_rate = parseFloat(
@@ -850,7 +851,16 @@ function update_purchase_entry_row_values(row) {
         var unit_product_tax = __calculate_amount('percentage', tax_rate, unit_cost_price);
 
         var unit_cost_price_after_tax = unit_cost_price + unit_product_tax;
-        var row_subtotal_after_tax = quantity * unit_cost_price_after_tax;
+        var quantity_unit_cost_price_after_tax = quantity * unit_cost_price_after_tax;
+
+  
+        //REDONDEAR EN VENTA
+        row_subtotal_after_tax = quantity_unit_cost_price_after_tax;
+        multiple = 0.05; // REDONDEO PARA EVITAR  EL 99.99
+        if(multiple > 0) { 
+            x = new Decimal(quantity_unit_cost_price_after_tax);
+            row_subtotal_after_tax = x.toNearest(multiple); 
+        }
 
         row.find('.row_subtotal_before_tax').text(
             __currency_trans_from_en(row_subtotal_before_tax, false, true)
@@ -907,8 +917,8 @@ function update_row_price_for_exchange_rate(row) {
         true
     );
 
-    var purchase_product_unit_tax =
-        __read_number(row.find('.purchase_product_unit_tax'), true) * exchange_rate;
+    var purchase_product_unit_tax = __read_number(row.find('.purchase_product_unit_tax'), true) * exchange_rate;
+
     __write_number(row.find('input.purchase_product_unit_tax'), purchase_product_unit_tax, true);
     row.find('.purchase_product_unit_tax_text').text(
         __currency_trans_from_en(purchase_product_unit_tax, false, true)
@@ -922,8 +932,9 @@ function update_row_price_for_exchange_rate(row) {
         true
     );
 
-    var row_subtotal_after_tax_hidden =
-        __read_number(row.find('.row_subtotal_after_tax_hidden'), true) * exchange_rate;
+    var row_subtotal_after_tax_hidden = __read_number(row.find('.row_subtotal_after_tax_hidden'), true) * exchange_rate;
+
+
     __write_number(
         row.find('input.row_subtotal_after_tax_hidden'),
         row_subtotal_after_tax_hidden,
@@ -961,6 +972,8 @@ function update_inline_profit_percentage(row) {
     __write_number(row.find('input.profit_percent'), profit_percent, true);
 }
 
+
+//
 function update_table_total() {
     var total_quantity = 0;
     var total_st_before_tax = 0;

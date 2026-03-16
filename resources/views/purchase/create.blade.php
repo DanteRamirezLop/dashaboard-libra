@@ -30,6 +30,31 @@
 	{!! Form::open(['url' => action([\App\Http\Controllers\PurchaseController::class, 'store']), 'method' => 'post', 'id' => 'add_purchase_form', 'files' => true ]) !!}
 	@component('components.widget', ['class' => 'box-primary'])
 		<div class="row">
+			<div class="col-sm-3">
+				<div class="form-group">
+					{!! Form::label('currency_id', 'Moneda'.':*') !!}
+					{!! Form::select('currency_id',['2'=>'Dolar (USD)','94'=>'Sol (PE)'], $currency_details->currency_id, ['class' => 'form-control', 'required']); !!}
+				</div>
+			</div>
+
+			<!-- Currency Exchange Rate -->
+			<div id="section_exchange_rate" class="col-sm-3 @if(!$currency_details->purchase_in_diff_currency) hide @endif">
+				<div class="form-group">
+					{!! Form::label('exchange_rate', __('purchase.p_exchange_rate') . ':*') !!}
+					@show_tooltip(__('tooltip.currency_exchange_factor'))
+					<div class="input-group">
+						<span class="input-group-addon">
+							<i class="fa fa-info"></i>
+						</span>
+						{!! Form::number('exchange_rate', @number_format($currency_details->p_exchange_rate,3), ['class' => 'form-control', 'required', 'step' => 0.001]); !!}
+					</div>
+					<span class="help-block text-danger">
+						@lang('purchase.diff_purchase_currency_help', ['currency' => $currency_details->name])
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="row">
 			<div class="@if(!empty($default_purchase_status)) col-sm-4 @else col-sm-3 @endif">
 				<div class="form-group">
 					{!! Form::label('supplier_id', __('purchase.supplier') . ':*') !!}
@@ -204,30 +229,6 @@
 					{!! Form::select('purchase_order_ids[]', [], null, ['class' => 'form-control select2', 'multiple', 'id' => 'purchase_order_ids']); !!}
 				</div>
 			</div>
-			
-			<div class="col-sm-3">
-				<div class="form-group">
-					{!! Form::label('currency_id', 'Moneda'.':*') !!}
-					{!! Form::select('currency_id',['2'=>'Dolar (USD)','94'=>'Sol (PE)'], $currency_details->currency_id, ['class' => 'form-control', 'required']); !!}
-				</div>
-			</div>
-
-			<!-- Currency Exchange Rate -->
-			<div id="section_exchange_rate" class="col-sm-3 @if(!$currency_details->purchase_in_diff_currency) hide @endif">
-				<div class="form-group">
-					{!! Form::label('exchange_rate', __('purchase.p_exchange_rate') . ':*') !!}
-					@show_tooltip(__('tooltip.currency_exchange_factor'))
-					<div class="input-group">
-						<span class="input-group-addon">
-							<i class="fa fa-info"></i>
-						</span>
-						{!! Form::number('exchange_rate', @number_format($currency_details->p_exchange_rate,3), ['class' => 'form-control', 'required', 'step' => 0.001]); !!}
-					</div>
-					<span class="help-block text-danger">
-						@lang('purchase.diff_purchase_currency_help', ['currency' => $currency_details->name])
-					</span>
-				</div>
-			</div>
 		</div>
 		@endif
 	@endcomponent
@@ -276,7 +277,7 @@
 								<th>@lang( 'purchase.unit_cost_before_tax' )</th>
 								<th class="{{$hide_tax}}">@lang( 'purchase.subtotal_before_tax' )</th>
 								<th class="{{$hide_tax}}">@lang( 'purchase.product_tax' )</th>
-								<th class="{{$hide_tax}}">@lang( 'purchase.net_cost' )</th>
+								<th class="{{$hide_tax}}">@lang( 'purchase.net_cost' ) </th>
 								<th>@lang( 'purchase.line_total' )</th>
 								<!-- <th class="@if(!session('business.enable_editing_product_from_purchase')) hide @endif">
 									@lang( 'lang_v1.profit_margin' )
@@ -377,7 +378,7 @@
 						<b>@lang( 'purchase.purchase_tax' ):</b>(+) 
 						<span id="tax_calculated_amount" class="display_currency">0</span>
 					</td>
-				</tr>
+				</tr> 
 				<tr>
 					<td colspan="4">
 						<div class="form-group">
@@ -557,7 +558,7 @@
 		<div class="row">
 			<div class="col-md-12 text-right">
 				{!! Form::hidden('final_total', 0 , ['id' => 'grand_total_hidden']); !!}
-						<b>@lang('purchase.purchase_total'): </b><span id="grand_total" class="display_currency" data-currency_symbol='true'>0</span>
+				<b>@lang('purchase.purchase_total'): </b><span id="grand_total" class="display_currency" data-currency_symbol='true'>0</span>
 			</div>
 		</div>
 	@endcomponent
@@ -618,11 +619,15 @@
 			});
 
 			$('#currency_id').on('change', function() {
-				 window.onbeforeunload = null; 
+				window.onbeforeunload = null; 
 				var valor = $(this).val();
+				var url = new URL(window.location.href);
 				if(valor !== ''){
-					var url = new URL(window.location.href);
 					url.searchParams.set('currency', valor); // nombre del parámetro
+					window.location.href = url.toString();
+				}else{
+					// eliminar el parámetro
+					url.searchParams.delete('currency');
 					window.location.href = url.toString();
 				}
 			});

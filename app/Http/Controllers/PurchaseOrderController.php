@@ -289,13 +289,13 @@ class PurchaseOrderController extends Controller
         $users = config('constants.enable_contact_assign') ? User::forDropdown($business_id, false, false, false, true) : [];
         $common_settings = ! empty(session('business.common_settings')) ? session('business.common_settings') : [];
 
+
         $currency_change_id = Business::find($business_id)->purchase_currency_id;
-        // Cambio de moneda
         $currency_id = request()->get('currency');   
-        if($currency_id == $currency_change_id){
-            $search_date = Carbon::now()->format('y-m-d');
-            $exchange_rate = ExchangeRates::where('search_date',$search_date)->first();
-            $exchange_rate = $exchange_rate ?  $exchange_rate->sale  : 1;
+        $search_date = Carbon::now()->format('y-m-d');
+        $exchange_rate = ExchangeRates::where('search_date',$search_date)->first();
+        $exchange_rate = $exchange_rate ?  $exchange_rate->sale  : 1;
+        if($currency_id){
             $currency_details = $this->transactionUtil->currencyDetails($business_id, $currency_id, $exchange_rate);
         }else{
             $currency_details = $this->transactionUtil->currencyDetails($business_id);
@@ -986,74 +986,4 @@ class PurchaseOrderController extends Controller
         }
     }
 
-    // private function montoATexto($monto, $moneda = 'PEN') {
-    //     // Separamos parte entera y decimales
-    //     $monto = number_format($monto, 2, '.', '');
-    //     list($entero, $decimal) = explode('.', $monto);
-
-    //     $entero = intval($entero);
-    //     $decimal = intval($decimal);
-
-    //     // Moneda
-    //     if ($moneda === 'PEN') {
-    //         $nombreSingular = "sol";
-    //         $nombrePlural = "soles";
-    //     } elseif ($moneda === 'USD') {
-    //         $nombreSingular = "dólar";
-    //         $nombrePlural = "dólares";
-    //     } else {
-    //         $nombreSingular = $moneda;
-    //         $nombrePlural = $moneda;
-    //     }
-    //     // Singular o plural
-    //     $nombreMoneda = ($entero == 1) ? $nombreSingular : $nombrePlural;
-    //     // Convertimos números a texto
-    //     $textoEntero = $this->numeroATexto($entero);
-    //     $textoDecimales =  $this->numeroATexto($decimal);
-
-    //     return trim("$textoEntero $nombreMoneda con $textoDecimales centavos");
-    // }
-
-    // private function numeroATexto($numero) {
-    //     $unidades = [
-    //         'cero', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve',
-    //         'diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete',
-    //         'dieciocho', 'diecinueve', 'veinte'
-    //     ];
-
-    //     $decenas = [
-    //         2 => 'veinti', 3 => 'treinta', 4 => 'cuarenta', 5 => 'cincuenta',
-    //         6 => 'sesenta', 7 => 'setenta', 8 => 'ochenta', 9 => 'noventa'
-    //     ];
-    //     $centenas = [
-    //         1 => 'cien', 2 => 'doscientos', 3 => 'trescientos', 4 => 'cuatrocientos',
-    //         5 => 'quinientos', 6 => 'seiscientos', 7 => 'setecientos',
-    //         8 => 'ochocientos', 9 => 'novecientos'
-    //     ];
-    //     if ($numero < 21) {
-    //         return $unidades[$numero];
-    //     } elseif ($numero < 30) {
-    //         return $decenas[2] . $unidades[$numero - 20];
-    //     } elseif ($numero < 100) {
-    //         $decena = intdiv($numero, 10);
-    //         $unidad = $numero % 10;
-    //         return $decenas[$decena] . ($unidad ? ' y ' . $unidades[$unidad] : '');
-    //     } elseif ($numero < 1000) {
-    //         $centena = intdiv($numero, 100);
-    //         $resto = $numero % 100;
-    //         if ($numero == 100) return "cien";
-    //         return $centenas[$centena] . ($resto ? ' ' . $this->numeroATexto($resto) : '');
-    //     } elseif ($numero < 1000000) {
-    //         $miles = intdiv($numero, 1000);
-    //         $resto = $numero % 1000;
-    //         $textoMiles = ($miles == 1) ? "mil" : $this->numeroATexto($miles) . " mil";
-    //         return $textoMiles . ($resto ? ' ' . $this->numeroATexto($resto) : '');
-    //     } else {
-    //         // Hasta millones
-    //         $millones = intdiv($numero, 1000000);
-    //         $resto = $numero % 1000000;
-    //         $textoMillones = ($millones == 1) ? "un millón" : $this->numeroATexto($millones) . " millones";
-    //         return $textoMillones . ($resto ? ' ' . $this->numeroATexto($resto) : '');
-    //     }
-    // }
 }

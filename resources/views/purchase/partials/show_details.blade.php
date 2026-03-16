@@ -17,15 +17,15 @@
     <div class="col-sm-4 invoice-col">
       @lang('purchase.supplier'):
       <address>
-        {!! e($purchase->contact->contact_address) !!}
+        {!! ($purchase->contact->contact_address) !!}
         @if(!empty($purchase->contact->tax_number))
-          <br>@lang('contact.tax_no'): {{$purchase->contact->tax_number}}
+          <br> @lang('contact.tax_no'): {{$purchase->contact->tax_number}}
         @endif
         @if(!empty($purchase->contact->mobile))
-          <br>@lang('contact.mobile'): {{$purchase->contact->mobile}}
+          <br> @lang('contact.mobile'): {{$purchase->contact->mobile}}
         @endif
         @if(!empty($purchase->contact->email))
-          <br>@lang('business.email'): {{$purchase->contact->email}}
+          <br> @lang('business.email'): {{$purchase->contact->email}}
         @endif
       </address>
       @if($purchase->document_path)
@@ -311,21 +311,21 @@
             <td>
               <b>(-)</b>
               @if($purchase->discount_type == 'percentage')
-                ({{$purchase->discount_amount}} %)
+                ({{$purchase->discount_amount}} %) 
               @endif
             </td>
             <td>
               <span class="display_currency pull-right" data-currency_symbol="true">
                 @if($purchase->discount_type == 'percentage')
-                  {{$purchase->discount_amount * $total_before_tax / 100}}
+                  {{ $purchase->discount_amount * $purchase->total_before_tax / 100 }} 
                 @else
                   {{$purchase->discount_amount}}
                 @endif                  
               </span>
             </td>
           </tr>
-          <tr>
-            <th>@lang('purchase.purchase_tax'):</th>
+          <!-- <tr>
+            <th>@lang('purchase.purchase_tax'): </th>
             <td><b>(+)</b></td>
             <td class="text-right">
                 @if(!empty($purchase_taxes))
@@ -336,7 +336,22 @@
                 0.00
                 @endif
               </td>
-          </tr>
+          </tr> -->
+           @if(!empty($line_taxes))
+            <tr>
+              <th>{{ __('lang_v1.line_taxes') }}:</th>
+              <td><b>(+)</b></td>
+              <td class="text-right">
+                @if(!empty($line_taxes))
+                  @foreach($line_taxes as $k => $v)
+                    <strong><small>{{$k}}</small></strong>  <span class="display_currency pull-right" data-currency_symbol="true">{{ $v }}</span><br>
+                  @endforeach
+                @else
+                0.00
+                @endif
+              </td>
+            </tr>
+            @endif
           @if( !empty( $purchase->shipping_charges ) )
             <tr>
               <th>@lang('purchase.additional_shipping_charges'):</th>
