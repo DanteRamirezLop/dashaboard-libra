@@ -336,20 +336,20 @@ class PurchaseController extends Controller
             $currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
 
             //unformat input values
-            $transaction_data['total_before_tax'] = round($this->productUtil->num_uf($transaction_data['total_before_tax'], $currency_details) / $exchange_rate,2);
+            $transaction_data['total_before_tax'] = round($this->productUtil->num_uf($transaction_data['total_before_tax'], $currency_details) / $exchange_rate, 4);
 
             // If discount type is fixed them multiply by exchange rate, else don't
             if ($transaction_data['discount_type'] == 'fixed') {
-                $transaction_data['discount_amount'] = round($this->productUtil->num_uf($transaction_data['discount_amount'], $currency_details) / $exchange_rate,2);
+                $transaction_data['discount_amount'] = round($this->productUtil->num_uf($transaction_data['discount_amount'], $currency_details) / $exchange_rate, 4);
             } elseif ($transaction_data['discount_type'] == 'percentage') {
                 $transaction_data['discount_amount'] = $this->productUtil->num_uf($transaction_data['discount_amount'], $currency_details);
             } else {
                 $transaction_data['discount_amount'] = 0;
             }
 
-            $transaction_data['tax_amount'] = round($this->productUtil->num_uf($transaction_data['tax_amount'], $currency_details) / $exchange_rate, 2);
-            $transaction_data['shipping_charges'] = round($this->productUtil->num_uf($transaction_data['shipping_charges'], $currency_details) / $exchange_rate, 2);
-            $transaction_data['final_total'] = round($this->productUtil->num_uf($transaction_data['final_total'], $currency_details) / $exchange_rate,2);
+            $transaction_data['tax_amount'] = round($this->productUtil->num_uf($transaction_data['tax_amount'], $currency_details) / $exchange_rate, 4);
+            $transaction_data['shipping_charges'] = round($this->productUtil->num_uf($transaction_data['shipping_charges'], $currency_details) / $exchange_rate, 4);
+            $transaction_data['final_total'] = round($this->productUtil->num_uf($transaction_data['final_total'], $currency_details) / $exchange_rate, 4);
             $transaction_data['business_id'] = $business_id;
             $transaction_data['created_by'] = $user_id;
             $transaction_data['type'] = 'purchase';
@@ -372,22 +372,22 @@ class PurchaseController extends Controller
 
             if ($request->input('additional_expense_value_1') != '') {
                 $transaction_data['additional_expense_key_1'] = $request->input('additional_expense_key_1');
-                $transaction_data['additional_expense_value_1'] = round($this->productUtil->num_uf($request->input('additional_expense_value_1'), $currency_details) / $exchange_rate,2);
+                $transaction_data['additional_expense_value_1'] = round($this->productUtil->num_uf($request->input('additional_expense_value_1'), $currency_details) / $exchange_rate, 4);
             }
 
             if ($request->input('additional_expense_value_2') != '') {
                 $transaction_data['additional_expense_key_2'] = $request->input('additional_expense_key_2');
-                $transaction_data['additional_expense_value_2'] = round($this->productUtil->num_uf($request->input('additional_expense_value_2'), $currency_details) / $exchange_rate,2);
+                $transaction_data['additional_expense_value_2'] = round($this->productUtil->num_uf($request->input('additional_expense_value_2'), $currency_details) / $exchange_rate, 4);
             }
 
             if ($request->input('additional_expense_value_3') != '') {
                 $transaction_data['additional_expense_key_3'] = $request->input('additional_expense_key_3');
-                $transaction_data['additional_expense_value_3'] = round($this->productUtil->num_uf($request->input('additional_expense_value_3'), $currency_details) / $exchange_rate,2);
+                $transaction_data['additional_expense_value_3'] = round($this->productUtil->num_uf($request->input('additional_expense_value_3'), $currency_details) / $exchange_rate, 4);
             }
 
             if ($request->input('additional_expense_value_4') != '') {
                 $transaction_data['additional_expense_key_4'] = $request->input('additional_expense_key_4');
-                $transaction_data['additional_expense_value_4'] = round($this->productUtil->num_uf($request->input('additional_expense_value_4'), $currency_details) / $exchange_rate,2);
+                $transaction_data['additional_expense_value_4'] = round($this->productUtil->num_uf($request->input('additional_expense_value_4'), $currency_details) / $exchange_rate, 4);
             }
 
             DB::beginTransaction();
@@ -441,9 +441,9 @@ class PurchaseController extends Controller
      */
     public function show($id)
     {
-        // if (!auth()->user()->can('purchase.view')) {
-        //     abort(403, 'Unauthorized action.');
-        // }
+        if (!auth()->user()->can('purchase.view')) {
+            abort(403, 'Unauthorized action.');
+        }
 
         $business_id = request()->session()->get('user.business_id');
         $taxes = TaxRate::where('business_id', $business_id)
@@ -513,8 +513,10 @@ class PurchaseController extends Controller
 
         $statuses = $this->productUtil->orderStatuses();
 
+        $currency_details = $this->transactionUtil->currencyDetails($business_id,  $purchase->currency_id, $purchase->exchange_rate);
+
         return view('purchase.show')
-                ->with(compact('line_taxes','taxes', 'purchase', 'payment_methods', 'purchase_taxes', 'activities', 'statuses', 'purchase_order_nos', 'purchase_order_dates'));
+                ->with(compact('currency_details','line_taxes','taxes', 'purchase', 'payment_methods', 'purchase_taxes', 'activities', 'statuses', 'purchase_order_nos', 'purchase_order_dates'));
     }
 
     /**
@@ -695,20 +697,20 @@ class PurchaseController extends Controller
             $update_data['transaction_date'] = $this->productUtil->uf_date($update_data['transaction_date'], true);
 
             //unformat input values
-            $update_data['total_before_tax'] = round($this->productUtil->num_uf($update_data['total_before_tax'], $currency_details) / $exchange_rate,2);
+            $update_data['total_before_tax'] = round($this->productUtil->num_uf($update_data['total_before_tax'], $currency_details) / $exchange_rate, 4);
             
             // If discount type is fixed them multiply by exchange rate, else don't
             if ($update_data['discount_type'] == 'fixed') {
-                $update_data['discount_amount'] = round($this->productUtil->num_uf($update_data['discount_amount'], $currency_details) / $exchange_rate,2);
+                $update_data['discount_amount'] = round($this->productUtil->num_uf($update_data['discount_amount'], $currency_details) / $exchange_rate, 4);
             } elseif ($update_data['discount_type'] == 'percentage') {
                 $update_data['discount_amount'] = $this->productUtil->num_uf($update_data['discount_amount'], $currency_details);
             } else {
                 $update_data['discount_amount'] = 0;
             }
 
-            $update_data['tax_amount'] = round($this->productUtil->num_uf($update_data['tax_amount'], $currency_details) / $exchange_rate , 2);
-            $update_data['shipping_charges'] = round($this->productUtil->num_uf($update_data['shipping_charges'], $currency_details) / $exchange_rate , 2);
-            $update_data['final_total'] = round($this->productUtil->num_uf($update_data['final_total'], $currency_details) / $exchange_rate , 2);
+            $update_data['tax_amount'] = round($this->productUtil->num_uf($update_data['tax_amount'], $currency_details) / $exchange_rate , 4);
+            $update_data['shipping_charges'] = round($this->productUtil->num_uf($update_data['shipping_charges'], $currency_details) / $exchange_rate , 4);
+            $update_data['final_total'] = round($this->productUtil->num_uf($update_data['final_total'], $currency_details) / $exchange_rate , 4);
             //unformat input values ends
 
             $update_data['custom_field_1'] = $request->input('custom_field_1', null);
@@ -1343,8 +1345,7 @@ class PurchaseController extends Controller
     {
         try {
             $business_id = request()->session()->get('user.business_id');
-            $taxes = TaxRate::where('business_id', $business_id)
-                                ->pluck('name', 'id');
+            $taxes = TaxRate::where('business_id', $business_id)->pluck('name', 'id');
             $purchase = Transaction::where('business_id', $business_id)
                                     ->where('id', $id)
                                     ->with(
@@ -1357,6 +1358,7 @@ class PurchaseController extends Controller
                                         'payment_lines'
                                     )
                                     ->first();
+
             $payment_methods = $this->productUtil->payment_types(null, false, $business_id);
 
             // new line add from show function to show purchase text
@@ -1369,10 +1371,19 @@ class PurchaseController extends Controller
                 }
             }
 
+            $line_taxes = [];
             foreach ($purchase->purchase_lines as $key => $value) {
                 if (! empty($value->sub_unit_id)) {
                     $formated_purchase_line = $this->productUtil->changePurchaseLineUnit($value, $business_id);
                     $purchase->purchase_lines[$key] = $formated_purchase_line;
+                }
+
+                if (! empty($taxes[$value->tax_id])) {
+                    if (isset($line_taxes[$taxes[$value->tax_id]])) {
+                        $line_taxes[$taxes[$value->tax_id]] += ($value->item_tax * $value->quantity);
+                    } else {
+                        $line_taxes[$taxes[$value->tax_id]] = ($value->item_tax * $value->quantity);
+                    }
                 }
             }
 
@@ -1390,11 +1401,12 @@ class PurchaseController extends Controller
                 $purchase_order_dates = implode(', ', $order_dates);
             }
 
+            $currency_details = $this->transactionUtil->currencyDetails($business_id,$purchase->currency_id, $purchase->exchange_rate);
+
             $output = ['success' => 1, 'receipt' => [], 'print_title' => $purchase->ref_no];
-            $output['receipt']['html_content'] = view('purchase.partials.show_details', compact('taxes', 'purchase', 'payment_methods', 'purchase_order_nos', 'purchase_order_dates', 'purchase_taxes'))->render();
+            $output['receipt']['html_content'] = view('purchase.partials.print_invoice', compact('currency_details','line_taxes','taxes', 'purchase', 'payment_methods', 'purchase_order_nos', 'purchase_order_dates', 'purchase_taxes'))->render();
         } catch (\Exception $e) {
             \Log::emergency('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
-
             $output = ['success' => 0,
                 'msg' => __('messages.something_went_wrong'),
             ];

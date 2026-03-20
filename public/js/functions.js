@@ -68,6 +68,41 @@ function __tab_key_up(e) {
     }
 }
 
+// function __currency_trans_from_en(
+//     input,
+//     show_symbol = true,
+//     use_page_currency = false,
+//     precision = __currency_precision,
+//     is_quantity = false
+// ) {
+//     if (use_page_currency && __p_currency_symbol) {
+//         var s = __p_currency_symbol;
+//         var thousand = __p_currency_thousand_separator;
+//         var decimal = __p_currency_decimal_separator;
+//     } else {
+//         var s = __currency_symbol;
+//         var thousand = __currency_thousand_separator;
+//         var decimal = __currency_decimal_separator;
+//     }
+
+//     symbol = '';
+//     var format = '%s%v';
+//     if (show_symbol) {
+//         symbol = s;
+//         format = '%s %v';
+//         if (__currency_symbol_placement == 'after') {
+//             format = '%v %s';
+//         }
+//     }
+
+//     if (is_quantity) {
+//         precision = __quantity_precision;
+//     }
+
+//     return accounting.formatMoney(input, symbol, precision, thousand, decimal, format);
+// }
+
+
 function __currency_trans_from_en(
     input,
     show_symbol = true,
@@ -75,21 +110,30 @@ function __currency_trans_from_en(
     precision = __currency_precision,
     is_quantity = false
 ) {
-    if (use_page_currency && __p_currency_symbol) {
-        var s = __p_currency_symbol;
-        var thousand = __p_currency_thousand_separator;
-        var decimal = __p_currency_decimal_separator;
+    let s, thousand, decimal;
+
+    if (
+        use_page_currency &&
+        typeof __p_currency_symbol !== 'undefined' &&
+        typeof __p_currency_thousand_separator !== 'undefined' &&
+        typeof __p_currency_decimal_separator !== 'undefined'
+    ) {
+        s = __p_currency_symbol;
+        thousand = __p_currency_thousand_separator;
+        decimal = __p_currency_decimal_separator;
     } else {
-        var s = __currency_symbol;
-        var thousand = __currency_thousand_separator;
-        var decimal = __currency_decimal_separator;
+        s = __currency_symbol;
+        thousand = __currency_thousand_separator;
+        decimal = __currency_decimal_separator;
     }
 
-    symbol = '';
-    var format = '%s%v';
+    let symbol = '';
+    let format = '%s%v';
+
     if (show_symbol) {
         symbol = s;
         format = '%s %v';
+
         if (__currency_symbol_placement == 'after') {
             format = '%v %s';
         }
@@ -115,6 +159,9 @@ function __currency_convert_recursively(element, use_page_currency = false) {
         //value will be over written 
         if (typeof $(this).data('use_page_currency') !== 'undefined') {
             use_page_currency = $(this).data('use_page_currency');
+
+            console.log('Dante');
+            console.log(use_page_currency);
         }
 
         var highlight = $(this).data('highlight');

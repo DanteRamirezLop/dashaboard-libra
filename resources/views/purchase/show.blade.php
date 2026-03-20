@@ -1,4 +1,9 @@
-<div class="modal-dialog modal-xl" role="document">
+<div class="modal-dialog modal-xl purchase-detail-modal" role="document"
+    data-currency_code="{{ $currency_details->code ?? '' }}"
+    data-currency_symbol="{{ $currency_details->symbol ?? '' }}"
+    data-currency_thousand="{{ $currency_details->thousand_separator ?? ',' }}"
+    data-currency_decimal="{{ $currency_details->decimal_separator ?? '.' }}">
+
   <div class="modal-content">
     @include('purchase.partials.show_details')
     <div class="modal-footer">
@@ -10,9 +15,14 @@
   </div>
 </div>
 
-<script type="text/javascript">
-	$(document).ready(function(){
-		var element = $('div.modal-xl');
-		__currency_convert_recursively(element);
-	});
+<script>
+$(document).ready(function () {
+    var element = $('div.modal-xl');
+
+    window.__p_currency_symbol = element.data('currency_symbol');
+    window.__p_currency_thousand_separator = element.data('currency_thousand');
+    window.__p_currency_decimal_separator = element.data('currency_decimal');
+
+    __currency_convert_recursively(element, true);
+});
 </script>

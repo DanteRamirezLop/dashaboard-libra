@@ -26,7 +26,7 @@
 			<div class="col-sm-3">
 				<div class="form-group">
 					{!! Form::label('currency_id', 'Moneda'.':*') !!}
-					{!! Form::select('currency_id',[''=>'Dolar (USD)','94'=>'Sol (PE)'], $currency_details->currency_id, ['class' => 'form-control', 'required']); !!}
+					{!! Form::select('currency_id',['2'=>'Dolar (USD)','94'=>'Sol (PE)'], $currency_details->currency_id, ['class' => 'form-control', 'required']); !!}
 				</div>
 			</div>
 
@@ -555,12 +555,11 @@
 				window.onbeforeunload = null; 
 				var valor = $(this).val();
 				var url = new URL(window.location.href);
-				if(valor !== ''){
-					url.searchParams.set('currency', valor); // nombre del parámetro
+				if(valor == '' || valor == 2 ){
+					url.searchParams.delete('currency');
 					window.location.href = url.toString();
 				}else{
-					// eliminar el parámetro
-					url.searchParams.delete('currency');
+					url.searchParams.set('currency', valor); // nombre del parámetro
 					window.location.href = url.toString();
 				}
 			});

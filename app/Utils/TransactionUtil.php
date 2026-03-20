@@ -751,12 +751,26 @@ class TransactionUtil extends Util
                         $paid_on = \Carbon::now()->toDateTimeString();
                     }
 
-                    $is_different_base_currency = isset($payment['diff_currency']) ? $payment['diff_currency'] : null;
-                    if($is_different_base_currency){
-                        $exchange_rate = $transaction->exchange_rate; //Si la venta es en soles el tipo de cambio es el mismo en la transaccion y el pago
-                        $payment_amount = round($payment_amount / $exchange_rate,2);
+                    $diff_currency = empty($payment['diff_currency']) ? false : true;
+                    if($diff_currency){
+                        //Soles u otra moneda
+                        $is_differente_pay_transacction  = isset($payment['exchange_rate_sell']) ? true : false;
+                        if($is_differente_pay_transacction){
+                            $exchange_rate = $payment['exchange_rate_sell'];  // La compra es en soles y se esta pagando en dolares
+                            $payment_amount = round($payment_amount / $exchange_rate,2);
+                            $exchange_rate = 1;
+                        }else{
+                            $exchange_rate = $transaction->exchange_rate; //La compra es soles y se esta pagando en soloes - por eso el tipo de cambio del la trasaccion y el pago es el mismo
+                            $payment_amount = round($payment_amount / $exchange_rate,2);
+                        }
                     }else{
-                        $exchange_rate = isset($payment['exchange_rate_sell']) ? $payment['exchange_rate_sell'] : null;
+                        //Dolares
+                         $is_differente_pay_transacction  = isset($payment['exchange_rate_sell']) ? true : false;
+                         if($is_differente_pay_transacction){
+                            $exchange_rate = $payment['exchange_rate_sell'];  //la compra en dolares y se esta pagando en soles
+                        }else{
+                            $exchange_rate = 1; //la compra es en dolares y se esta pagando en dolares
+                         }
                     }
 
                     $payment_data = [

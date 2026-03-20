@@ -228,7 +228,6 @@
               $line_item_tax = $purchase_line->item_tax * $currency_factor;
               $line_purchase_price_inc_tax = $purchase_line->purchase_price_inc_tax * $currency_factor;
               $line_subtotal_inc_tax = ($purchase_line->purchase_price_inc_tax * $purchase_line->quantity) * $currency_factor;
-
               $total_before_tax += $line_subtotal_before_tax;
             @endphp
 
@@ -253,9 +252,10 @@
 
               @if($purchase->type == 'purchase_order')
                 <td>
-                  <span class="display_currency" data-is_quantity="true" data-currency_symbol="false">
-                    {{ $purchase_line->quantity - $purchase_line->po_quantity_purchased }}
+                  <span>
+                    @format_currency(($purchase_line->quantity - $purchase_line->po_quantity_purchased), $currency_details)
                   </span>
+
                   @if(!empty($purchase_line->actual_name))
                     {{$purchase_line->sub_unit->actual_name}}
                   @else
@@ -265,9 +265,10 @@
               @endif
 
               <td>
-                <span class="display_currency" data-is_quantity="true" data-currency_symbol="false">
-                  {{ $purchase_line->quantity }}
+                <span>
+                  @format_currency($purchase_line->quantity, $currency_details)
                 </span>
+
                 @if(!empty($purchase_line->sub_unit))
                   {{$purchase_line->sub_unit->actual_name}}
                 @else
@@ -284,31 +285,32 @@
 
                 @if(!empty($purchase_line->product->second_unit) && $purchase_line->secondary_unit_quantity != 0)
                   <br>
-                  <span class="display_currency" data-is_quantity="true" data-currency_symbol="false">
-                    {{ $purchase_line->secondary_unit_quantity }}
+                  <span>
+                     @format_currency( $purchase_line->secondary_unit_quantity, $currency_details)
                   </span>
+
                   {{$purchase_line->product->second_unit->actual_name}}
                 @endif
               </td>
 
               <td class="text-right">
-                <span class="display_currency" data-currency_symbol="true">{{ $line_pp_without_discount }}</span>
+                    @format_currency($line_pp_without_discount, $currency_details)
               </td>
 
               <td class="text-right">
-                <span class="display_currency">{{ $purchase_line->discount_percent }}</span> %
+                   @format_currency($purchase_line->discount_percent, $currency_details) %
               </td>
 
               <td class="no-print text-right">
-                <span class="display_currency" data-currency_symbol="true">{{ $line_purchase_price }}</span>
+                   @format_currency($line_purchase_price, $currency_details)
               </td>
 
               <td class="no-print text-right">
-                <span class="display_currency" data-currency_symbol="true">{{ $line_subtotal_before_tax }}</span>
+                  @format_currency($line_subtotal_before_tax, $currency_details)
               </td>
 
               <td class="text-right">
-                <span class="display_currency" data-currency_symbol="true">{{ $line_item_tax }}</span>
+                  @format_currency($line_item_tax, $currency_details)
                 <br/>
                 <small>
                   @if(!empty($taxes[$purchase_line->tax_id]))
@@ -318,7 +320,7 @@
               </td>
 
               <td class="text-right">
-                <span class="display_currency" data-currency_symbol="true">{{ $line_purchase_price_inc_tax }}</span>
+                 @format_currency($line_purchase_price_inc_tax, $currency_details)
               </td>
 
               @if($purchase->type != 'purchase_order')
@@ -341,7 +343,7 @@
               @endif
 
               <td class="text-right">
-                <span class="display_currency" data-currency_symbol="true">{{ $line_subtotal_inc_tax }}</span>
+                 @format_currency($line_subtotal_inc_tax, $currency_details)
               </td>
             </tr>
           @endforeach
@@ -386,14 +388,12 @@
                 <td>{{ @format_date($payment_line->paid_on) }}</td>
                 <td>{{ $payment_line->payment_ref_no }}</td>
                 <td>
-                  <span class="display_currency" data-currency_symbol="true">{{ $payment_amount_converted }}</span>
+                   @format_currency($payment_amount_converted, $currency_details)
                 </td>
-
                 <td>
                    Se cancelo {{$payment_line->amount * $payment_line->exchange_rate}}
                    {{$payment_line->currency->currency}}
                 </td>
-
                 <td>{{ $payment_methods[$payment_line->method] ?? '' }}</td>
                 <td>
                   @if($payment_line->note)
@@ -422,7 +422,9 @@
             <th>@lang('purchase.net_total_amount'):</th>
             <td></td>
             <td>
-              <span class="display_currency pull-right" data-currency_symbol="true">{{ $total_before_tax }}</span>
+                <span class="pull-right">
+                    @format_currency($total_before_tax, $currency_details)
+                </span>
             </td>
           </tr>
 
@@ -435,11 +437,11 @@
               @endif
             </td>
             <td>
-              <span class="display_currency pull-right" data-currency_symbol="true">
+              <span class="pull-right">
                 @if($purchase->discount_type == 'percentage')
-                  {{ (($purchase->discount_amount * $purchase->total_before_tax) / 100) * $currency_factor }}
+                    @format_currency(((($purchase->discount_amount * $purchase->total_before_tax) / 100) * $currency_factor) , $currency_details)
                 @else
-                  {{ $purchase->discount_amount * $currency_factor }}
+                    @format_currency($purchase->discount_amount * $currency_factor, $currency_details)
                 @endif
               </span>
             </td>
@@ -453,7 +455,9 @@
                 @if(!empty($line_taxes))
                   @foreach($line_taxes as $k => $v)
                     <strong><small>{{$k}}</small></strong>
-                    <span class="display_currency pull-right" data-currency_symbol="true">{{ $v * $currency_factor }}</span><br>
+                    <span class="pull-right">
+                        @format_currency(($v * $currency_factor), $currency_details)
+                    </span><br>
                   @endforeach
                 @else
                   0.00
@@ -467,7 +471,7 @@
               <th>@lang('purchase.additional_shipping_charges'):</th>
               <td><b>(+)</b></td>
               <td>
-                <span class="display_currency pull-right">{{ $purchase->shipping_charges * $currency_factor }}</span>
+                 @format_currency(($purchase->shipping_charges * $currency_factor), $currency_details)
               </td>
             </tr>
           @endif
@@ -477,7 +481,7 @@
               <th>{{ $purchase->additional_expense_key_1 }}:</th>
               <td><b>(+)</b></td>
               <td>
-                <span class="display_currency pull-right">{{ $purchase->additional_expense_value_1 * $currency_factor }}</span>
+                 @format_currency(($purchase->additional_expense_value_1 * $currency_factor), $currency_details)
               </td>
             </tr>
           @endif

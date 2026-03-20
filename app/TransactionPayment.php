@@ -114,4 +114,10 @@ class TransactionPayment extends Model
     {
         return $this->morphMany(\App\CashDenomination::class, 'model');
     }
+
+
+    public function currency(){
+          return $this->belongsTo(\App\Currency::class);
+    }
+
 }

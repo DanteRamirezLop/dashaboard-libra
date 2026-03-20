@@ -622,12 +622,11 @@
 				window.onbeforeunload = null; 
 				var valor = $(this).val();
 				var url = new URL(window.location.href);
-				if(valor !== ''){
-					url.searchParams.set('currency', valor); // nombre del parámetro
+				if(valor == '' || valor == 2 ){
+					url.searchParams.delete('currency');
 					window.location.href = url.toString();
 				}else{
-					// eliminar el parámetro
-					url.searchParams.delete('currency');
+					url.searchParams.set('currency', valor); // nombre del parámetro
 					window.location.href = url.toString();
 				}
 			});
@@ -643,10 +642,12 @@
 					if(p_currency_id == payment_currency_id){
 						console.log('la moneda es igual en la transaccion y el pago');
 						$('.payment-amount').prop('readonly',false);
+						exchange_rate_for_payment.prop('disabled', true);
 						exchange_rate_for_payment.addClass('hide');
 					}else{
 						console.log('la moneda es diferente en la transaccion y el pago');
 						$('.payment-amount').prop('readonly',true);
+						exchange_rate_for_payment.prop('disabled', false);
 						exchange_rate_for_payment.removeClass('hide');
 					}
 				}else{
@@ -654,6 +655,7 @@
 					if(p_currency_id == payment_currency_id){
 						console.log('la moneda es igual en la transaccion y el pago');
 						$('.payment-amount').prop('readonly',false);
+						exchange_rate_for_payment.prop('disabled', true);
 						exchange_rate_for_payment.addClass('hide');
 
 					}else{
@@ -663,6 +665,7 @@
 						$('#exchange_rate_sell').prop('readonly',true);
 						$('#amount_to_change').prop('readonly',false);
 						$('.payment-amount').prop('readonly',true);
+						exchange_rate_for_payment.prop('disabled', false);
 						exchange_rate_for_payment.removeClass('hide');
 					}
 				}

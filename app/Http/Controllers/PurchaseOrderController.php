@@ -170,7 +170,7 @@ class PurchaseOrderController extends Controller
                     if (auth()->user()->can('purchase_order.view_all') || auth()->user()->can('purchase_order.view_own')) {
                         $html .= '<li><a href="#" data-href="'.action([\App\Http\Controllers\PurchaseOrderController::class, 'show'], [$row->id]).'" class="btn-modal" data-container=".view_modal"><i class="fas fa-eye" aria-hidden="true"></i>'.__('messages.view').'</a></li>';
 
-                        $html .= '<li><a href="#" class="print-invoice" data-href="'.action([\App\Http\Controllers\PurchaseController::class, 'printInvoice'], [$row->id]).'"><i class="fas fa-print" aria-hidden="true"></i>'.__('messages.print').'</a></li>';
+                        // $html .= '<li><a href="#" class="print-invoice" data-href="'.action([\App\Http\Controllers\PurchaseController::class, 'printInvoice'], [$row->id]).'"><i class="fas fa-print" aria-hidden="true"></i>'.__('messages.print').'</a></li>';
                     }
                     if ((auth()->user()->can('purchase_order.view_all') || auth()->user()->can('purchase_order.view_own'))) {
                         $html .= '<li><a href="'.route('purchaseOrder.downloadPdf', [$row->id]).'" target="_blank"><i class="fas fa-print" aria-hidden="true"></i> '.__('lang_v1.download_pdf').'</a></li>';
@@ -374,7 +374,6 @@ class PurchaseOrderController extends Controller
             $user_id = $request->session()->get('user.id');
             $enable_product_editing = $request->session()->get('business.enable_editing_product_from_purchase');
 
-            
             $currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
 
             //unformat input values
@@ -482,8 +481,7 @@ class PurchaseOrderController extends Controller
         }
 
         $business_id = request()->session()->get('user.business_id');
-        $taxes = TaxRate::where('business_id', $business_id)
-                            ->pluck('name', 'id');
+        $taxes = TaxRate::where('business_id', $business_id)->pluck('name', 'id');
         $query = Transaction::where('business_id', $business_id)
                                 ->where('id', $id)
                                 ->with(
@@ -497,16 +495,26 @@ class PurchaseOrderController extends Controller
                                     'location',
                                     'tax'
                                 );
+
         if (! auth()->user()->can('purchase_order.view_all') && auth()->user()->can('purchase_order.view_own')) {
             $query->where('transactions.created_by', request()->session()->get('user.id'));
         }
 
         $purchase = $query->firstOrFail();
 
+        $line_taxes = [];
         foreach ($purchase->purchase_lines as $key => $value) {
             if (! empty($value->sub_unit_id)) {
                 $formated_purchase_line = $this->productUtil->changePurchaseLineUnit($value, $business_id);
                 $purchase->purchase_lines[$key] = $formated_purchase_line;
+            }
+
+            if (! empty($taxes[$value->tax_id])) {
+                if (isset($line_taxes[$taxes[$value->tax_id]])) {
+                    $line_taxes[$taxes[$value->tax_id]] += ($value->item_tax * $value->quantity);
+                } else {
+                    $line_taxes[$taxes[$value->tax_id]] = ($value->item_tax * $value->quantity);
+                }
             }
         }
 
@@ -528,8 +536,10 @@ class PurchaseOrderController extends Controller
         $status_color_in_activity = $this->purchaseOrderStatuses;
         $po_statuses = $this->purchaseOrderStatuses;
 
+        $currency_details = $this->transactionUtil->currencyDetails($business_id,  $purchase->currency_id, $purchase->exchange_rate);
+
         return view('purchase_order.show')
-                ->with(compact('taxes', 'purchase', 'purchase_taxes', 'activities', 'shipping_statuses', 'status_color_in_activity', 'po_statuses'));
+                ->with(compact('currency_details','line_taxes','taxes', 'purchase', 'purchase_taxes', 'activities', 'shipping_statuses', 'status_color_in_activity', 'po_statuses'));
     }
 
     /**
@@ -548,8 +558,6 @@ class PurchaseOrderController extends Controller
         $business_id = request()->session()->get('user.business_id');
 
         $business = Business::find($business_id);
-
-        //$currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
 
         $taxes = TaxRate::where('business_id', $business_id)
                             ->ExcludeForTaxGroup()
@@ -582,10 +590,7 @@ class PurchaseOrderController extends Controller
             }
         }
 
-        //ESTO SE P
         //Determinar la moneda de la compra - transaccion
-        //$currency_change_id = $business->purchase_currency_id; 
-        //$currency_id = ($purchase->exchange_rate == 1) ? 0 : $currency_change_id; //Si el tipo de cambio es 1 entonces se usa la moneda base 
         $currency_details = $this->transactionUtil->currencyDetails($business_id,  $purchase->currency_id, $purchase->exchange_rate);
         $business_locations = BusinessLocation::forDropdown($business_id);
 
@@ -852,7 +857,6 @@ class PurchaseOrderController extends Controller
 
         $business_id = request()->session()->get('user.business_id');
         $taxes = TaxRate::where('business_id', $business_id)->pluck('name','id');
-        
         $purchase = Transaction::where('business_id', $business_id)
                     ->where('id', $id)
                     ->with(
@@ -878,8 +882,6 @@ class PurchaseOrderController extends Controller
         $date_delivery = $purchase->delivery_date ? Carbon::parse($purchase->delivery_date)->format('d/m/Y') : null;
         //Texto de Dolares -tax
         $amount = $purchase->final_total;
-        //$text_amount = $this->montoATexto($amount, 'USD');
-
         //Obtener rentencion de 3% 
         $is_currency_base =  ($purchase->exchange_rate == 1)? true : false;
         if($is_currency_base){
@@ -901,10 +903,6 @@ class PurchaseOrderController extends Controller
             $three_percent_withholding =  ($purchase->final_total >= $seven_hundred_usa) ? $three_percente : 0;
         }
         //Determinar la moneda de la compra - transaccion
-        //$currency_change_id = Business::find($business_id)->purchase_currency_id; 
-        //$currency_id = ($purchase->exchange_rate == 1) ? 0 : $currency_change_id; //Si el tipo de cambio es 1 entonces se usa la moneda base 
-        //$currency_details = $this->transactionUtil->currencyDetails($business_id, $currency_id, $purchase->exchange_rate);
-
         $currency_details = $this->transactionUtil->currencyDetails($business_id,$purchase->currency_id, $purchase->exchange_rate);
         //Generate pdf 
         $pdf = Pdf::set_option('isRemoteEnabled', true)->loadView('purchase_order.receipts.download',compact('exchange_rate_purchase','three_percent_withholding','taxes','location_details','date_delivery','date_release','purchase', 'invoice_layout', 'date_print','currency_details'));

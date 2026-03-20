@@ -124,7 +124,10 @@
 			</div>
 		</div>
 
-		<div id="exchange_rate_for_payment" class="col-md-8 hide">
+	
+		
+
+		<fieldset id="exchange_rate_for_payment" class="col-md-8 hide" disabled>
 			<div class="row">
 				<div class="col-md-6 ">
 					<div class="form-group">
@@ -149,10 +152,11 @@
 					</div>
 				</div>
 			</div>
-		</div>
+		</fieldset>
+		
 
 		<div class="@if(!$currency_details->purchase_in_diff_currency) hide @endif">
-			{!! Form::hidden("payment[$row_index][diff_currency]", 1); !!}
+			{!! Form::hidden("payment[$row_index][diff_currency]", $currency_details->purchase_in_diff_currency); !!}
 		</div>
 	<!-- FIN  -->
 

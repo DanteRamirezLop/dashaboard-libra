@@ -60,4 +60,5 @@
      'shipping' => 'Transporte',
      'shipping_details' => 'Detalles de envío',
      'shipping_charges' => 'Gastos de envío',
+     'amount_paid' => 'Cantidad pagada',
  ];
