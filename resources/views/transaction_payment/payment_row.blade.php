@@ -8,7 +8,7 @@
     @endif
     <div class="modal-header">
       <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-      <h4 class="modal-title">@lang( 'purchase.add_payment' )</h4>
+      <h4 class="modal-title">@lang( 'purchase.add_payment' ) </h4>
     </div>
 
     <div class="modal-body">
@@ -125,8 +125,8 @@
         </fieldset>
 
         {{-- Contexto de moneda para purchase_currency.js --}}
-        <input type="hidden" class="js-p-currency-id" value="{{ $currency_details->currency_id }}">
-        <input type="hidden" class="js-diff-currency" value="{{ $currency_details->purchase_in_diff_currency ? '1' : '' }}">
+        <input type="hidden" name="js-p-currency-id" class="js-p-currency-id" value="{{ $currency_details->currency_id }}">
+        <input type="hidden" name="js-diff-currency" class="js-diff-currency" value="{{ $currency_details->purchase_in_diff_currency ? '1' : '' }}">
         <!-- FIN MONEDA -->
 
         <div class="col-md-4">

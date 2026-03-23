@@ -134,6 +134,11 @@ var PurchaseCurrency = (function () {
                 ? $container.find('.payment-amount, .payment_amount')
                 : $('.payment-amount, .payment_amount');
 
+            // Si se selecciona Soles (94), resetear el monto a 0
+            //if ($this.val() == 94) {
+                $amountField.val(0);
+            //}
+
             if (sameAsPage) {
                 $amountField.prop('readonly', false);
                 _toggleExchangeRateSection($container.length ? $container : $(document), false);
@@ -150,7 +155,7 @@ var PurchaseCurrency = (function () {
                         ? $container.find('#exchange_rate_sell')
                         : $('#exchange_rate_sell');
 
-                    $rateField.val(txRate).prop('readonly', true);
+                    $rateField.prop('readonly', true);
                     $container.find('#amount_to_change').prop('readonly', false);
                 }
             }
@@ -175,6 +180,7 @@ var PurchaseCurrency = (function () {
      */
     function _onAmountToChangeInput() {
         $(document).on('input', '#amount_to_change', function () {
+
             var $this        = $(this);
             var state        = _getState($this);
             var $container   = $this.closest('.modal-content, .box-body, form');
