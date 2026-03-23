@@ -602,6 +602,7 @@
 @section('javascript')
 	<script src="{{ asset('js/purchase.js?v=' . $asset_v) }}"></script>
 	<script src="{{ asset('js/product.js?v=' . $asset_v) }}"></script>
+	<script src="{{ asset('js/purchase_currency.js?v=' . $asset_v) }}"></script>
 	<script type="text/javascript">
 		$(document).ready( function(){
       		__page_leave_confirmation('#add_purchase_form');
@@ -618,91 +619,8 @@
 				set_payment_type_dropdown();
 			});
 
-			$('#currency_id').on('change', function() {
-				window.onbeforeunload = null; 
-				var valor = $(this).val();
-				var url = new URL(window.location.href);
-				if(valor == '' || valor == 2 ){
-					url.searchParams.delete('currency');
-					window.location.href = url.toString();
-				}else{
-					url.searchParams.set('currency', valor); // nombre del parámetro
-					window.location.href = url.toString();
-				}
-			});
-
-			//Gestionar los pagos mixtos
-			$(document).on('change', '.currency_exchange_to_pay_dropdown', function(e) {
-				var diff_currency = $('#diff_currency').val();
-				var p_currency_id = $('#p_currency_id').val();
-				var payment_currency_id = $('.currency_exchange_to_pay_dropdown').val();
-				exchange_rate_for_payment = $("#exchange_rate_for_payment");
-				if(diff_currency === ''){
-					console.log('La transaccion es la moneda base - Dolares');
-					if(p_currency_id == payment_currency_id){
-						console.log('la moneda es igual en la transaccion y el pago');
-						$('.payment-amount').prop('readonly',false);
-						exchange_rate_for_payment.prop('disabled', true);
-						exchange_rate_for_payment.addClass('hide');
-					}else{
-						console.log('la moneda es diferente en la transaccion y el pago');
-						$('.payment-amount').prop('readonly',true);
-						exchange_rate_for_payment.prop('disabled', false);
-						exchange_rate_for_payment.removeClass('hide');
-					}
-				}else{
-					console.log('la transasccion no es en la moneda base -  Soles');
-					if(p_currency_id == payment_currency_id){
-						console.log('la moneda es igual en la transaccion y el pago');
-						$('.payment-amount').prop('readonly',false);
-						exchange_rate_for_payment.prop('disabled', true);
-						exchange_rate_for_payment.addClass('hide');
-
-					}else{
-						console.log('la moneda es diferente en la transaccion y el pago');
-						var exchange_rate = $('#exchange_rate').val();
-						$('#exchange_rate_sell').val(exchange_rate) ;
-						$('#exchange_rate_sell').prop('readonly',true);
-						$('#amount_to_change').prop('readonly',false);
-						$('.payment-amount').prop('readonly',true);
-						exchange_rate_for_payment.prop('disabled', false);
-						exchange_rate_for_payment.removeClass('hide');
-					}
-				}
-			});
-
-			$('#exchange_rate').on('input',function(){
-				const amount = parseFloat($(this).val());
-				$('#exchange_rate_sell').val(amount);
-			})
-
-			//Calcular monto a pagar con tipo de cambio
-			$('#amount_to_change').on('input',function(){
-				const diff_currency = $('#diff_currency').val();
-				const exchange_rate_sell = $("#exchange_rate_sell").val();
-				const amount = parseFloat($(this).val());
-
-				if (isNaN(exchange_rate_sell) || isNaN(amount)) {
-					console.log('Ingresar valores');
-					return;
-				}
-
-				var amount_chagen = 0;
-				if(diff_currency == ''){
-					 amount_chagen = amount / exchange_rate_sell;
-				}else{
-					amount_chagen = amount * exchange_rate_sell;
-				}
-				
-				$('.payment-amount').val(amount_chagen.toFixed(3));
-				var payment = __number_uf(amount_chagen.toFixed(3),false);
-				var grand_total = __read_number($('input#grand_total_hidden'), true);
-				var bal = grand_total - payment;
-				if(bal > 0){
-					blas = 0;
-				}
-				$('#payment_due').text(__currency_trans_from_en(bal, true, true));
-			});
+			// Inicializar módulo de cambio de moneda
+			PurchaseCurrency.init();
 
     	});
     	$(document).on('change', '.payment_types_dropdown, #location_id', function(e) {

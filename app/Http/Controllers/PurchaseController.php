@@ -250,7 +250,6 @@ class PurchaseController extends Controller
         $business_locations = $business_locations['locations'];
 
         //*** CAMBIO DE MONEDA */
-        //$currency_change_id = Business::find($business_id)->purchase_currency_id;
         $currency_id = request()->get('currency');   
         $search_date = Carbon::now()->format('y-m-d');
         $exchange_rate = ExchangeRates::where('search_date',$search_date)->first();

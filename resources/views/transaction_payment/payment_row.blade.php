@@ -8,7 +8,7 @@
     @endif
     <div class="modal-header">
       <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-      <h4 class="modal-title">@lang( 'purchase.add_payment' ) </h4>
+      <h4 class="modal-title">@lang( 'purchase.add_payment' )</h4>
     </div>
 
     <div class="modal-body">
@@ -84,6 +84,51 @@
             </div>
           </div>
         </div>
+        <!-- MONEDA / TIPO DE CAMBIO -->
+        <div class="col-md-4">
+          <div class="form-group">
+            {!! Form::label('currency', 'Moneda' . ':*') !!}
+            <div class="input-group">
+              <span class="input-group-addon">
+                <i class="fas fa-money-bill-alt"></i>
+              </span>
+              {!! Form::select("currency_id", ['2' => 'Dolar (USD)', '94' => 'Sol (PE)'], $currency_details->currency_id, ['class' => 'form-control currency_exchange_to_pay_dropdown', 'required']); !!}
+            </div>
+          </div>
+        </div>
+
+        <fieldset id="exchange_rate_for_payment" class="col-md-8 hide" disabled>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                {!! Form::label('exchange_rate_sell', 'Tasa de cambio' . ':*') !!}
+                <div class="input-group">
+                  <span class="input-group-addon">
+                    <i class="fas fa-money-bill-alt"></i>
+                  </span>
+                  {!! Form::number("exchange_rate_sell", @number_format($exchange_rate, 3), ['id' => 'exchange_rate_sell', 'class' => 'form-control']); !!}
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                {!! Form::label("amount_to_change", 'Cantidad a cambiar' . ':*') !!}
+                <div class="input-group">
+                  <span class="input-group-addon">
+                    <i class="fas fa-money-bill-alt"></i>
+                  </span>
+                  {!! Form::text("amount_to_change", 0, ['class' => 'form-control']); !!}
+                </div>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
+        {{-- Contexto de moneda para purchase_currency.js --}}
+        <input type="hidden" class="js-p-currency-id" value="{{ $currency_details->currency_id }}">
+        <input type="hidden" class="js-diff-currency" value="{{ $currency_details->purchase_in_diff_currency ? '1' : '' }}">
+        <!-- FIN MONEDA -->
+
         <div class="col-md-4">
           <div class="form-group">
             {!! Form::label("amount" , __('sale.amount') . ':*') !!}

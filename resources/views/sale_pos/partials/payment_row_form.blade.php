@@ -111,7 +111,8 @@
             <div class="clearfix"></div>
         @endif
 
-	<!-- PAGOS mixtos  -->
+
+		<!-- PAGOS mixtos  -->
 		<div class="col-md-4">
 			<div class="form-group">
 				{!! Form::label('currency', 'Moneda' . ':*') !!} 
@@ -123,9 +124,6 @@
 				</div>
 			</div>
 		</div>
-
-	
-		
 
 		<fieldset id="exchange_rate_for_payment" class="col-md-8 hide" disabled>
 			<div class="row">

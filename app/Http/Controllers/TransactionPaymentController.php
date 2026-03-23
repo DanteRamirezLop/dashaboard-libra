@@ -6,10 +6,12 @@ use App\Contact;
 use App\Events\TransactionPaymentAdded;
 use App\Events\TransactionPaymentUpdated;
 use App\Exceptions\AdvanceBalanceNotAvailable;
+use App\ExchangeRates;
 use App\Transaction;
 use App\TransactionPayment;
 use App\Utils\ModuleUtil;
 use App\Utils\TransactionUtil;
+use Carbon\Carbon;
 use Datatables;
 use DB;
 use Illuminate\Http\Request;
@@ -58,6 +60,8 @@ class TransactionPaymentController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
+
+ 
     public function store(Request $request)
     {
         try {
@@ -74,7 +78,7 @@ class TransactionPaymentController extends Controller
             if ($transaction->payment_status != 'paid') {
                 $inputs = $request->only(['amount', 'method', 'note', 'card_number', 'card_holder_name',
                     'card_transaction_number', 'card_type', 'card_month', 'card_year', 'card_security',
-                    'cheque_number', 'bank_account_number', ]);
+                    'cheque_number', 'bank_account_number','exchange_rate_sell','js-diff-currency','currency_id' ]);
                 $inputs['paid_on'] = $this->transactionUtil->uf_date($request->input('paid_on'), true);
                 $inputs['transaction_id'] = $transaction->id;
                 $inputs['amount'] = $this->transactionUtil->num_uf($inputs['amount']);
@@ -114,6 +118,29 @@ class TransactionPaymentController extends Controller
                 $contact_balance = ! empty($transaction->contact) ? $transaction->contact->balance : 0;
                 if ($inputs['method'] == 'advance' && $inputs['amount'] > $contact_balance) {
                     throw new AdvanceBalanceNotAvailable(__('lang_v1.required_advance_balance_not_available'));
+                }
+
+                //Pago mixto
+                $diff_currency = empty($inputs['js-diff-currency']) ? false : true;
+                if($diff_currency){
+                    //Soles u otra moneda
+                    $is_differente_pay_transacction  = isset($inputs['exchange_rate_sell']) ? true : false;
+                    if($is_differente_pay_transacction){
+                        $exchange_rate = $inputs['exchange_rate_sell'];  // La compra es en soles y se esta pagando en dolares
+                        $inputs['amount'] = round($payment_amount / $exchange_rate,2);
+                        $inputs['exchange_rate'] = 1;
+                    }else{
+                       $inputs['amount'] = round($payment_amount /$transaction->exchange_rate,2);
+                        $inputs['exchange_rate'] = $transaction->exchange_rate; //La compra es soles y se esta pagando en soloes - por eso el tipo de cambio del la trasaccion y el pago es el mismo
+                    }
+                }else{
+                    //Dolares
+                    $is_differente_pay_transacction  = isset($inputs['exchange_rate_sell']) ? true : false;
+                    if($is_differente_pay_transacction){
+                        $inputs['exchange_rate'] = $inputs['exchange_rate_sell'];  //la compra en dolares y se esta pagando en soles
+                    }else{
+                        $inputs['exchange_rate'] = 1; //la compra es en dolares y se esta pagando en dolares
+                    }
                 }
 
                 if (! empty($inputs['amount'])) {
@@ -436,6 +463,7 @@ class TransactionPaymentController extends Controller
             $transaction = Transaction::where('business_id', $business_id)
                                         ->with(['contact', 'location'])
                                         ->findOrFail($transaction_id);
+
             if ($transaction->payment_status != 'paid') {
                 $show_advance = in_array($transaction->type, ['sell', 'purchase']) ? true : false;
                 $payment_types = $this->transactionUtil->payment_types($transaction->location, $show_advance);
@@ -456,8 +484,15 @@ class TransactionPaymentController extends Controller
                 //Accounts
                 $accounts = $this->moduleUtil->accountsDropdown($business_id, true, false, true);
 
-                $view = view('transaction_payment.payment_row')
-                ->with(compact('transaction', 'payment_types', 'payment_line', 'amount_formated', 'accounts'))->render();
+                // Tipo de cambio del día
+                $search_date = Carbon::now()->format('y-m-d');
+                $exchange_rate_record = ExchangeRates::where('search_date', $search_date)->first();
+                $exchange_rate = $exchange_rate_record ? $exchange_rate_record->sale : 1;
+                $currency_id = $transaction->currency_id;
+                $currency_details = $this->transactionUtil->currencyDetails($business_id, $currency_id, $exchange_rate);
+                //$currency_details = $this->transactionUtil->currencyDetails($business_id);
+           
+                $view = view('transaction_payment.payment_row')->with(compact('transaction', 'payment_types', 'payment_line', 'amount_formated', 'accounts', 'exchange_rate', 'currency_details'))->render();
 
                 $output = ['status' => 'due',
                     'view' => $view, ];
