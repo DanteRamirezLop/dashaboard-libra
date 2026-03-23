@@ -104,6 +104,7 @@ var PurchaseCurrency = (function () {
      */
     function _onCurrencyIdChange() {
         $('#currency_id').on('change', function () {
+
             window.onbeforeunload = null;
             var value = $(this).val();
             var url   = new URL(window.location.href);
@@ -124,6 +125,8 @@ var PurchaseCurrency = (function () {
      */
     function _onPaymentCurrencyChange() {
         $(document).on('change', '.currency_exchange_to_pay_dropdown', function () {
+
+            //exchange_rate_sell
             var $this   = $(this);
             var state   = _getState($this);
             var $container = $this.closest('.modal-content, .box-body, form');
@@ -134,27 +137,25 @@ var PurchaseCurrency = (function () {
                 ? $container.find('.payment-amount, .payment_amount')
                 : $('.payment-amount, .payment_amount');
 
-            // Si se selecciona Soles (94), resetear el monto a 0
-            //if ($this.val() == 94) {
-                $amountField.val(0);
-            //}
-
-            if (sameAsPage) {
+            $amountField.val(0);
+         
+            if (sameAsPage) {                                     
                 $amountField.prop('readonly', false);
                 _toggleExchangeRateSection($container.length ? $container : $(document), false);
             } else {
+              
                 $amountField.prop('readonly', true);
                 _toggleExchangeRateSection($container.length ? $container : $(document), true);
+                
+                // ****** $('#exchange_rate_sell').prop('readonly', false);
+            
 
                 // Si la transacción tiene tasa propia, pre-llenar y bloquear
                 if (state.diffCurrency !== '') {
                     var txRate = $container.length
                         ? $container.find('#exchange_rate').val()
                         : $('#exchange_rate').val();
-                    var $rateField = $container.length
-                        ? $container.find('#exchange_rate_sell')
-                        : $('#exchange_rate_sell');
-
+                    var $rateField = $container.length ? $container.find('#exchange_rate_sell')  : $('#exchange_rate_sell');
                     $rateField.prop('readonly', true);
                     $container.find('#amount_to_change').prop('readonly', false);
                 }

@@ -366,7 +366,7 @@
               <th>{{ __('messages.date') }}</th>
               <th>{{ __('purchase.ref_no') }}</th>
               <th>{{ __('sale.amount') }}</th>
-               <th>{{ __('sale.amount_paid') }}</th>
+               <th>{{ __('sale.detail_amount_paid') }}</th>
               <th>{{ __('sale.payment_mode') }}</th>
               <th>{{ __('sale.payment_note') }}</th>
             </tr>
