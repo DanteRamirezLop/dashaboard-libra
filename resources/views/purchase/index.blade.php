@@ -129,7 +129,7 @@
     </script>
     <script src="{{ asset('js/purchase.js?v=' . $asset_v) }}"></script>
     <script src="{{ asset('js/payment.js?v=' . $asset_v) }}"></script>
-    <script src="{{ asset('js/purchase_currency.js?v=' . $asset_v) }}"></script>
+    <script src="{{ asset('js/change_currency.js?v=' . $asset_v) }}"></script>
     <script>
         // Inicializar módulo de cambio de moneda (handlers delegados activos para modales)
         PurchaseCurrency.init();

@@ -124,7 +124,7 @@
           </div>
         </fieldset>
 
-        {{-- Contexto de moneda para purchase_currency.js --}}
+        {{-- Contexto de moneda para change_currency.js --}}
         <input type="hidden" name="js-p-currency-id" class="js-p-currency-id" value="{{ $currency_details->currency_id }}">
         <input type="hidden" name="js-diff-currency" class="js-diff-currency" value="{{ $currency_details->purchase_in_diff_currency ? '1' : '' }}">
         <!-- FIN MONEDA -->

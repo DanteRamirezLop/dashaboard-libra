@@ -1,5 +1,5 @@
 /**
- * purchase_currency.js
+ * change_currency.js
  * Módulo de cambio de moneda para compras.
  *
  * Funciona en dos contextos:
