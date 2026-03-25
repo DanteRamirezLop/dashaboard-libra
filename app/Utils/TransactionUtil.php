@@ -757,11 +757,11 @@ class TransactionUtil extends Util
                         $is_differente_pay_transacction  = isset($payment['exchange_rate_sell']) ? true : false;
                         if($is_differente_pay_transacction){
                             $exchange_rate = $payment['exchange_rate_sell'];  // La compra es en soles y se esta pagando en dolares
-                            $payment_amount = round($payment_amount / $exchange_rate,2);
+                            $payment_amount = round($payment_amount / $exchange_rate,4);
                             $exchange_rate = 1;
                         }else{
                             $exchange_rate = $transaction->exchange_rate; //La compra es soles y se esta pagando en soloes - por eso el tipo de cambio del la trasaccion y el pago es el mismo
-                            $payment_amount = round($payment_amount / $exchange_rate,2);
+                            $payment_amount = round($payment_amount / $exchange_rate,4);
                         }
                     }else{
                         //Dolares
