@@ -120,26 +120,26 @@ class TransactionPaymentController extends Controller
                     throw new AdvanceBalanceNotAvailable(__('lang_v1.required_advance_balance_not_available'));
                 }
 
-                //Pago mixto
-                $diff_currency = empty($inputs['js-diff-currency']) ? false : true;
+                // PAGOS MIXTOS 
+                $diff_currency = empty($inputs['js-diff-currency']) ? false : true; // La transaccion es difererene a la moneda base
                 if($diff_currency){
-                    //Soles u otra moneda
-                    $is_differente_pay_transacction  = isset($inputs['exchange_rate_sell']) ? true : false;
+                    //Otra moneda - SOLES ACTULAMENE
+                    $is_differente_pay_transacction  = isset($inputs['exchange_rate_sell']) ? true : false; //El pago se esta realizando con una moneda diferente a la moneda base
                     if($is_differente_pay_transacction){
-                        $exchange_rate = $inputs['exchange_rate_sell'];  // La compra es en soles y se esta pagando en dolares
+                        $exchange_rate = $inputs['exchange_rate_sell'];  // La transaccion es diferente a la moneda base y se esta pagando en la moneda base
                         $inputs['amount'] = round($payment_amount / $exchange_rate,4);
                         $inputs['exchange_rate'] = 1;
                     }else{
                        $inputs['amount'] = round($payment_amount /$transaction->exchange_rate,4);
-                        $inputs['exchange_rate'] = $transaction->exchange_rate; //La compra es soles y se esta pagando en soloes - por eso el tipo de cambio del la trasaccion y el pago es el mismo
+                        $inputs['exchange_rate'] = $transaction->exchange_rate; //La transaccion es diferente a la moneda base y se esta apagando en esa misma moneda - El tipo de cambio de la transaccion y el pago es el mismo
                     }
                 }else{
-                    //Dolares
+                    //Moneda base - Dolares actualmente
                     $is_differente_pay_transacction  = isset($inputs['exchange_rate_sell']) ? true : false;
                     if($is_differente_pay_transacction){
-                        $inputs['exchange_rate'] = $inputs['exchange_rate_sell'];  //la compra en dolares y se esta pagando en soles
+                        $inputs['exchange_rate'] = $inputs['exchange_rate_sell'];  //La transaccion es en dolares y se esta pagando en soles
                     }else{
-                        $inputs['exchange_rate'] = 1; //la compra es en dolares y se esta pagando en dolares
+                        $inputs['exchange_rate'] = 1; //La transaccion es en la moneda base y se esta pagando en la moneda base
                     }
                 }
 
