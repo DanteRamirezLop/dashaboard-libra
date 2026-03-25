@@ -21,7 +21,6 @@
 	<input type="hidden" id="p_symbol" value="{{$currency_details->symbol}}">
 	<input type="hidden" id="p_thousand" value="{{$currency_details->thousand_separator}}">
 	<input type="hidden" id="p_decimal" value="{{$currency_details->decimal_separator}}">
-
 	<input type="hidden" id="p_currency_id" value="{{$currency_details->currency_id}}">
 	<input type="hidden" id="diff_currency" value="{{$currency_details->purchase_in_diff_currency}}">
 

@@ -146,10 +146,7 @@ var PurchaseCurrency = (function () {
               
                 $amountField.prop('readonly', true);
                 _toggleExchangeRateSection($container.length ? $container : $(document), true);
-                
-                // ****** $('#exchange_rate_sell').prop('readonly', false);
             
-
                 // Si la transacción tiene tasa propia, pre-llenar y bloquear
                 if (state.diffCurrency !== '') {
                     var txRate = $container.length

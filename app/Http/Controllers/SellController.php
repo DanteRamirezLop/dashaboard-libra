@@ -835,8 +835,11 @@ class SellController extends Controller
             $currency_details = $this->transactionUtil->currencyDetails($business_id);
         }
 
+
+
         return view('sell.create')
             ->with(compact(
+                'exchange_rate',
                 'currency_details',
                 'business_details',
                 'taxes',

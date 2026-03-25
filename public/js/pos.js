@@ -14,6 +14,10 @@ $(document).ready(function() {
 
     //For edit pos form
     if ($('form#edit_pos_sell_form').length > 0) {
+        // Guardar precios base y aplicar tipo de cambio a filas existentes
+        $('table#pos_table tbody tr').each(function() {
+            update_row_price_for_exchange_rate($(this));
+        });
         pos_total_row();
         pos_form_obj = $('form#edit_pos_sell_form');
     } else {
@@ -737,8 +741,10 @@ $(document).ready(function() {
             dataType: 'html',
             success: function(result) {
                 if (result) {
-                    var appended = $('#payment_rows_div').append(result);
 
+                  
+
+                    var appended = $('#payment_rows_div').append(result);
                     var total_payable = __read_number($('input#final_total_input'));
                     var total_paying = __read_number($('input#total_paying_input'));
                     var b_due = total_payable - total_paying;
@@ -1355,13 +1361,11 @@ $(document).ready(function() {
     });
 
     $('#exchange_rate').change(function() {
-        var curr_exchange_rate = 1;
-        if ($(this).val()) {
-            curr_exchange_rate = __read_number($(this));
-        }
-        var total_payable = __read_number($('input#final_total_input'));
-        var shown_total = total_payable * curr_exchange_rate;
-        $('span#total_payable').text(__currency_trans_from_en(shown_total, false));
+        // Recalcular precios de todas las filas con el nuevo tipo de cambio
+        $('table#pos_table tbody tr').each(function() {
+            update_row_price_for_exchange_rate($(this));
+        });
+        pos_total_row();
     });
 
     $('select#price_group').change(function() {
@@ -1783,6 +1787,7 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
             },
             dataType: 'json',
             success: function(result) {
+                
                 if (result.success) {
                     $('table#pos_table tbody')
                         .append(result.html_content)
@@ -1794,12 +1799,11 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
                         .last();
                     pos_each_row(this_row);
 
-                    //update_row_price_for_exchange_rate(this_row);   // <- AQUI CAMBIO DE MONEDA
+                    update_row_price_for_exchange_rate(this_row);
 
                     //For initial discount if present
                     var line_total = __read_number(this_row.find('input.pos_line_total'));
                     this_row.find('span.pos_line_total_text').text(line_total);
-
                     pos_total_row();
 
                     //Check if multipler is present then multiply it when a new row is added.
@@ -1849,31 +1853,31 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
 
 
 function update_row_price_for_exchange_rate(row) {
-    var exchange_rate = $('input#exchange_rate').val();
-
-    console.log(exchange_rate);
-    console.log('------');
-    if (!exchange_rate) {
-        exchange_rate = 1;
-    }
+    var exchange_rate = parseFloat($('input#exchange_rate').val()) || 1;
 
     if (exchange_rate == 1) {
         return true;
     }
 
+    // Guardar precio base (moneda base) la primera vez que se llama esta función
+    if (typeof row.data('base_unit_price') === 'undefined') {
+        row.data('base_unit_price', __read_number(row.find('input.pos_unit_price')));
+    }
 
-    var pos_unit_price = __read_number(row.find('.pos_unit_price')) * exchange_rate;
-    __write_number(row.find('.pos_unit_price'), pos_unit_price);
+    // Aplicar tipo de cambio desde el precio base almacenado
+    var pos_unit_price = row.data('base_unit_price') * exchange_rate;
+    __write_number(row.find('input.pos_unit_price'), pos_unit_price);
 
-    var pos_unit_price_inc_tax =__read_number(row.find('.pos_unit_price_inc_tax')) * exchange_rate;
-    __write_number(row.find('input.pos_unit_price_inc_tax'), pos_unit_price_inc_tax);
+    // Recalcular impuesto y total de línea desde el nuevo precio unitario
+    pos_each_row(row);
 
-    var pos_line_total = __read_number(row.find('.pos_line_total')) * exchange_rate;
-    __write_number(row.find('input.pos_line_total'),pos_line_total);
-
-    // row.find('.row_subtotal_after_tax').text(
-    //     __currency_trans_from_en(pos_line_total_text, false, true)
-    // );
+    // Actualizar pos_line_total y pos_line_total_text con el tipo de cambio aplicado
+    var qty = __read_number(row.find('input.pos_quantity'));
+    var unit_price_inc_tax = __read_number(row.find('input.pos_unit_price_inc_tax'));
+    var line_total = qty * unit_price_inc_tax;
+    line_total = __round(line_total, 0.05).number;
+    __write_number(row.find('input.pos_line_total'), line_total);
+    row.find('span.pos_line_total_text').text(__currency_trans_from_en(line_total, true));
 }
 
 //Update values for each row
@@ -2008,12 +2012,9 @@ function calculate_billing_details(price_total) {
     $('input#round_off_amount').val(round_off_amount);
 
     __write_number($('input#final_total_input'), total_payable_rounded);
-    var curr_exchange_rate = 1;
-    if ($('#exchange_rate').length > 0 && $('#exchange_rate').val()) {
-        curr_exchange_rate = __read_number($('#exchange_rate'));
-    }
-    var shown_total = total_payable_rounded * curr_exchange_rate;
-    $('span#total_payable').text(__currency_trans_from_en(shown_total, false));
+    // Los precios de fila ya están en la moneda de la transacción (con tipo de cambio aplicado),
+    // por lo que el total no requiere multiplicación adicional.
+    $('span#total_payable').text(__currency_trans_from_en(total_payable_rounded, false));
 
     $('span.total_payable_span').text(__currency_trans_from_en(total_payable_rounded, true));
 
@@ -2071,14 +2072,14 @@ function calculate_balance_due() {
     //change_return
     if (bal_due < 0 || Math.abs(bal_due) < 0.05) {
         __write_number($('input#change_return'), bal_due * -1);
-        $('span.change_return_span').text(__currency_trans_from_en(bal_due * -1, true));
+        $('span.change_return_span').text(__currency_trans_from_en(bal_due * -1, true, true));
         change_return = bal_due * -1;
         bal_due = 0;
     } else {
         __write_number($('input#change_return'), 0);
-        $('span.change_return_span').text(__currency_trans_from_en(0, true));
+        $('span.change_return_span').text(__currency_trans_from_en(0, true, true));
         change_return = 0;
-        
+
     }
 
     if (change_return !== 0) {
@@ -2088,10 +2089,10 @@ function calculate_balance_due() {
     }
 
     __write_number($('input#total_paying_input'), total_paying);
-    $('span.total_paying').text(__currency_trans_from_en(total_paying, true));
+    $('span.total_paying').text(__currency_trans_from_en(total_paying, true, true));
 
     __write_number($('input#in_balance_due'), bal_due);
-    $('span.balance_due').text(__currency_trans_from_en(bal_due, true));
+    $('span.balance_due').text(__currency_trans_from_en(bal_due, true, true));
 
     __highlight(bal_due * -1, $('span.balance_due'));
     __highlight(change_return * -1, $('span.change_return_span'));

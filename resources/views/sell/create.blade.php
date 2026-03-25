@@ -79,6 +79,7 @@
 					@if(count($price_groups) > 1)
 						<div class="col-sm-4">
 							<div class="form-group">
+								{!! Form::label('exchange_rate', __('lang_v1.price_group') . ':*') !!}
 								<div class="input-group">
 									<span class="input-group-addon">
 										<i class="fas fa-money-bill-alt"></i>
@@ -104,9 +105,35 @@
 					@endif
 				@endif
 
+				<!-- Selección de moneda -->
+				<div class="col-sm-3">
+					<div class="form-group">
+						{!! Form::label('currency_id', 'Moneda'.':*') !!}
+						{!! Form::select('currency_id',['2'=>'Dolar (USD)','94'=>'Sol (PE)'], $currency_details->currency_id, ['class' => 'form-control', 'required']); !!}
+					</div>
+				</div>
+
+				<!-- Currency Exchange Rate -->
+				<div id="section_exchange_rate" class="col-sm-3 @if(!$currency_details->purchase_in_diff_currency) hide @endif">
+					<div class="form-group">
+						{!! Form::label('exchange_rate', __('purchase.p_exchange_rate') . ':*') !!}
+						@show_tooltip(__('tooltip.currency_exchange_factor'))
+						<div class="input-group">
+							<span class="input-group-addon">
+								<i class="fa fa-info"></i>
+							</span>
+							{!! Form::number('exchange_rate', @number_format($currency_details->p_exchange_rate,3), ['class' => 'form-control', 'required', 'step' => 0.001]); !!}
+						</div>
+						<span class="help-block text-danger">
+							@lang('purchase.diff_purchase_currency_help', ['currency' => $currency_details->name])
+						</span>
+					</div>
+				</div> 
+
 				{!! Form::hidden('default_price_group', null, ['id' => 'default_price_group']) !!}
 
 				@if(in_array('types_of_service', $enabled_modules) && !empty($types_of_service))
+	
 					<div class="col-md-4 col-sm-6">
 						<div class="form-group">
 							<div class="input-group">
@@ -332,32 +359,7 @@
 				    </div>
 		        @endif
 
-				<!-- Selección de moneda -->
-				<div class="col-sm-3">
-					<div class="form-group">
-						{!! Form::label('currency_id', 'Moneda'.':*') !!}
-						{!! Form::select('currency_id',['2'=>'Dolar (USD)','94'=>'Sol (PE)'], $currency_details->currency_id, ['class' => 'form-control', 'required']); !!}
-					</div>
-				</div>
-
-				<!-- Currency Exchange Rate -->
-				<div id="section_exchange_rate" class="col-sm-3 @if(!$currency_details->purchase_in_diff_currency) hide @endif">
-					<div class="form-group">
-						{!! Form::label('exchange_rate', __('purchase.p_exchange_rate') . ':*') !!}
-						@show_tooltip(__('tooltip.currency_exchange_factor'))
-						<div class="input-group">
-							<span class="input-group-addon">
-								<i class="fa fa-info"></i>
-							</span>
-							{!! Form::number('exchange_rate', @number_format($currency_details->p_exchange_rate,3), ['class' => 'form-control', 'required', 'step' => 0.001]); !!}
-						</div>
-						<span class="help-block text-danger">
-							@lang('purchase.diff_purchase_currency_help', ['currency' => $currency_details->name])
-						</span>
-					</div>
-				</div>
-
-
+				
 
 		        <div class="col-sm-3">
 	                <div class="form-group">
@@ -369,6 +371,7 @@
 	                    </p>
 	                </div>
 	            </div>
+
 		        <div class="clearfix"></div>
 
 		        @if((!empty($pos_settings['enable_sales_order']) && $sale_type != 'sales_order') || $is_order_request_enabled)
@@ -842,7 +845,10 @@
 					</div>
 				</div>
 			@endif
+
+		
 			@if(empty($status) || !in_array($status, ['quotation', 'draft']))
+				
 				<div class="payment_row" @if($is_enabled_download_pdf) id="payment_rows_div" @endif>
 					<div class="row">
 						<div class="col-md-12 mb-12">
@@ -902,6 +908,7 @@
 							</div>
 						</div>
 						@endif
+						<p>---------------</p>
 						@include('sale_pos.partials.payment_type_details', ['payment_line' => $change_return, 'row_index' => 'change_return'])
 					</div>
 					<hr>
@@ -964,6 +971,13 @@
     @endif
     <script type="text/javascript">
     	$(document).ready( function() {
+    		// Aplicar símbolo de moneda registrado en p_symbol (igual que purchase/create)
+    		if ($('input#p_symbol').length > 0 && $('input#p_symbol').val()) {
+    			__currency_symbol = $('input#p_symbol').val();
+    			__currency_thousand_separator = $('input#p_thousand').val();
+    			__currency_decimal_separator = $('input#p_decimal').val();
+    		}
+
     		$('#status').change(function(){
     			if ($(this).val() == 'final') {
     				$('#payment_rows_div').removeClass('hide');
