@@ -554,9 +554,6 @@ class PurchaseController extends Controller
 
         $business = Business::find($business_id);
 
-        //$currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
-
-
         $taxes = TaxRate::where('business_id', $business_id)
                             ->ExcludeForTaxGroup()
                             ->get();
@@ -625,7 +622,7 @@ class PurchaseController extends Controller
                                         ->pluck('ref_no', 'id');
         }
 
-        //*** CAMBIO DE MONEDA */
+        //*** Change currency */
         $currency_id =  $purchase->currency_id;
         $exchange_rate = $purchase->exchange_rate;
         if($currency_id){

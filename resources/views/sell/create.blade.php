@@ -256,7 +256,7 @@
 						<input type="hidden" id="disable_qty_alert">
 					@endif
 				@else
-					<div class="@if(!empty($commission_agent)) col-sm-3 @else col-sm-4 @endif">
+					<div class="@if(!empty($commission_agent)) col-sm-3 @else col-sm-3 @endif">
 						<div class="form-group">
 							{!! Form::label('status', __('sale.status') . ':*') !!}
 							{!! Form::select('status', $statuses, null, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select'), 'required']); !!}
@@ -264,7 +264,7 @@
 					</div>
 				@endif
 				@if($sale_type != 'sales_order')
-					<div class="col-sm-3">
+					<div class="col-sm-4">
 						<div class="form-group">
 							{!! Form::label('invoice_scheme_id', __('invoice.invoice_scheme') . ':') !!}
 							{!! Form::select('invoice_scheme_id', $invoice_schemes, $default_invoice_schemes->id, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select')]); !!}
@@ -272,6 +272,7 @@
 					</div>
 				@endif
 					@can('edit_invoice_number')
+					
 					<div class="col-sm-3">
 						<div class="form-group">
 							{!! Form::label('invoice_no', $sale_type == 'sales_order' ? __('restaurant.order_no') : __('sale.invoice_no') . ':') !!}
@@ -280,6 +281,8 @@
 						</div>
 					</div>
 					@endcan
+					
+
 				
 				@php
 			        $custom_field_1_label = !empty($custom_labels['sell']['custom_field_1']) ? $custom_labels['sell']['custom_field_1'] : '';
@@ -359,7 +362,6 @@
 				    </div>
 		        @endif
 
-				
 
 		        <div class="col-sm-3">
 	                <div class="form-group">
@@ -653,6 +655,7 @@
 			        </div>
 			    </div>
 	        @endif
+			
 	        @if(!empty($shipping_custom_label_2))
 	        	@php
 	        		$label_2 = $shipping_custom_label_2 . ':';
