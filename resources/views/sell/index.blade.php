@@ -375,6 +375,18 @@
             $('#only_subscriptions').on('ifChanged', function(event) {
                 sell_table.ajax.reload();
             });
+
+            // Aplicar símbolo de moneda correcto al abrir el modal de detalle de venta
+            // $(document).on('shown.bs.modal', '.view_modal', function() {
+            //     var modal_dialog = $(this).find('div.modal-xl');
+            //     var currency_symbol = modal_dialog.data('currency_symbol');
+            //     if (currency_symbol) {
+            //         window.__p_currency_symbol = currency_symbol;
+            //         window.__p_currency_thousand_separator = modal_dialog.data('currency_thousand');
+            //         window.__p_currency_decimal_separator = modal_dialog.data('currency_decimal');
+            //         __currency_convert_recursively(modal_dialog, true);
+            //     }
+            // });
         });
     </script>
     <script src="{{ asset('js/payment.js?v=' . $asset_v) }}"></script>

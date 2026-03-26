@@ -44,6 +44,8 @@ class TransactionUtil extends Util
      * @param  int  $user_id
      * @return object
      */
+
+
     public function createSellTransaction($business_id, $input, $invoice_total, $user_id, $uf_data = true)
     {
         $sale_type = ! empty($input['type']) ? $input['type'] : 'sell';
@@ -147,7 +149,7 @@ class TransactionUtil extends Util
             'additional_expense_key_3' => ! empty($input['additional_expense_key_3']) ? $input['additional_expense_key_3'] : null,
             'additional_expense_key_4' => ! empty($input['additional_expense_key_4']) ? $input['additional_expense_key_4'] : null,
             'is_kitchen_order' => ! empty($input['is_kitchen_order']) ? 1 : 0,
-
+            'currency_id' => isset($input['currency_id']) ? $input['currency_id'] : null,
         ]);
 
         return $transaction;

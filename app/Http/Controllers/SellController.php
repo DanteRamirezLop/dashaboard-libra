@@ -669,8 +669,7 @@ class SellController extends Controller
 
             $rawColumns = ['final_total', 'action', 'total_paid', 'total_remaining', 'payment_status', 'invoice_no', 'discount_amount', 'tax_amount', 'total_before_tax', 'shipping_status', 'types_of_service_name', 'payment_methods', 'return_due', 'conatct_name', 'status', 'zatca_status'];
 
-            return $datatable->rawColumns($rawColumns)
-                      ->make(true);
+            return $datatable->rawColumns($rawColumns)->make(true);
         }
 
         $business_locations = BusinessLocation::forDropdown($business_id, false);
@@ -953,8 +952,12 @@ class SellController extends Controller
         $status_color_in_activity = Transaction::sales_order_statuses();
         $sales_orders = $sell->salesOrders();
 
+        $currency_details = $this->transactionUtil->currencyDetails($business_id,  $sell->currency_id, $sell->exchange_rate);
+
+
         return view('sale_pos.show')
             ->with(compact(
+                'currency_details',
                 'taxes',
                 'sell',
                 'payment_types',

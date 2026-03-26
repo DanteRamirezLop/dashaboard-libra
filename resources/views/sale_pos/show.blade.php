@@ -1,4 +1,7 @@
-<div class="modal-dialog modal-xl no-print" role="document">
+<div class="modal-dialog modal-xl no-print" role="document"
+    data-currency_symbol="{{ $currency_details->symbol ?? '' }}"
+    data-currency_thousand="{{ $currency_details->thousand_separator ?? ',' }}"
+    data-currency_decimal="{{ $currency_details->decimal_separator ?? '.' }}">
   <div class="modal-content">
     <div class="modal-header">
     <button type="button" class="close no-print" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -423,6 +426,11 @@
 <script type="text/javascript">
   $(document).ready(function(){
     var element = $('div.modal-xl');
-    __currency_convert_recursively(element);
+
+    window.__p_currency_symbol = element.data('currency_symbol');
+    window.__p_currency_thousand_separator = element.data('currency_thousand');
+    window.__p_currency_decimal_separator = element.data('currency_decimal');
+
+    __currency_convert_recursively(element, true);
   });
 </script>

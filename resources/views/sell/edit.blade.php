@@ -12,6 +12,16 @@
 </section>
 <!-- Main content -->
 <section class="content">
+
+<!-- Page level currency setting -->
+<input type="hidden" id="p_code" value="{{$currency_details->code}}">
+<input type="hidden" id="p_symbol" value="{{$currency_details->symbol}}">
+<input type="hidden" id="p_thousand" value="{{$currency_details->thousand_separator}}">
+<input type="hidden" id="p_decimal" value="{{$currency_details->decimal_separator}}">
+
+<input type="hidden" id="p_currency_id" value="{{$currency_details->currency_id}}">
+<input type="hidden" id="diff_currency" value="{{$currency_details->purchase_in_diff_currency}}">
+
 <input type="hidden" id="amount_rounding_method" value="{{$pos_settings['amount_rounding_method'] ?? ''}}">
 <input type="hidden" id="amount_rounding_method" value="{{$pos_settings['amount_rounding_method'] ?? 'none'}}">
 @if(!empty($pos_settings['allow_overselling']))
@@ -202,6 +212,30 @@
 					</div>
 				</div>
 				@endcan
+
+				<!-- Moneda (solo lectura) -->
+				{!! Form::hidden('currency_id', $currency_details->currency_id) !!}
+
+				<!-- Tipo de cambio (solo cuando la moneda es distinta a la base) -->
+				@if($currency_details->purchase_in_diff_currency)
+				<div id="section_exchange_rate" class="col-sm-3">
+					<div class="form-group">
+						{!! Form::label('exchange_rate', __('purchase.p_exchange_rate') . ':') !!}
+						<div class="input-group">
+							<span class="input-group-addon">
+								{{ $currency_details->symbol }}
+							</span>
+							{!! Form::number('exchange_rate', $transaction->exchange_rate, ['class' => 'form-control', 'readonly', 'step' => 0.001]); !!}
+						</div>
+						<span class="help-block text-muted">
+							{{ $currency_details->name }}
+						</span>
+					</div>
+				</div>
+				@else
+				{!! Form::hidden('exchange_rate', $transaction->exchange_rate) !!}
+				@endif
+
 				@php
 			        $custom_field_1_label = !empty($custom_labels['sell']['custom_field_1']) ? $custom_labels['sell']['custom_field_1'] : '';
 
@@ -864,12 +898,20 @@
 	<script src="{{ asset('js/pos.js?v=' . $asset_v) }}"></script>
 	<script src="{{ asset('js/product.js?v=' . $asset_v) }}"></script>
 	<script src="{{ asset('js/opening_stock.js?v=' . $asset_v) }}"></script>
+	<script src="{{ asset('js/change_currency.js?v=' . $asset_v) }}"></script>
 	<!-- Call restaurant module if defined -->
     @if(in_array('tables' ,$enabled_modules) || in_array('modifiers' ,$enabled_modules) || in_array('service_staff' ,$enabled_modules))
     	<script src="{{ asset('js/restaurant.js?v=' . $asset_v) }}"></script>
     @endif
     <script type="text/javascript">
     	$(document).ready( function(){
+    		// Aplicar símbolo de moneda registrado en p_symbol
+    		if ($('input#p_symbol').length > 0 && $('input#p_symbol').val()) {
+    			__currency_symbol = $('input#p_symbol').val();
+    			__currency_thousand_separator = $('input#p_thousand').val();
+    			__currency_decimal_separator = $('input#p_decimal').val();
+    		}
+
     		$('#shipping_documents').fileinput({
 		        showUpload: false,
 		        showPreview: false,
