@@ -45,6 +45,110 @@ class TransactionUtil extends Util
      * @return object
      */
 
+      public function regeneratePaymentSchedule( int $loanId, int $fromVersionId, int $toVersionId, float $capitalPayment, $type_pay)
+    { 
+        $fromVersionId = $fromVersionId ? $fromVersionId : NULL;
+        $loan = Loan::findOrFail($loanId);
+        $rows = PaymentSchedule::query()
+            ->where('loan_id', $loanId)
+            ->where('schedule_version_id', $fromVersionId)
+            ->orderBy('id')
+            ->get();
+
+        $nextPending = $rows->firstWhere('status', 'pending');
+        if (!$nextPending) {
+            return; // no hay cuotas pendientes
+        }
+
+        $pendingRows = $rows->where('status', 'pending')->values();
+        $pendingCount = $pendingRows->count();
+        $monthlyRate = ($loan->multiplier / 100) / 12;
+        $balanceBefore = (float) $nextPending->opening_balance;
+        $oldInstallment = ((float) $nextPending->capital) + ( (float) $nextPending->interests );
+        $oldTotals = $this->simulateFrenchScheduleTotals($balanceBefore, $monthlyRate, $pendingCount, $oldInstallment);
+        $newBalance = max(0, $balanceBefore - $capitalPayment);
+        $installment = $this->frenchInstallment($newBalance, $monthlyRate, $pendingCount);
+        $newTotals = $this->simulateFrenchScheduleTotals($newBalance, $monthlyRate, $pendingCount, $installment);
+        // 1) Replicar las cuotas pagadas tal cual, el unico cambio es el schedule_version_id y ref_payment_schedule_id
+        foreach ($rows->where('status', '=', 'paid') as $oldRow) {
+            $newRow = $oldRow->replicate();
+            $newRow->schedule_version_id = $toVersionId;
+            $newRow->ref_payment_schedule_id = $oldRow->ref_payment_schedule_id ? $oldRow->ref_payment_schedule_id : $oldRow->id;
+            $newRow->save();
+        }
+        // 2) Recalcular solo las pendientes
+        if($type_pay == 'parcial'){ 
+            $balance = $newBalance;
+            foreach ($pendingRows as $index => $oldRow) {
+                $isLastPending = ($index === $pendingCount - 1);
+                $interests  = round($balance * $monthlyRate, 2);
+                $principal  = round($installment - $interests, 2);
+                if ($isLastPending) {
+                    $principal = $balance; // cerrar saldo por redondeos
+                }
+
+                $installmentFinal = round($principal + $interests, 2);
+                $balanceAfter     = round($balance - $principal, 2);
+
+                $newRow = $oldRow->replicate();
+                $newRow->schedule_version_id = $toVersionId;
+                $newRow->opening_balance = $balance;
+                $newRow->mount_quota     = $installment;
+                $newRow->interests       = $interests;
+                $newRow->capital         = $principal;
+                $newRow->final_balance   = $balanceAfter;
+                $newRow->save();
+                $balance = $balanceAfter;
+            }
+         }else{
+            $loan->status = 'paid'; // Si es pago total, marcar el prestamo como pagado
+        }
+
+        $interestSaved = round($oldTotals['total_interests'] - $newTotals['total_interests'], 4);
+        $loan->interest_saved =  $interestSaved;
+        $loan->save();
+
+        return $interestSaved;
+    }
+
+    private function frenchInstallment(float $principal, float $monthlyRate, int $n): float
+    {
+        if ($n <= 0) return 0.0;
+        if ($principal <= 0) return 0.0;
+
+        // Si tasa 0, cuota = principal / n
+        if (abs($monthlyRate) < 1e-12) {
+            return round($principal / $n, 2);
+        }
+
+        return $principal * ($monthlyRate / (1 - pow(1 + $monthlyRate, -$n)));
+    }
+
+
+     private function simulateFrenchScheduleTotals( float $startingBalance, float $monthlyRate, int $n, float $installment ): array 
+    {
+        $balance = $startingBalance;
+        $totalInterests = 0.0;
+
+        for ($i = 0; $i < $n; $i++) {
+            $interests = round($balance * $monthlyRate, 2);
+            $principal = round($installment - $interests, 2);
+
+            $isLast = ($i === $n - 1);
+            if ($isLast) {
+                $principal = $balance;
+            }
+
+            $balance = round($balance - $principal, 2);
+            $totalInterests += $interests;
+        }
+
+        return [
+            'total_interests' => round($totalInterests, 2),
+            'ending_balance'  => $balance,
+        ];
+    }
+
 
     public function createSellTransaction($business_id, $input, $invoice_total, $user_id, $uf_data = true)
     {
@@ -53,6 +157,11 @@ class TransactionUtil extends Util
         $invoice_no = ! empty($input['invoice_no']) ? $input['invoice_no'] : $this->getInvoiceNumber($business_id, $input['status'], $input['location_id'], $invoice_scheme_id, $sale_type);
 
         $final_total = $uf_data ? $this->num_uf($input['final_total']) : $input['final_total'];
+
+        $exchange_rate = !empty($input['exchange_rate'])
+            ? ($uf_data ? $this->num_uf($input['exchange_rate']) : $input['exchange_rate'])
+            : 1;
+        $exchange_rate = ($exchange_rate > 0) ? $exchange_rate : 1;
 
         $pay_term_number = isset($input['pay_term_number']) ? $input['pay_term_number'] : null;
         $pay_term_type = isset($input['pay_term_type']) ? $input['pay_term_type'] : null;
@@ -74,13 +183,13 @@ class TransactionUtil extends Util
             'invoice_no' => $invoice_no,
             'ref_no' => '',
             'source' => ! empty($input['source']) ? $input['source'] : null,
-            'total_before_tax' => $invoice_total['total_before_tax'],
+            'total_before_tax' => round($invoice_total['total_before_tax'] / $exchange_rate, 4),
             'transaction_date' => $input['transaction_date'],
             'tax_id' => ! empty($input['tax_rate_id']) ? $input['tax_rate_id'] : null,
             'discount_type' => ! empty($input['discount_type']) ? $input['discount_type'] : null,
-            'discount_amount' => $uf_data ? $this->num_uf($input['discount_amount']) : $input['discount_amount'],
-            'tax_amount' => $invoice_total['tax'],
-            'final_total' => $final_total,
+            'discount_amount' => round(($uf_data ? $this->num_uf($input['discount_amount']) : $input['discount_amount']) / $exchange_rate, 4),
+            'tax_amount' => round($invoice_total['tax'] / $exchange_rate, 4),
+            'final_total' => round($final_total / $exchange_rate, 4),
             'additional_notes' => ! empty($input['sale_note']) ? $input['sale_note'] : null,
             'staff_note' => ! empty($input['staff_note']) ? $input['staff_note'] : null,
             'created_by' => $user_id,
@@ -97,7 +206,7 @@ class TransactionUtil extends Util
             'shipping_status' => isset($input['shipping_status']) ? $input['shipping_status'] : null,
             'delivered_to' => isset($input['delivered_to']) ? $input['delivered_to'] : null,
             'delivery_person' => isset($input['delivery_person']) ? $input['delivery_person'] : null,
-            'shipping_charges' => isset($input['shipping_charges']) ? $uf_data ? $this->num_uf($input['shipping_charges']) : $input['shipping_charges'] : 0,
+            'shipping_charges' => isset($input['shipping_charges']) ? round(($uf_data ? $this->num_uf($input['shipping_charges']) : $input['shipping_charges']) / $exchange_rate, 4) : 0,
             'shipping_custom_field_1' => ! empty($input['shipping_custom_field_1']) ? $input['shipping_custom_field_1'] : null,
             'shipping_custom_field_2' => ! empty($input['shipping_custom_field_2']) ? $input['shipping_custom_field_2'] : null,
             'shipping_custom_field_3' => ! empty($input['shipping_custom_field_3']) ? $input['shipping_custom_field_3'] : null,
@@ -140,10 +249,10 @@ class TransactionUtil extends Util
             'prefer_payment_account' => ! empty($input['prefer_payment_account']) ? $input['prefer_payment_account'] : null,
             'is_export' => ! empty($input['is_export']) ? 1 : 0,
             'export_custom_fields_info' => (! empty($input['is_export']) && ! empty($input['export_custom_fields_info'])) ? $input['export_custom_fields_info'] : null,
-            'additional_expense_value_1' => isset($input['additional_expense_value_1']) ? $uf_data ? $this->num_uf($input['additional_expense_value_1']) : $input['additional_expense_value_1'] : 0,
-            'additional_expense_value_2' => isset($input['additional_expense_value_2']) ? $uf_data ? $this->num_uf($input['additional_expense_value_2']) : $input['additional_expense_value_2'] : 0,
-            'additional_expense_value_3' => isset($input['additional_expense_value_3']) ? $uf_data ? $this->num_uf($input['additional_expense_value_3']) : $input['additional_expense_value_3'] : 0,
-            'additional_expense_value_4' => isset($input['additional_expense_value_4']) ? $uf_data ? $this->num_uf($input['additional_expense_value_4']) : $input['additional_expense_value_4'] : 0,
+            'additional_expense_value_1' => isset($input['additional_expense_value_1']) ? round(($uf_data ? $this->num_uf($input['additional_expense_value_1']) : $input['additional_expense_value_1']) / $exchange_rate, 4) : 0,
+            'additional_expense_value_2' => isset($input['additional_expense_value_2']) ? round(($uf_data ? $this->num_uf($input['additional_expense_value_2']) : $input['additional_expense_value_2']) / $exchange_rate, 4) : 0,
+            'additional_expense_value_3' => isset($input['additional_expense_value_3']) ? round(($uf_data ? $this->num_uf($input['additional_expense_value_3']) : $input['additional_expense_value_3']) / $exchange_rate, 4) : 0,
+            'additional_expense_value_4' => isset($input['additional_expense_value_4']) ? round(($uf_data ? $this->num_uf($input['additional_expense_value_4']) : $input['additional_expense_value_4']) / $exchange_rate, 4) : 0,
             'additional_expense_key_1' => ! empty($input['additional_expense_key_1']) ? $input['additional_expense_key_1'] : null,
             'additional_expense_key_2' => ! empty($input['additional_expense_key_2']) ? $input['additional_expense_key_2'] : null,
             'additional_expense_key_3' => ! empty($input['additional_expense_key_3']) ? $input['additional_expense_key_3'] : null,

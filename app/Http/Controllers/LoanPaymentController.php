@@ -54,6 +54,97 @@ class LoanPaymentController extends Controller
         $this->notificationUtil = $notificationUtil;
     }
 
+      public function regeneratePaymentSchedule( int $loanId, int $fromVersionId, int $toVersionId, float $capitalPayment, $type_pay)
+    { 
+        $fromVersionId = $fromVersionId ? $fromVersionId : NULL;
+        $loan = Loan::findOrFail($loanId);
+        $rows = PaymentSchedule::query()
+            ->where('loan_id', $loanId)
+            ->where('schedule_version_id', $fromVersionId)
+            ->orderBy('id')
+            ->get();
+
+        $nextPending = $rows->firstWhere('status', 'pending');
+        if (!$nextPending) {
+            return; // no hay cuotas pendientes
+        }
+
+        $pendingRows = $rows->where('status', 'pending')->values();
+        $pendingCount = $pendingRows->count();
+        $monthlyRate = ($loan->multiplier / 100) / 12;
+        $balanceBefore = (float) $nextPending->opening_balance;
+        $oldInstallment = ((float) $nextPending->capital) + ( (float) $nextPending->interests );
+        $oldTotals = $this->simulateFrenchScheduleTotals($balanceBefore, $monthlyRate, $pendingCount, $oldInstallment);
+        $newBalance = max(0, $balanceBefore - $capitalPayment);
+        $installment = $this->frenchInstallment($newBalance, $monthlyRate, $pendingCount);
+        $newTotals = $this->simulateFrenchScheduleTotals($newBalance, $monthlyRate, $pendingCount, $installment);
+        // 1) Replicar las cuotas pagadas tal cual, el unico cambio es el schedule_version_id y ref_payment_schedule_id
+        foreach ($rows->where('status', '=', 'paid') as $oldRow) {
+            $newRow = $oldRow->replicate();
+            $newRow->schedule_version_id = $toVersionId;
+            $newRow->ref_payment_schedule_id = $oldRow->ref_payment_schedule_id ? $oldRow->ref_payment_schedule_id : $oldRow->id;
+            $newRow->save();
+        }
+        // 2) Recalcular solo las pendientes
+        if($type_pay == 'parcial'){ 
+            $balance = $newBalance;
+            foreach ($pendingRows as $index => $oldRow) {
+                $isLastPending = ($index === $pendingCount - 1);
+                $interests  = round($balance * $monthlyRate, 2);
+                $principal  = round($installment - $interests, 2);
+                if ($isLastPending) {
+                    $principal = $balance; // cerrar saldo por redondeos
+                }
+
+                $installmentFinal = round($principal + $interests, 2);
+                $balanceAfter     = round($balance - $principal, 2);
+
+                $newRow = $oldRow->replicate();
+                $newRow->schedule_version_id = $toVersionId;
+                $newRow->opening_balance = $balance;
+                $newRow->mount_quota     = $installment;
+                $newRow->interests       = $interests;
+                $newRow->capital         = $principal;
+                $newRow->final_balance   = $balanceAfter;
+                $newRow->save();
+                $balance = $balanceAfter;
+            }
+         }else{
+            $loan->status = 'paid'; // Si es pago total, marcar el prestamo como pagado
+        }
+
+        $interestSaved = round($oldTotals['total_interests'] - $newTotals['total_interests'], 4);
+        $loan->interest_saved =  $interestSaved;
+        $loan->save();
+
+        return $interestSaved;
+    }
+
+
+       private function simulateFrenchScheduleTotals( float $startingBalance, float $monthlyRate, int $n, float $installment ): array 
+    {
+        $balance = $startingBalance;
+        $totalInterests = 0.0;
+
+        for ($i = 0; $i < $n; $i++) {
+            $interests = round($balance * $monthlyRate, 2);
+            $principal = round($installment - $interests, 2);
+
+            $isLast = ($i === $n - 1);
+            if ($isLast) {
+                $principal = $balance;
+            }
+
+            $balance = round($balance - $principal, 2);
+            $totalInterests += $interests;
+        }
+
+        return [
+            'total_interests' => round($totalInterests, 2),
+            'ending_balance'  => $balance,
+        ];
+    }
+
     //Pago de las cuotas por medio del calendario de pagos
     public function store(Request $request){
         
