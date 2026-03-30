@@ -1789,9 +1789,7 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
             success: function(result) {
                 
                 if (result.success) {
-                    $('table#pos_table tbody')
-                        .append(result.html_content)
-                        .find('input.pos_quantity');
+                    $('table#pos_table tbody').append(result.html_content).find('input.pos_quantity');
                     //increment row count
                     $('input#product_row_count').val(parseInt(product_row) + 1);
                     var this_row = $('table#pos_table tbody')
@@ -1803,6 +1801,7 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
 
                     //For initial discount if present
                     var line_total = __read_number(this_row.find('input.pos_line_total'));
+
                     this_row.find('span.pos_line_total_text').text(line_total);
                     pos_total_row();
 
@@ -1851,13 +1850,16 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
     }
 }
 
-
+//row_subtotal_after_tax
+//pos_line_total
+//row_subtotal_after_tax_hidden
 function update_row_price_for_exchange_rate(row) {
     var exchange_rate = parseFloat($('input#exchange_rate').val()) || 1;
 
     if (exchange_rate == 1) {
         return true;
     }
+
 
     // Guardar precio base (moneda base) la primera vez que se llama esta función
     if (typeof row.data('base_unit_price') === 'undefined') {
@@ -1876,6 +1878,9 @@ function update_row_price_for_exchange_rate(row) {
     var unit_price_inc_tax = __read_number(row.find('input.pos_unit_price_inc_tax'));
     var line_total = qty * unit_price_inc_tax;
     line_total = __round(line_total, 0.05).number;
+    unit_price_inc_tax = qty > 0 ? line_total / qty : unit_price_inc_tax;
+
+    __write_number(row.find('input.pos_unit_price_inc_tax'), unit_price_inc_tax);
     __write_number(row.find('input.pos_line_total'), line_total);
     row.find('span.pos_line_total_text').text(__currency_trans_from_en(line_total, true));
 }
@@ -1890,8 +1895,7 @@ function pos_each_row(row_obj) {
         .find(':selected')
         .data('rate');
 
-    var unit_price_inc_tax =
-        discounted_unit_price + __calculate_amount('percentage', tax_rate, discounted_unit_price);
+    var unit_price_inc_tax = discounted_unit_price + __calculate_amount('percentage', tax_rate, discounted_unit_price);
     __write_number(row_obj.find('input.pos_unit_price_inc_tax'), unit_price_inc_tax);
 
     var discount = __read_number(row_obj.find('input.row_discount_amount'));
@@ -1902,8 +1906,9 @@ function pos_each_row(row_obj) {
         __write_number(row_obj.find('input.pos_line_total'), line_total);
     }
 
-    //var unit_price_inc_tax = __read_number(row_obj.find('input.pos_unit_price_inc_tax'));
+    unit_price_inc_tax = __round(unit_price_inc_tax, 0.05).number;
 
+    //var unit_price_inc_tax = __read_number(row_obj.find('input.pos_unit_price_inc_tax'));
     __write_number(row_obj.find('input.item_tax'), unit_price_inc_tax - discounted_unit_price);
 }
 
@@ -2415,6 +2420,9 @@ $('table#pos_table tbody').on('change', 'input.pos_line_total', function() {
     if (pos_form_validator) {
         pos_form_validator.element(quantity_element);
     }
+
+   
+
     tr.find('span.pos_line_total_text').text(__currency_trans_from_en(subtotal, true));
 
     pos_total_row();
@@ -2945,6 +2953,10 @@ $("#sales_order_ids").on("select2:select", function (e) {
                     pos_each_row(this_row);
 
                     product_row = parseInt(product_row) + 1;
+
+
+    
+        console.log('DANTE_11');
 
                     //For initial discount if present
                     var line_total = __read_number(this_row.find('input.pos_line_total'));

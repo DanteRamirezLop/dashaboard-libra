@@ -399,7 +399,7 @@ class TransactionUtil extends Util
      *   Example: ['database_trasnaction_linekey' => 'products_line_key'];
      * @return boolean/object
      */
-    public function createOrUpdateSellLines($transaction, $products, $location_id, $return_deleted = false, $status_before = null, $extra_line_parameters = [], $uf_data = true)
+    public function createOrUpdateSellLines($transaction, $products, $location_id, $return_deleted = false, $status_before = null, $extra_line_parameters = [], $uf_data = true, $currency_details = null)
     {
         $lines_formatted = [];
         $modifiers_array = [];
@@ -407,6 +407,8 @@ class TransactionUtil extends Util
         $modifiers_formatted = [];
         $combo_lines = [];
         $products_modified_combo = [];
+        $exchange_rate = ! empty($transaction->exchange_rate) ? $transaction->exchange_rate : 1;
+
         foreach ($products as $product) {
             $multiplier = 1;
             if (isset($product['sub_unit_id']) && $product['sub_unit_id'] == $product['product_unit_id']) {
@@ -455,11 +457,11 @@ class TransactionUtil extends Util
                 $products_modified_combo[] = $product;
 
                 //calculate unit price and unit price before discount
-                $uf_unit_price = $uf_data ? $this->num_uf($product['unit_price']) : $product['unit_price'];
+                $uf_unit_price = $uf_data ? $this->num_uf($product['unit_price'], $currency_details) : $product['unit_price'];
                 $unit_price_before_discount = $uf_unit_price / $multiplier;
                 $unit_price = $unit_price_before_discount;
                 if (! empty($product['line_discount_type']) && $product['line_discount_amount']) {
-                    $discount_amount = $uf_data ? $this->num_uf($product['line_discount_amount']) : $product['line_discount_amount'];
+                    $discount_amount = $uf_data ? $this->num_uf($product['line_discount_amount'], $currency_details) : $product['line_discount_amount'];
                     if ($product['line_discount_type'] == 'fixed') {
 
                         //Note: Consider multiplier for fixed discount amount
@@ -469,12 +471,12 @@ class TransactionUtil extends Util
                     }
                 }
                 $uf_quantity = $uf_data ? $this->num_uf($product['quantity']) : $product['quantity'];
-                $uf_item_tax = $uf_data ? $this->num_uf($product['item_tax']) : $product['item_tax'];
-                $uf_unit_price_inc_tax = $uf_data ? $this->num_uf($product['unit_price_inc_tax']) : $product['unit_price_inc_tax'];
+                $uf_item_tax = $uf_data ? $product['item_tax'] : $product['item_tax'];
+                $uf_unit_price_inc_tax = $uf_data ? $this->num_uf($product['unit_price_inc_tax'], $currency_details) : $product['unit_price_inc_tax'];
 
                 $line_discount_amount = 0;
                 if (! empty($product['line_discount_amount'])) {
-                    $line_discount_amount = $uf_data ? $this->num_uf($product['line_discount_amount']) : $product['line_discount_amount'];
+                    $line_discount_amount = $uf_data ? $this->num_uf($product['line_discount_amount'], $currency_details) : $product['line_discount_amount'];
 
                     if ($product['line_discount_type'] == 'fixed') {
                         $line_discount_amount = $line_discount_amount / $multiplier;
@@ -485,13 +487,13 @@ class TransactionUtil extends Util
                     'product_id' => $product['product_id'],
                     'variation_id' => $product['variation_id'],
                     'quantity' => $uf_quantity * $multiplier,
-                    'unit_price_before_discount' => $unit_price_before_discount,
-                    'unit_price' => $unit_price,
+                    'unit_price_before_discount' => ($this->num_uf($unit_price_before_discount, $currency_details) / $exchange_rate) ,
+                    'unit_price' => ($this->num_uf($unit_price, $currency_details) / $exchange_rate) ,
                     'line_discount_type' => ! empty($product['line_discount_type']) ? $product['line_discount_type'] : null,
                     'line_discount_amount' => $line_discount_amount,
-                    'item_tax' => $uf_item_tax / $multiplier,
+                    'item_tax' => ($this->num_uf($uf_item_tax, $currency_details) / $exchange_rate) / $multiplier,
                     'tax_id' => $product['tax_id'],
-                    'unit_price_inc_tax' => $uf_unit_price_inc_tax / $multiplier,
+                    'unit_price_inc_tax' => ($this->num_uf($uf_unit_price_inc_tax , $currency_details)/ $exchange_rate) / $multiplier,
                     'sell_line_note' => ! empty($product['sell_line_note']) ? $product['sell_line_note'] : '',
                     'sub_unit_id' => ! empty($product['sub_unit_id']) ? $product['sub_unit_id'] : null,
                     'discount_id' => ! empty($product['discount_id']) ? $product['discount_id'] : null,

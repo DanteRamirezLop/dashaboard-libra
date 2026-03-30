@@ -419,7 +419,7 @@
       <div class="table-responsive">
         <table class="table">
           <tr>
-            <th>@lang('purchase.net_total_amount'):</th>
+            <th>@lang('purchase.net_total_amount'): </th>
             <td></td>
             <td>
               <span class="display_currency pull-right" data-currency_symbol="true">{{ $total_before_tax }}</span>

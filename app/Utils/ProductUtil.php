@@ -1237,6 +1237,7 @@ class ProductUtil extends Util
                     $this->updateProductQuantity($transaction->location_id, $data['product_id'], $data['variation_id'], $new_quantity_f, 0, $currency_details);
                 }
             }
+            //price_inc_tax
 
             $purchase_line->quantity = $new_quantity;
             $purchase_line->pp_without_discount = ($this->num_uf($data['pp_without_discount'], $currency_details) / $exchange_rate) / $multiplier;

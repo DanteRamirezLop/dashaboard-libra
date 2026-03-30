@@ -1,3 +1,4 @@
+@php $currency_factor = $currency_factor ?? 1; @endphp
 <table class="table @if(!empty($for_ledger)) table-slim mb-0 bg-light-gray @else bg-gray @endif" @if(!empty($for_pdf)) style="width: 100%;" @endif>
         <tr @if(empty($for_ledger)) class="bg-green" @endif>
         <th>#</th>
@@ -86,24 +87,24 @@
             @endif
             <td>
                 @if(!empty($for_ledger))
-                    @format_currency($sell_line->unit_price_before_discount)
+                    @format_currency($sell_line->unit_price_before_discount * $currency_factor)
                 @else
-                    <span class="display_currency" data-currency_symbol="true">{{ $sell_line->unit_price_before_discount }}</span>
+                    <span class="display_currency" data-currency_symbol="true">{{ $sell_line->unit_price_before_discount * $currency_factor }}</span>
                 @endif
             </td>
             <td>
                 @if(!empty($for_ledger))
-                    @format_currency($sell_line->get_discount_amount())
+                    @format_currency($sell_line->get_discount_amount() * $currency_factor)
                 @else
-                    <span class="display_currency" data-currency_symbol="true">{{ $sell_line->get_discount_amount() }}</span>
+                    <span class="display_currency" data-currency_symbol="true">{{ $sell_line->get_discount_amount() * $currency_factor }}</span>
                 @endif
                 @if($sell_line->line_discount_type == 'percentage') ({{$sell_line->line_discount_amount}}%) @endif
             </td>
             <td>
                 @if(!empty($for_ledger))
-                    @format_currency($sell_line->item_tax)
+                    @format_currency($sell_line->item_tax * $currency_factor)
                 @else
-                    <span class="display_currency" data-currency_symbol="true">{{ $sell_line->item_tax }}</span> 
+                    <span class="display_currency" data-currency_symbol="true">{{ $sell_line->item_tax * $currency_factor }}</span>
                 @endif
                 @if(!empty($taxes[$sell_line->tax_id]))
                 ( {{ $taxes[$sell_line->tax_id]}} )
@@ -111,16 +112,16 @@
             </td>
             <td>
                 @if(!empty($for_ledger))
-                    @format_currency($sell_line->unit_price_inc_tax)
+                    @format_currency($sell_line->unit_price_inc_tax * $currency_factor)
                 @else
-                    <span class="display_currency" data-currency_symbol="true">{{ $sell_line->unit_price_inc_tax }}</span>
+                    <span class="display_currency" data-currency_symbol="true">{{ $sell_line->unit_price_inc_tax * $currency_factor }}</span>
                 @endif
             </td>
             <td>
                 @if(!empty($for_ledger))
-                    @format_currency($sell_line->quantity * $sell_line->unit_price_inc_tax)
+                    @format_currency($sell_line->quantity * $sell_line->unit_price_inc_tax * $currency_factor)
                 @else
-                    <span class="display_currency" data-currency_symbol="true">{{ $sell_line->quantity * $sell_line->unit_price_inc_tax }}</span>
+                    <span class="display_currency" data-currency_symbol="true">{{ $sell_line->quantity * $sell_line->unit_price_inc_tax * $currency_factor }}</span>
                 @endif
             </td>
         </tr>
@@ -143,9 +144,9 @@
                 @endif
                 <td>
                     @if(!empty($for_ledger))
-                        @format_currency($modifier->unit_price)
+                        @format_currency($modifier->unit_price * $currency_factor)
                     @else
-                        <span class="display_currency" data-currency_symbol="true">{{ $modifier->unit_price }}</span>
+                        <span class="display_currency" data-currency_symbol="true">{{ $modifier->unit_price * $currency_factor }}</span>
                     @endif
                 </td>
                 <td>
@@ -153,9 +154,9 @@
                 </td>
                 <td>
                     @if(!empty($for_ledger))
-                        @format_currency($modifier->item_tax)
+                        @format_currency($modifier->item_tax * $currency_factor)
                     @else
-                        <span class="display_currency" data-currency_symbol="true">{{ $modifier->item_tax }}</span> 
+                        <span class="display_currency" data-currency_symbol="true">{{ $modifier->item_tax * $currency_factor }}</span>
                     @endif
                     @if(!empty($taxes[$modifier->tax_id]))
                     ( {{ $taxes[$modifier->tax_id]}} )
@@ -163,16 +164,16 @@
                 </td>
                 <td>
                     @if(!empty($for_ledger))
-                        @format_currency($modifier->unit_price_inc_tax)
+                        @format_currency($modifier->unit_price_inc_tax * $currency_factor)
                     @else
-                        <span class="display_currency" data-currency_symbol="true">{{ $modifier->unit_price_inc_tax }}</span>
+                        <span class="display_currency" data-currency_symbol="true">{{ $modifier->unit_price_inc_tax * $currency_factor }}</span>
                     @endif
                 </td>
                 <td>
                     @if(!empty($for_ledger))
-                        @format_currency($modifier->quantity * $modifier->unit_price_inc_tax)
+                        @format_currency($modifier->quantity * $modifier->unit_price_inc_tax * $currency_factor)
                     @else
-                        <span class="display_currency" data-currency_symbol="true">{{ $modifier->quantity * $modifier->unit_price_inc_tax }}</span>
+                        <span class="display_currency" data-currency_symbol="true">{{ $modifier->quantity * $modifier->unit_price_inc_tax * $currency_factor }}</span>
                     @endif
                 </td>
             </tr>

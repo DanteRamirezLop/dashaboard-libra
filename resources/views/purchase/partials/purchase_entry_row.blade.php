@@ -156,6 +156,7 @@
                 $dpp_inc_tax = !empty($purchase_order_line) ? number_format($purchase_order_line->purchase_price_inc_tax , $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator) : $dpp_inc_tax;
 
             @endphp
+            
             {!! Form::text('purchases[' . $row_count . '][purchase_price_inc_tax]', $dpp_inc_tax, ['class' => 'form-control input-sm purchase_unit_cost_after_tax input_number', 'required']); !!}
         </td>
         <td>
@@ -216,6 +217,7 @@
                 </div>
                 <b><small>@lang('product.exp_date'):</small></b>
                 <div class="input-group">
+                
                     <span class="input-group-addon">
                         <i class="fa fa-calendar"></i>
                     </span>
@@ -231,7 +233,10 @@
         @endif
         <?php $row_count++ ;?>
 
-        <td><i class="fa fa-times remove_purchase_entry_row text-danger" title="Remove" style="cursor:pointer;"></i></td>
+        <td>
+            ***
+            <i class="fa fa-times remove_purchase_entry_row text-danger" title="Remove" style="cursor:pointer;"></i>
+        </td>
     </tr>
 @endforeach
 
