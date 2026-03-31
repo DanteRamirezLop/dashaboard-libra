@@ -1106,6 +1106,7 @@ class TransactionUtil extends Util
 
         $transaction = Transaction::find($transaction_id);
         $transaction_type = $transaction->type;
+        $exchange_rate = !empty($transaction->exchange_rate) ? (float)$transaction->exchange_rate : 1;
 
         $output = [
             'header_text' => isset($il->header_text) ? $il->header_text : '',
@@ -1449,6 +1450,39 @@ class TransactionUtil extends Util
             $output['tax_summary_label'] = $il->common_settings['tax_summary_label'] ?? '';
             $details = $this->_receiptDetailsSellLines($lines, $il, $business_details);
 
+            if ($exchange_rate != 1) {
+                foreach ($details['lines'] as &$line) {
+                    $line['unit_price_uf']                  *= $exchange_rate;
+                    $line['unit_price']                      = $this->num_f($line['unit_price_uf'], false, $business_details);
+                    $line['unit_price_exc_tax']              = $line['unit_price'];
+
+                    $line['tax_unformatted']                *= $exchange_rate;
+                    $line['tax']                             = $this->num_f($line['tax_unformatted'], false, $business_details);
+
+                    $line['unit_price_inc_tax_uf']          *= $exchange_rate;
+                    $line['unit_price_inc_tax']              = $this->num_f($line['unit_price_inc_tax_uf'], false, $business_details);
+
+                    $line['price_exc_tax']                   = $line['quantity_uf'] * $line['unit_price_uf'];
+
+                    $line['unit_price_before_discount_uf']  *= $exchange_rate;
+                    $line['unit_price_before_discount']      = $this->num_f($line['unit_price_before_discount_uf'], false, $business_details);
+
+                    $line['line_total_uf']                  *= $exchange_rate;
+                    $line['line_total']                      = $this->num_f($line['line_total_uf'], false, $business_details);
+
+                    $line['line_total_exc_tax_uf']          *= $exchange_rate;
+                    $line['line_total_exc_tax']              = $this->num_f($line['line_total_exc_tax_uf'], false, $business_details);
+
+                    $line['line_discount_uf']               *= $exchange_rate;
+                    $line['line_discount']                   = $this->num_f($line['line_discount_uf'], false, $business_details);
+                    if (isset($line['line_discount_percent'])) {
+                        $line['line_discount'] .= ' (' . $line['line_discount_percent'] . '%)';
+                    }
+                    $line['total_line_discount']             = $this->num_f($line['line_discount_uf'] * $line['quantity_uf'], false, $business_details);
+                }
+                unset($line);
+            }
+
             $output['lines'] = $details['lines'];
             $output['taxes'] = [];
             $total_quantity = 0;
@@ -1530,8 +1564,8 @@ class TransactionUtil extends Util
 
         //Subtotal
         $output['subtotal_label'] = $il->sub_total_label.':';
-        $output['subtotal'] = ($transaction->total_before_tax != 0) ? $this->num_f($transaction->total_before_tax, $show_currency, $business_details) : 0;
-        $output['subtotal_unformatted'] = ($transaction->total_before_tax != 0) ? $transaction->total_before_tax : 0;
+        $output['subtotal'] = ($transaction->total_before_tax != 0) ? $this->num_f($transaction->total_before_tax * $exchange_rate, $show_currency, $business_details) : 0;
+        $output['subtotal_unformatted'] = ($transaction->total_before_tax != 0) ? $transaction->total_before_tax * $exchange_rate : 0;
 
         //round off
         $output['round_off_label'] = ! empty($il->round_off_label) ? $il->round_off_label.':' : __('lang_v1.round_off').':';
@@ -1550,9 +1584,9 @@ class TransactionUtil extends Util
         $output['discount_label'] .= ($transaction->discount_type == 'percentage') ? ' <small>('.$this->num_f($transaction->discount_amount, false, $business_details).'%)</small> :' : '';
 
         if ($transaction->discount_type == 'percentage') {
-            $discount = ($transaction->discount_amount / 100) * $transaction->total_before_tax;
+            $discount = ($transaction->discount_amount / 100) * $transaction->total_before_tax * $exchange_rate;
         } else {
-            $discount = $transaction->discount_amount;
+            $discount = $transaction->discount_amount * $exchange_rate;
         }
         $output['discount'] = ($discount != 0) ? $this->num_f($discount, $show_currency, $business_details) : 0;
 
@@ -1594,7 +1628,7 @@ class TransactionUtil extends Util
         }
 
         //Shipping charges
-        $output['shipping_charges'] = ($transaction->shipping_charges != 0) ? $this->num_f($transaction->shipping_charges, $show_currency, $business_details) : 0;
+        $output['shipping_charges'] = ($transaction->shipping_charges != 0) ? $this->num_f($transaction->shipping_charges * $exchange_rate, $show_currency, $business_details) : 0;
         $output['shipping_charges_label'] = trans('sale.shipping_charges');
         //Shipping details
         $output['shipping_details'] = $transaction->shipping_details;
@@ -1604,19 +1638,20 @@ class TransactionUtil extends Util
         $output['packing_charge'] = ($transaction->packing_charge != 0) ? $this->num_f($transaction->packing_charge, $show_currency, $business_details) : 0;
 
         //Total
+        $final_total_display = $transaction->final_total * $exchange_rate;
         if ($transaction_type == 'sell_return') {
             $output['total_label'] = $invoice_layout->cn_amount_label.':';
-            $output['total'] = $this->num_f($transaction->final_total, $show_currency, $business_details);
+            $output['total'] = $this->num_f($final_total_display, $show_currency, $business_details);
         } else {
             $output['total_label'] = $invoice_layout->total_label.':';
-            $output['total'] = $this->num_f($transaction->final_total, $show_currency, $business_details);
+            $output['total'] = $this->num_f($final_total_display, $show_currency, $business_details);
         }
         if (! empty($il->common_settings['show_total_in_words'])) {
             $word_format = isset($il->common_settings['num_to_word_format']) ? $il->common_settings['num_to_word_format'] : 'international';
-            $output['total_in_words'] = $this->numToWord($transaction->final_total, null, $word_format);
+            $output['total_in_words'] = $this->numToWord($final_total_display, null, $word_format);
         }
 
-        $output['total_unformatted'] = $transaction->final_total;
+        $output['total_unformatted'] = $final_total_display;
 
         //Paid & Amount due, only if final
         if ($transaction_type == 'sell' && $transaction->status == 'final') {
@@ -1701,16 +1736,16 @@ class TransactionUtil extends Util
         $output['additional_expenses'] = [];
 
         if (! empty($transaction->additional_expense_value_1) && ! empty($transaction->additional_expense_key_1)) {
-            $output['additional_expenses'][$transaction->additional_expense_key_1] = $this->num_f($transaction->additional_expense_value_1, $show_currency, $business_details);
+            $output['additional_expenses'][$transaction->additional_expense_key_1] = $this->num_f($transaction->additional_expense_value_1 * $exchange_rate, $show_currency, $business_details);
         }
         if (! empty($transaction->additional_expense_value_2) && ! empty($transaction->additional_expense_key_2)) {
-            $output['additional_expenses'][$transaction->additional_expense_key_2] = $this->num_f($transaction->additional_expense_value_2, $show_currency, $business_details);
+            $output['additional_expenses'][$transaction->additional_expense_key_2] = $this->num_f($transaction->additional_expense_value_2 * $exchange_rate, $show_currency, $business_details);
         }
         if (! empty($transaction->additional_expense_value_3) && ! empty($transaction->additional_expense_key_3)) {
-            $output['additional_expenses'][$transaction->additional_expense_key_3] = $this->num_f($transaction->additional_expense_value_3, $show_currency, $business_details);
+            $output['additional_expenses'][$transaction->additional_expense_key_3] = $this->num_f($transaction->additional_expense_value_3 * $exchange_rate, $show_currency, $business_details);
         }
         if (! empty($transaction->additional_expense_value_4) && ! empty($transaction->additional_expense_key_4)) {
-            $output['additional_expenses'][$transaction->additional_expense_key_4] = $this->num_f($transaction->additional_expense_value_4, $show_currency, $business_details);
+            $output['additional_expenses'][$transaction->additional_expense_key_4] = $this->num_f($transaction->additional_expense_value_4 * $exchange_rate, $show_currency, $business_details);
         }
 
         //Check for barcode
