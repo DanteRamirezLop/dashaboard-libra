@@ -3,7 +3,7 @@
         <div class="modal-header">
             <button type="button" class="close no-print" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             <h4 class="modal-title no-print">
-                @lang( 'purchase.view_payments' ) 
+               @lang( 'purchase.view_payments' ) 
                 (
                 @if(in_array($transaction->type, ['purchase', 'expense', 'purchase_return', 'payroll']))    
                     @lang('purchase.ref_no'): {{ $transaction->ref_no }} 

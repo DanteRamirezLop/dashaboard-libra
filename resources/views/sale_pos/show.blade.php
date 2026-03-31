@@ -425,6 +425,7 @@
               <th>{{ __('messages.date') }}</th>
               <th>{{ __('purchase.ref_no') }}</th>
               <th>{{ __('sale.amount') }}</th>
+              <th>{{ __('sale.detail_amount_paid') }}</th>
               <th>{{ __('sale.payment_mode') }}</th>
               <th>{{ __('sale.payment_note') }}</th>
             </tr>
@@ -443,6 +444,12 @@
                 <td>{{ @format_date($payment_line->paid_on) }}</td>
                 <td>{{ $payment_line->payment_ref_no }}</td>
                 <td><span class="display_currency" data-currency_symbol="true">{{ $payment_amount_converted }}</span></td>
+                
+                <td>
+                   Se cancelo {{number_format(($payment_line->amount * $payment_line->exchange_rate),2)}}
+                   {{$payment_line->currency->currency}}
+                </td>
+
                 <td>
                   {{ $payment_types[$payment_line->method] ?? $payment_line->method }}
                   @if($payment_line->is_return == 1)

@@ -1895,7 +1895,16 @@ function pos_each_row(row_obj) {
         .find(':selected')
         .data('rate');
 
-    var unit_price_inc_tax = discounted_unit_price + __calculate_amount('percentage', tax_rate, discounted_unit_price);
+    var after_unit_price_inc_tax = discounted_unit_price + __calculate_amount('percentage', tax_rate, discounted_unit_price);
+   
+    //REDONDEAR EN VENTA
+    unit_price_inc_tax = after_unit_price_inc_tax;
+    multiple = 0.05; // REDONDEO PARA EVITAR  EL 99.99
+    if(multiple > 0) { 
+        x = new Decimal(after_unit_price_inc_tax);
+        unit_price_inc_tax = x.toNearest(multiple); 
+    }
+   
     __write_number(row_obj.find('input.pos_unit_price_inc_tax'), unit_price_inc_tax);
 
     var discount = __read_number(row_obj.find('input.row_discount_amount'));
@@ -1905,8 +1914,6 @@ function pos_each_row(row_obj) {
         var line_total = qty * unit_price_inc_tax;
         __write_number(row_obj.find('input.pos_line_total'), line_total);
     }
-
-    unit_price_inc_tax = __round(unit_price_inc_tax, 0.05).number;
 
     //var unit_price_inc_tax = __read_number(row_obj.find('input.pos_unit_price_inc_tax'));
     __write_number(row_obj.find('input.item_tax'), unit_price_inc_tax - discounted_unit_price);

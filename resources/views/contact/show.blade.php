@@ -559,6 +559,10 @@ $(document).on('click', '#print_ledger_pdf', function() {
 </script>
 @include('sale_pos.partials.sale_table_javascript')
 <script src="{{ asset('js/payment.js?v=' . $asset_v) }}"></script>
+<script src="{{ asset('js/change_currency.js?v=' . $asset_v) }}"></script>
+<script>
+    PurchaseCurrency.init();
+</script>
 @if(in_array($contact->type, ['both', 'supplier']))
     <script src="{{ asset('js/purchase.js?v=' . $asset_v) }}"></script>
 @endif

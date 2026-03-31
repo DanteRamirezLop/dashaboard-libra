@@ -789,6 +789,7 @@
 			@endcomponent
 		</div>
 	</div>
+
 	@if(!empty($common_settings['is_enabled_export']) && $sale_type != 'sales_order')
 		@component('components.widget', ['class' => 'box-solid', 'title' => __('lang_v1.export')])
 			<div class="col-md-12 mb-12">
@@ -849,9 +850,8 @@
 				</div>
 			@endif
 
-		
+			
 			@if(empty($status) || !in_array($status, ['quotation', 'draft']))
-				
 				<div class="payment_row" @if($is_enabled_download_pdf) id="payment_rows_div" @endif>
 					<div class="row">
 						<div class="col-md-12 mb-12">
@@ -866,7 +866,7 @@
 						<div class="col-md-12">
 			        		<hr>
 			        		<strong>
-			        			@lang('lang_v1.change_return'):
+			        			@lang('lang_v1.change_return'):  
 			        		</strong>
 			        		<br/>
 			        		<span class="lead text-bold change_return_span">0</span>
@@ -878,6 +878,8 @@
 			            	@endif
 						</div>
 					</div>
+
+					
 					<div class="row hide payment_row" id="change_return_payment_data">
 						<div class="col-md-4">
 							<div class="form-group">
@@ -898,6 +900,7 @@
 								</div>
 							</div>
 						</div>
+				
 						@if(!empty($accounts))
 						<div class="col-md-4">
 							<div class="form-group">
@@ -911,7 +914,7 @@
 							</div>
 						</div>
 						@endif
-						<p>---------------</p>
+						
 						@include('sale_pos.partials.payment_type_details', ['payment_line' => $change_return, 'row_index' => 'change_return'])
 					</div>
 					<hr>
@@ -923,8 +926,11 @@
 				</div>
 			@endif
 			@endcomponent
+
+
 		@endcan
 	@endif
+
 	
 	<div class="row">
 		{!! Form::hidden('is_save_and_print', 0, ['id' => 'is_save_and_print']); !!}

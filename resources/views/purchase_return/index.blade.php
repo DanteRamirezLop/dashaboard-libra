@@ -69,6 +69,10 @@
 @stop
 @section('javascript')
     <script src="{{ asset('js/payment.js?v=' . $asset_v) }}"></script>
+    <script src="{{ asset('js/change_currency.js?v=' . $asset_v) }}"></script>
+    <script>
+        PurchaseCurrency.init();
+    </script>
     <script>
         $(document).ready(function() {
             $('#purchase_list_filter_date_range').daterangepicker(

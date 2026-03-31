@@ -234,7 +234,6 @@
         <?php $row_count++ ;?>
 
         <td>
-            ***
             <i class="fa fa-times remove_purchase_entry_row text-danger" title="Remove" style="cursor:pointer;"></i>
         </td>
     </tr>
