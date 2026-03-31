@@ -194,7 +194,7 @@ class TransactionUtil extends Util
             'staff_note' => ! empty($input['staff_note']) ? $input['staff_note'] : null,
             'created_by' => $user_id,
             'document' => ! empty($input['document']) ? $input['document'] : null,
-            'custom_field_1' => ! empty($input['custom_field_1']) ? $input['custom_field_1'] : null,
+            'custom_field_1' => ! empty($input['custom_field_1']) ? $input['custom_field_1'] : ($input['status'] == 'final' ? null : $invoice_no), //Si es una cotizacion el numero de factura tambien se guarda el numero de cotizacion
             'custom_field_2' => ! empty($input['custom_field_2']) ? $input['custom_field_2'] : null,
             'custom_field_3' => ! empty($input['custom_field_3']) ? $input['custom_field_3'] : null,
             'custom_field_4' => ! empty($input['custom_field_4']) ? $input['custom_field_4'] : null,

@@ -363,7 +363,7 @@
 		        @endif
 
 
-		        <div class="col-sm-3">
+		        <div class="col-sm-4">
 	                <div class="form-group">
 	                    {!! Form::label('upload_document', __('purchase.attach_document') . ':') !!}
 	                    {!! Form::file('sell_document', ['id' => 'upload_document', 'accept' => implode(',', array_keys(config('constants.document_upload_mimes_types')))]); !!}
