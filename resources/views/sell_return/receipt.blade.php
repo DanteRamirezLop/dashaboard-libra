@@ -154,6 +154,14 @@
 				{{$receipt_details->invoice_date}}
 			</p>
 		@endif
+
+		<!-- Exchange rate -->
+		@if(!empty($receipt_details->exchange_rate) && $receipt_details->exchange_rate != 1)
+			<p class="text-right font-23 color-555">
+				<span class="pull-left"><b>Tipo de cambio:</b></span>
+				{{ number_format($receipt_details->exchange_rate, 3) }}
+			</p>
+		@endif
 	</div>
 </div>
 

@@ -1,11 +1,13 @@
 <style>
 	@media print {
-	@page { margin: 0; }
-	body { margin: 1.6cm; }
+		@page { margin: 0; }
+		body { margin: 1.6cm; }
 	}
 </style>
 <!-- business information here -->
 <div class="row" style="color: #000000 !important;">
+
+
 	@if(empty($receipt_details->letter_head))
 		<!-- Logo -->
 		@if(!empty($receipt_details->logo))
@@ -22,8 +24,9 @@
 		<!-- business information here -->
 		<div class="col-xs-12 text-center">
 			<!-- Address -->
-			<div class="text-sm"><strong>Local 1: </strong>Central Administración, Taller, Exhibición & Ventas  
-					AAHH 8 de Setiembre. Calle Las Mercedes Lote 01, Tumbes 
+			<div class="text-sm"><strong>Local 1: </strong>
+				Central Administración, Taller, Exhibición & Ventas  
+				AAHH 8 de Setiembre. Calle Las Mercedes Lote 01, Tumbes 
 			</div>
 			<div class="text-sm"><strong>Local 2: </strong>Exhibición y Ventas, Carretera Panamericana Norte Km 1267 
 				Pueblo Nuevo, Tumbes 
@@ -72,7 +75,7 @@
 	<div class="col-xs-7">
 		<h3 style="text-transform: uppercase; font-weight:800"><!-- Shop & Location Name  -->
 			@if(!empty($receipt_details->display_name))
-					{{$receipt_details->display_name}}
+				{{$receipt_details->display_name}}
 			@endif
 		</h3>
 	</div>
@@ -162,6 +165,10 @@
 
 				@if(!empty($receipt_details->due_date_label))
 				<br><b>{{$receipt_details->due_date_label}}</b> {{$receipt_details->due_date ?? ''}}
+				@endif
+
+				@if(!empty($receipt_details->exchange_rate) && $receipt_details->exchange_rate != 1)
+				<br><b>Tipo de cambio:</b> {{ number_format($receipt_details->exchange_rate, 3) }}
 				@endif
 
 				@if(!empty($receipt_details->brand_label) || !empty($receipt_details->repair_brand))
@@ -260,7 +267,6 @@
 
 <div class="row" style="color: #000000 !important;">
 	<div class="col-xs-12">
-		
 		<br/>
 		@php
 			$p_width = 45;
@@ -686,11 +692,14 @@
 							{!! $receipt_details->total_label !!}
 						</th>
 						<td class="text-right" style="border-top: 1px solid black;">
-							{{$receipt_details->total}}
-							@if(!empty($receipt_details->total_in_words))
+							{{$receipt_details->total}} 
+
+							
+						
+							<!-- @if(!empty($receipt_details->total_in_words))
 								<br>
-								<small>({{$receipt_details->total_in_words}})</small>
-							@endif
+								<small>({{$receipt_details->total_in_words}}) </small>
+							@endif -->
 						</td>
 					</tr>
 				</tbody>
@@ -725,14 +734,12 @@
     
 </div>
 
-
 <div class="row">
 	<div style="margin-top:6px"></div>
 	<div class="text-center">Si usted tiene alguna pregunta sobre esta cotización, por favor, p&oacute;ngase en contacto con nosotros</div>
 	<div class="text-center">LIBRA INTERNATIONAL EIRL | Cel: 957233959 | E-mail: informes@librainternational.com.pe</div>
 	<div class="text-center"><strong><em>Gracias por hacer negocios con nosotros!</em></strong></div>
 </div>
-
 
 <div class="row" style="color: #000000 !important;">
 	@if(!empty($receipt_details->footer_text))

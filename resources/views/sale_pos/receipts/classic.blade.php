@@ -160,6 +160,10 @@
 				<br><b>{{$receipt_details->due_date_label}}</b> {{$receipt_details->due_date ?? ''}}
 				@endif
 
+				@if(!empty($receipt_details->exchange_rate) && $receipt_details->exchange_rate != 1)
+				<br><b>Tipo de cambio:</b> {{ number_format($receipt_details->exchange_rate, 3) }}
+				@endif
+
 				@if(!empty($receipt_details->brand_label) || !empty($receipt_details->repair_brand))
 					<br>
 					@if(!empty($receipt_details->brand_label))

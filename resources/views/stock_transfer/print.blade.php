@@ -1,3 +1,6 @@
+@php
+  $currency_factor = !empty($sell_transfer->exchange_rate) ? (float) $sell_transfer->exchange_rate : 1;
+@endphp
 <div class="row">
   <div class="col-xs-12">
     <h2 class="page-header">
@@ -62,6 +65,9 @@
   <div class="col-sm-4 invoice-col">
     <b>@lang('purchase.ref_no'):</b> #{{ $sell_transfer->ref_no }}<br/>
     <b>@lang('messages.date'):</b> {{ @format_date($sell_transfer->transaction_date) }}<br/>
+    @if(!empty($sell_transfer->exchange_rate) && $sell_transfer->exchange_rate != 1)
+      <b>Tipo de cambio:</b> {{ number_format($sell_transfer->exchange_rate, 3) }}<br/>
+    @endif
   </div>
 </div>
 
@@ -102,11 +108,11 @@
             </td>
             <td>{{ @format_quantity($sell_lines->quantity) }} {{$sell_lines->product->unit->short_name ?? ""}}</td>
             <td class="show_price_with_permission">
-              <span class="display_currency" data-currency_symbol="true">{{ $sell_lines->unit_price_inc_tax * $sell_lines->quantity }}</span>
+              @format_currency($sell_lines->unit_price_inc_tax * $sell_lines->quantity * $currency_factor, $currency_details)
             </td>
           </tr>
-          @php 
-            $total += ($sell_lines->unit_price_inc_tax * $sell_lines->quantity);
+          @php
+            $total += ($sell_lines->unit_price_inc_tax * $sell_lines->quantity * $currency_factor);
           @endphp
         @endforeach
       </table>
@@ -122,19 +128,19 @@
         <tr>
           <th >@lang('purchase.net_total_amount'): </th>
           <td></td>
-          <td><span class="display_currency pull-right" data-currency_symbol="true">{{ $total }}</span></td>
+          <td class="pull-right">@format_currency($total, $currency_details)</td>
         </tr>
         @if( !empty( $sell_transfer->shipping_charges ) )
           <tr>
             <th>@lang('purchase.additional_shipping_charges'):</th>
             <td><b>(+)</b></td>
-            <td><span class="display_currency pull-right" data-currency_symbol="true">{{ $sell_transfer->shipping_charges }}</span></td>
+            <td class="pull-right">@format_currency($sell_transfer->shipping_charges * $currency_factor, $currency_details)</td>
           </tr>
         @endif
         <tr>
           <th>@lang('purchase.purchase_total'):</th>
           <td></td>
-          <td><span class="display_currency pull-right" data-currency_symbol="true" >{{ $sell_transfer->final_total }}</span></td>
+          <td class="pull-right">@format_currency($sell_transfer->final_total * $currency_factor, $currency_details)</td>
         </tr>
       </table>
     </div>

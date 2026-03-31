@@ -63,6 +63,7 @@ use Stripe\Charge;
 use Stripe\Stripe;
 use Yajra\DataTables\Facades\DataTables;
 use App\Events\SellCreatedOrModified;
+use App\Currency;
 
 class SellPosController extends Controller
 {
@@ -732,7 +733,8 @@ class SellPosController extends Controller
         $invoice_layout_id = null,
         $is_delivery_note = false,
         $is_draft = false,
-    ) {
+    ) 
+    {
         $output = ['is_enabled' => false,
             'print_type' => 'browser',
             'html_content' => null,
@@ -741,6 +743,17 @@ class SellPosController extends Controller
         ];
 
         $business_details = $this->businessUtil->getDetails($business_id);
+
+        // Si la transacción tiene una moneda distinta a la del sistema, usarla en business_details
+        $transaction_for_currency = Transaction::find($transaction_id);
+        if (! empty($transaction_for_currency->currency_id)) {
+            $transaction_currency = Currency::find($transaction_for_currency->currency_id);
+            if (! empty($transaction_currency)) {
+                $business_details->currency_code   = $transaction_currency->code;
+                $business_details->currency_symbol = $transaction_currency->symbol;
+            }
+        }
+
         $location_details = BusinessLocation::find($location_id);
 
         if ($from_pos_screen && $location_details->print_receipt_on_invoice != 1) {
@@ -758,12 +771,6 @@ class SellPosController extends Controller
 
         $receipt_details = $this->transactionUtil->getReceiptDetails($transaction_id, $location_id, $invoice_layout, $business_details, $location_details, $receipt_printer_type);
 
-        $currency_details = [
-            'symbol' => $business_details->currency_symbol,
-            'thousand_separator' => $business_details->thousand_separator,
-            'decimal_separator' => $business_details->decimal_separator,
-        ];
-        $receipt_details->currency = $currency_details;
 
         if ($is_package_slip) {
             $output['html_content'] = view('sale_pos.receipts.packing_slip', compact('receipt_details'))->render();
@@ -777,6 +784,7 @@ class SellPosController extends Controller
             return $output;
         }
 
+
         $output['print_title'] = $receipt_details->invoice_no;
         //If print type browser - return the content, printer - return printer config data, and invoice format config
         if ($receipt_printer_type == 'printer') {
@@ -785,7 +793,6 @@ class SellPosController extends Controller
             $output['data'] = $receipt_details;
         } else {
             //$layout = !empty($receipt_details->design) ? 'sale_pos.receipts.' . $receipt_details->design : 'sale_pos.receipts.classic';
-
             if($is_draft){
                 $layout = 'sale_pos.receipts.draft';
             }else{    

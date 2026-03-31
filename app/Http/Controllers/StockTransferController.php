@@ -591,8 +591,10 @@ class StockTransferController extends Controller
                 $lot_n_exp_enabled = true;
             }
 
+            $currency_details = $this->transactionUtil->currencyDetails($business_id, $sell_transfer->currency_id, $sell_transfer->exchange_rate);
+
             $output = ['success' => 1, 'receipt' => [], 'print_title' => $sell_transfer->ref_no];
-            $output['receipt']['html_content'] = view('stock_transfer.print', compact('sell_transfer', 'location_details', 'lot_n_exp_enabled'))->render();
+            $output['receipt']['html_content'] = view('stock_transfer.print', compact('sell_transfer', 'location_details', 'lot_n_exp_enabled', 'currency_details'))->render();
         } catch (\Exception $e) {
             \Log::emergency('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
 

@@ -1398,8 +1398,6 @@ class TransactionUtil extends Util
 
         $output['transaction_date'] = $transaction->transaction_date;
         $output['date_time_format'] = $business_details->date_format;
-        $output['currency_symbol'] = $business_details->currency_symbol;
-
         $output['hide_price'] = ! empty($il->common_settings['hide_price']) ? true : false;
 
         if (! empty($il->common_settings['show_due_date']) && $transaction->payment_status != 'paid') {
@@ -1415,7 +1413,7 @@ class TransactionUtil extends Util
         }
 
         $show_currency = true;
-        if ($receipt_printer_type == 'printer' && trim($business_details->currency_symbol) != '$') {
+        if ($receipt_printer_type == 'printer') {
             $show_currency = false;
         }
 
@@ -2049,6 +2047,9 @@ class TransactionUtil extends Util
 
         $output['design'] = $il->design;
         $output['table_tax_headings'] = ! empty($il->table_tax_headings) ? array_filter(json_decode($il->table_tax_headings), 'strlen') : null;
+
+        $output['exchange_rate'] = !empty($transaction->exchange_rate) ? (float) $transaction->exchange_rate : 1;
+        $output['currency_id'] = $transaction->currency_id ?? null;
 
         return (object) $output;
     }
