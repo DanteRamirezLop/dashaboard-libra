@@ -1658,7 +1658,7 @@ class TransactionUtil extends Util
             $paid_amount = $this->getTotalPaid($transaction->id);
             $due = $transaction->final_total - $paid_amount;
 
-            $output['total_paid'] = ($paid_amount == 0) ? 0 : $this->num_f($paid_amount, $show_currency, $business_details);
+            $output['total_paid'] = ($paid_amount == 0) ? 0 : $this->num_f($paid_amount * $exchange_rate, $show_currency, $business_details);
             $output['total_paid_label'] = $il->paid_label;
             $output['total_due'] = ($due == 0) ? 0 : $this->num_f($due, $show_currency, $business_details);
             $output['total_due_label'] = $il->total_due_label;
@@ -1674,15 +1674,23 @@ class TransactionUtil extends Util
             //Get payment details
             $output['payments'] = [];
             if ($il->show_payments == 1) {
-                $payments = $transaction->payment_lines->toArray();
+                $payments = $transaction->payment_lines()->with('currency')->get()->toArray();
                 $payment_types = $this->payment_types($transaction->location_id, true);
                 if (! empty($payments)) {
                     foreach ($payments as $value) {
                         $method = ! empty($payment_types[$value['method']]) ? $payment_types[$value['method']] : '';
+                        $pay_rate          = !empty($value['exchange_rate']) ? (float)$value['exchange_rate'] : 1;
+                        $pay_amount        = $value['amount'] * $pay_rate;
+                        $pay_amount_base    = $value['amount'];
+                        $pay_currency_code = !empty($value['currency']['symbol'])
+                            ? $value['currency']['symbol']
+                            : ($business_details->currency_symbol ?? '');
                         if ($value['method'] == 'cash') {
                             $output['payments'][] =
                                 ['method' => $method.($value['is_return'] == 1 ? ' ('.$il->change_return_label.')(-)' : ''),
-                                    'amount' => $this->num_f($value['amount'], $show_currency, $business_details),
+                                    'amount' => $this->num_f($pay_amount, false, $business_details),
+                                    'amount_base' => $this->num_f($pay_amount_base, false, $business_details),
+                                    'currency_symbol' => $pay_currency_code,
                                     'date' => $this->format_date($value['paid_on'], false, $business_details),
                                 ];
                             if ($value['is_return'] == 1) {
@@ -1690,31 +1698,41 @@ class TransactionUtil extends Util
                         } elseif ($value['method'] == 'card') {
                             $output['payments'][] =
                                 ['method' => $method.(! empty($value['card_transaction_number']) ? (', Transaction Number:'.$value['card_transaction_number']) : ''),
-                                    'amount' => $this->num_f($value['amount'], $show_currency, $business_details),
+                                    'amount' => $this->num_f($pay_amount, false, $business_details),
+                                    'amount_base' => $this->num_f($pay_amount_base, false, $business_details),
+                                    'currency_symbol' => $pay_currency_code,
                                     'date' => $this->format_date($value['paid_on'], false, $business_details),
                                 ];
                         } elseif ($value['method'] == 'cheque') {
                             $output['payments'][] =
                                 ['method' => $method.(! empty($value['cheque_number']) ? (', Cheque Number:'.$value['cheque_number']) : ''),
-                                    'amount' => $this->num_f($value['amount'], $show_currency, $business_details),
+                                    'amount' => $this->num_f($pay_amount, false, $business_details),
+                                    'amount_base' => $this->num_f($pay_amount_base, false, $business_details),
+                                    'currency_symbol' => $pay_currency_code,
                                     'date' => $this->format_date($value['paid_on'], false, $business_details),
                                 ];
                         } elseif ($value['method'] == 'bank_transfer') {
                             $output['payments'][] =
                                 ['method' => $method.(! empty($value['bank_account_number']) ? (', Account Number:'.$value['bank_account_number']) : ''),
-                                    'amount' => $this->num_f($value['amount'], $show_currency, $business_details),
+                                    'amount' => $this->num_f($pay_amount, false, $business_details),
+                                    'amount_base' => $this->num_f($pay_amount_base, false, $business_details),
+                                    'currency_symbol' => $pay_currency_code,
                                     'date' => $this->format_date($value['paid_on'], false, $business_details),
                                 ];
                         } elseif ($value['method'] == 'advance') {
                             $output['payments'][] =
                                 ['method' => $method,
-                                    'amount' => $this->num_f($value['amount'], $show_currency, $business_details),
+                                    'amount' => $this->num_f($pay_amount, false, $business_details),
+                                    'amount_base' => $this->num_f($pay_amount_base, false, $business_details),
+                                    'currency_symbol' => $pay_currency_code,
                                     'date' => $this->format_date($value['paid_on'], false, $business_details),
                                 ];
                         } elseif ($value['method'] == 'other') {
                             $output['payments'][] =
                                 ['method' => $method,
-                                    'amount' => $this->num_f($value['amount'], $show_currency, $business_details),
+                                    'amount' => $this->num_f($pay_amount, false, $business_details),
+                                    'amount_base' => $this->num_f($pay_amount_base, false, $business_details),
+                                    'currency_symbol' => $pay_currency_code,
                                     'date' => $this->format_date($value['paid_on'], false, $business_details),
                                 ];
                         }
@@ -1723,7 +1741,9 @@ class TransactionUtil extends Util
                             if ($value['method'] == "custom_pay_{$i}") {
                                 $output['payments'][] =
                                     ['method' => $method.(! empty($value['transaction_no']) ? (', '.trans('lang_v1.transaction_no').':'.$value['transaction_no']) : ''),
-                                        'amount' => $this->num_f($value['amount'], $show_currency, $business_details),
+                                        'amount' => $this->num_f($pay_amount, false, $business_details),
+                                        'amount_base' => $this->num_f($pay_amount_base, false, $business_details),
+                                        'currency_symbol' => $pay_currency_code,
                                         'date' => $this->format_date($value['paid_on'], false, $business_details),
                                     ];
                             }

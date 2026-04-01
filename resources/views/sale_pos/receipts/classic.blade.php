@@ -411,7 +411,11 @@
 				@foreach($receipt_details->payments as $payment)
 					<tr>
 						<td>{{$payment['method']}}</td>
-						<td class="text-right" >{{$payment['amount']}}</td>
+						<td class="text-right">
+							@if(!empty($payment['currency_symbol']))
+								<small>{{$payment['currency_symbol']}}</small>{{$payment['amount']}} 
+							@endif
+						</td>
 						<td class="text-right">{{$payment['date']}}</td>
 					</tr>
 				@endforeach

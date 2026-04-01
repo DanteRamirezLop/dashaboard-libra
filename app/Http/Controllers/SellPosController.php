@@ -771,19 +771,15 @@ class SellPosController extends Controller
 
         $receipt_details = $this->transactionUtil->getReceiptDetails($transaction_id, $location_id, $invoice_layout, $business_details, $location_details, $receipt_printer_type);
 
-
         if ($is_package_slip) {
             $output['html_content'] = view('sale_pos.receipts.packing_slip', compact('receipt_details'))->render();
-
             return $output;
         }
 
         if ($is_delivery_note) {
             $output['html_content'] = view('sale_pos.receipts.delivery_note', compact('receipt_details'))->render();
-
             return $output;
         }
-
 
         $output['print_title'] = $receipt_details->invoice_no;
         //If print type browser - return the content, printer - return printer config data, and invoice format config

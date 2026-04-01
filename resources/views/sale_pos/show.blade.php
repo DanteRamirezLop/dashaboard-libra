@@ -503,11 +503,11 @@
               <td><span class="display_currency pull-right" data-currency_symbol="true">{{ $sell->total_before_tax * $currency_factor }}</span></td>
             </tr>
             <tr>
-              <th>{{ __('sale.discount') }}:</th>
+              <th>{{ __('sale.discount') }}: </th>
               <td><b>(-)</b></td>
               <td><div class="pull-right">
                 @if($sell->discount_type == 'percentage')
-                  <span class="display_currency">{{ $sell->discount_amount }}</span> %
+                  <span class="display_currency">{{ $sell->discount_amount * $currency_factor }}</span> %
                 @else
                   <span class="display_currency" data-currency_symbol="true">{{ $sell->discount_amount * $currency_factor }}</span>
                 @endif

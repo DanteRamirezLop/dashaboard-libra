@@ -522,7 +522,12 @@
 				@foreach($receipt_details->payments as $payment)
 					<tr>
 						<td>{{$payment['method']}}</td>
-						<td class="text-right" >{{$payment['amount']}}</td>
+						<td class="text-right">
+							{{$payment['amount']}}
+							@if(!empty($payment['currency_symbol']))
+								<small>{{$payment['currency_symbol']}}</small>
+							@endif
+						</td>
 						<td class="text-right">{{$payment['date']}}</td>
 					</tr>
 				@endforeach
@@ -693,9 +698,6 @@
 						</th>
 						<td class="text-right" style="border-top: 1px solid black;">
 							{{$receipt_details->total}} 
-
-							
-						
 							<!-- @if(!empty($receipt_details->total_in_words))
 								<br>
 								<small>({{$receipt_details->total_in_words}}) </small>

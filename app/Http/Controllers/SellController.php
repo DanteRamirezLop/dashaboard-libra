@@ -953,7 +953,7 @@ class SellController extends Controller
         $sales_orders = $sell->salesOrders();
 
         $currency_details = $this->transactionUtil->currencyDetails($business_id,  $sell->currency_id, $sell->exchange_rate);
-
+        //$discount = ($sell->discount_amount / 100) * ($sell->total_before_tax * $sell->exchange_rate);
 
         return view('sale_pos.show')
             ->with(compact(
