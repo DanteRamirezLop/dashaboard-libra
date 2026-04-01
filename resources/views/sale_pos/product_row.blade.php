@@ -107,6 +107,16 @@
 			if($discount_type == 'fixed') {
 				$discount_amount = $discount_amount * $multiplier;
 			}
+
+			$exchange_rate = isset($transaction) && !empty($transaction->exchange_rate) ? $transaction->exchange_rate : 1;
+
+			if(!empty($action) && $action == 'edit' && $exchange_rate != 1) {
+				$item_tax = $item_tax * $exchange_rate;
+				$unit_price_inc_tax = $unit_price_inc_tax * $exchange_rate;
+				if($discount_type == 'fixed') {
+					$discount_amount = $discount_amount * $exchange_rate;
+				}
+			}
 		@endphp
 
 		@if(empty($is_direct_sell))
@@ -114,7 +124,8 @@
 			@include('sale_pos.partials.row_edit_product_price_modal')
 		</div> 
 		@endif
-<br>
+		<br>
+
 		<small class="text-muted p-1">
 			@if($product->enable_stock)
 			{{ @num_format($product->qty_available) }} {{$product->unit}} @lang('lang_v1.in_stock')
@@ -149,7 +160,6 @@
 				}
 			}
 			
-
 			$max_qty_rule = $max_quantity;
 			$max_qty_msg = __('validation.custom-messages.quantity_not_available', ['qty'=> $formatted_max_quantity, 'unit' => $product->unit  ]);
 		@endphp
@@ -352,6 +362,10 @@
 
 			if(!empty($so_line) && $action !== 'edit') {
 				$pos_unit_price = $so_line->unit_price_before_discount;
+			}
+
+			if(!empty($action) && $action == 'edit' && isset($exchange_rate) && $exchange_rate != 1) {
+				$pos_unit_price = $pos_unit_price * $exchange_rate;
 			}
 		@endphp
 		<td class="@if(!auth()->user()->can('edit_product_price_from_sale_screen')) hide @endif">

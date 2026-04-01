@@ -33,7 +33,6 @@
 <input type="hidden" id="p_currency_id" value="{{$currency_details->currency_id}}">
 <input type="hidden" id="diff_currency" value="{{$currency_details->purchase_in_diff_currency}}">
 
-
 <input type="hidden" id="amount_rounding_method" value="{{$pos_settings['amount_rounding_method'] ?? ''}}">
 @if(!empty($pos_settings['allow_overselling']))
 	<input type="hidden" id="is_overselling_allowed">
@@ -43,7 +42,7 @@
 @endif
 @if(count($business_locations) > 0)
 <div class="row">
-	<div class="col-sm-3">
+	<div class="col-sm-4">
 		<div class="form-group">
 			<div class="input-group">
 				<span class="input-group-addon">
@@ -106,7 +105,7 @@
 				@endif
 
 				<!-- Selección de moneda -->
-				<div class="col-sm-3">
+				<div class="col-sm-4">
 					<div class="form-group">
 						{!! Form::label('currency_id', 'Moneda'.':*') !!}
 						{!! Form::select('currency_id',['2'=>'Dolar (USD)','94'=>'Sol (PE)'], $currency_details->currency_id, ['class' => 'form-control', 'required']); !!}
@@ -114,7 +113,7 @@
 				</div>
 
 				<!-- Currency Exchange Rate -->
-				<div id="section_exchange_rate" class="col-sm-3 @if(!$currency_details->purchase_in_diff_currency) hide @endif">
+				<div id="section_exchange_rate" class="col-sm-4 @if(!$currency_details->purchase_in_diff_currency) hide @endif">
 					<div class="form-group">
 						{!! Form::label('exchange_rate', __('purchase.p_exchange_rate') . ':*') !!}
 						@show_tooltip(__('tooltip.currency_exchange_factor'))
@@ -163,7 +162,7 @@
 					</div>
 				@endif
 				<div class="clearfix"></div>
-				<div class="@if(!empty($commission_agent)) col-sm-3 @else col-sm-4 @endif">
+				<div class="@if(!empty($commission_agent)) col-sm-4 @else col-sm-4 @endif">
 					<div class="form-group">
 						{!! Form::label('contact_id', __('contact.customer') . ':*') !!}
 						<div class="input-group">
@@ -207,7 +206,7 @@
 					</small>
 				</div>
 
-				<div class="col-md-3">
+				<div class="col-md-4">
 		          <div class="form-group">
 		            <div class="multi-input">
 		            @php
@@ -230,7 +229,7 @@
 				@php
 					$is_commission_agent_required = !empty($pos_settings['is_commission_agent_required']);
 				@endphp
-				<div class="col-sm-3">
+				<div class="col-sm-4">
 					<div class="form-group">
 					{!! Form::label('commission_agent', __('lang_v1.commission_agent') . ':') !!}
 					{!! Form::select('commission_agent', 
@@ -238,7 +237,7 @@
 					</div>
 				</div>
 				@endif
-				<div class="@if(!empty($commission_agent)) col-sm-3 @else col-sm-4 @endif">
+				<div class="@if(!empty($commission_agent)) col-sm-4 @else col-sm-4 @endif">
 					<div class="form-group">
 						{!! Form::label('transaction_date', __('sale.sale_date') . ':*') !!}
 						<div class="input-group">
@@ -251,12 +250,11 @@
 				</div>
 				@if(!empty($status))
 					<input type="hidden" name="status" id="status" value="{{$status}}">
-
 					@if(in_array($status, ['draft', 'quotation']))
 						<input type="hidden" id="disable_qty_alert">
 					@endif
 				@else
-					<div class="@if(!empty($commission_agent)) col-sm-3 @else col-sm-3 @endif">
+					<div class="@if(!empty($commission_agent)) col-sm-4 @else col-sm-4 @endif">
 						<div class="form-group">
 							{!! Form::label('status', __('sale.status') . ':*') !!}
 							{!! Form::select('status', $statuses, null, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select'), 'required']); !!}
@@ -273,7 +271,7 @@
 				@endif
 					@can('edit_invoice_number')
 					
-					<div class="col-sm-3">
+					<div class="col-sm-4">
 						<div class="form-group">
 							{!! Form::label('invoice_no', $sale_type == 'sales_order' ? __('restaurant.order_no') : __('sale.invoice_no') . ':') !!}
 							{!! Form::text('invoice_no', null, ['class' => 'form-control', 'placeholder' => $sale_type == 'sales_order' ? __('restaurant.order_no') : __('sale.invoice_no')]); !!}
@@ -377,7 +375,7 @@
 		        <div class="clearfix"></div>
 
 		        @if((!empty($pos_settings['enable_sales_order']) && $sale_type != 'sales_order') || $is_order_request_enabled)
-					<div class="col-sm-3">
+					<div class="col-sm-4">
 						<div class="form-group">
 							{!! Form::label('sales_order_ids', __('lang_v1.sales_order').':') !!}
 							{!! Form::select('sales_order_ids[]', [], null, ['class' => 'form-control select2', 'multiple', 'id' => 'sales_order_ids']); !!}

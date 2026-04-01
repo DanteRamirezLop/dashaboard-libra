@@ -23,7 +23,6 @@
 <input type="hidden" id="diff_currency" value="{{$currency_details->purchase_in_diff_currency}}">
 
 <input type="hidden" id="amount_rounding_method" value="{{$pos_settings['amount_rounding_method'] ?? ''}}">
-<input type="hidden" id="amount_rounding_method" value="{{$pos_settings['amount_rounding_method'] ?? 'none'}}">
 @if(!empty($pos_settings['allow_overselling']))
 	<input type="hidden" id="is_overselling_allowed">
 @endif
@@ -97,7 +96,7 @@
 					</div>
 				@endif
 				<div class="clearfix"></div>
-				<div class="@if(!empty($commission_agent)) col-sm-3 @else col-sm-4 @endif">
+				<div class="@if(!empty($commission_agent)) col-sm-4 @else col-sm-4 @endif">
 					<div class="form-group">
 						{!! Form::label('contact_id', __('contact.customer') . ':*') !!}
 						<div class="input-group">
@@ -135,7 +134,7 @@
 					</small>
 				</div>
 
-				<div class="col-md-3">
+				<div class="col-md-4">
 		          <div class="form-group">
 		            <div class="multi-input">
 		            	@php
@@ -158,7 +157,7 @@
 				@php
 					$is_commission_agent_required = !empty($pos_settings['is_commission_agent_required']);
 				@endphp
-				<div class="col-sm-3">
+				<div class="col-sm-4">
 					<div class="form-group">
 					{!! Form::label('commission_agent', __('lang_v1.commission_agent') . ':') !!}
 					{!! Form::select('commission_agent', 
@@ -166,7 +165,7 @@
 					</div>
 				</div>
 				@endif
-				<div class="@if(!empty($commission_agent)) col-sm-3 @else col-sm-4 @endif">
+				<div class="@if(!empty($commission_agent)) col-sm-4 @else col-sm-4 @endif">
 					<div class="form-group">
 						{!! Form::label('transaction_date', __('sale.sale_date') . ':*') !!}
 						<div class="input-group">
@@ -189,7 +188,7 @@
 				@if($transaction->type == 'sales_order')
 					<input type="hidden" name="status" id="status" value="{{$transaction->status}}">
 				@else
-					<div class="@if(!empty($commission_agent)) col-sm-3 @else col-sm-3 @endif">
+					<div class="@if(!empty($commission_agent)) col-sm-4 @else col-sm-4 @endif">
 						<div class="form-group">
 							{!! Form::label('status', __('sale.status') . ':*') !!}
 							{!! Form::select('status', $statuses, $status, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select'), 'required']); !!}
@@ -205,15 +204,13 @@
 				</div>
 				@endif
 				@can('edit_invoice_number')
-				<div class="col-sm-3">
+				<div class="col-sm-4">
 					<div class="form-group">
 						{!! Form::label('invoice_no', $transaction->type == 'sales_order' ? __('restaurant.order_no'): __('sale.invoice_no') . ':') !!}
 						{!! Form::text('invoice_no', $transaction->invoice_no, ['class' => 'form-control', 'placeholder' => $transaction->type == 'sales_order' ? __('restaurant.order_no'): __('sale.invoice_no')]); !!}
 					</div>
 				</div>
 				@endcan
-
-				
 
 				@php
 			        $custom_field_1_label = !empty($custom_labels['sell']['custom_field_1']) ? $custom_labels['sell']['custom_field_1'] : '';
@@ -306,7 +303,7 @@
 
 				<!-- Tipo de cambio (solo cuando la moneda es distinta a la base) -->
 				@if($currency_details->purchase_in_diff_currency)
-				<div id="section_exchange_rate" class="col-sm-3">
+				<div id="section_exchange_rate" class="col-sm-4">
 					<div class="form-group">
 						{!! Form::label('exchange_rate', __('purchase.p_exchange_rate') . ':') !!}
 						<div class="input-group">
@@ -324,10 +321,9 @@
 				{!! Form::hidden('exchange_rate', $transaction->exchange_rate) !!}
 				@endif
 
-
 		        <div class="clearfix"></div>
 		        @if((!empty($pos_settings['enable_sales_order']) && $transaction->type != 'sales_order') || $is_order_request_enabled)
-					<div class="col-sm-3">
+					<div class="col-sm-4">
 						<div class="form-group">
 							{!! Form::label('sales_order_ids', __('lang_v1.sales_order').':') !!}
 							{!! Form::select('sales_order_ids[]', $sales_orders, $transaction->sales_order_ids, ['class' => 'form-control select2 not_loaded', 'multiple', 'id' => 'sales_order_ids']); !!}
@@ -345,11 +341,8 @@
 			
 			@component('components.widget', ['class' => 'box-solid'])
 				
-
 				<div class="row col-sm-12" style="min-height: 0">
-
 					<input type="hidden" name="sell_price_tax" id="sell_price_tax" value="{{$business_details->sell_price_tax}}">
-
 					<!-- Keeps count of product rows -->
 					<input type="hidden" id="product_row_count" 
 						value="{{count($sell_details)}}">
@@ -458,7 +451,7 @@
 			                <span class="input-group-addon">
 			                    <i class="fa fa-info"></i>
 			                </span>
-			                {!! Form::text('discount_amount', @num_format($transaction->discount_amount), ['class' => 'form-control input_number', 'data-default' => $business_details->default_sales_discount, 'data-max-discount' => $max_discount, 'data-max-discount-error_msg' => __('lang_v1.max_discount_error_msg', ['discount' => $max_discount != '' ? @num_format($max_discount) : '']) ]); !!}
+			                {!! Form::text('discount_amount', @num_format($transaction->discount_amount * $transaction->exchange_rate), ['class' => 'form-control input_number', 'data-default' => $business_details->default_sales_discount, 'data-max-discount' => $max_discount, 'data-max-discount-error_msg' => __('lang_v1.max_discount_error_msg', ['discount' => $max_discount != '' ? @num_format($max_discount) : '']) ]); !!}
 			            </div>
 			        </div>
 			    </div>
@@ -539,7 +532,7 @@
 					<span class="input-group-addon">
 					<i class="fa fa-info"></i>
 					</span>
-					{!!Form::text('shipping_charges',@num_format($transaction->shipping_charges),['class'=>'form-control input_number','placeholder'=> __('sale.shipping_charges')]);!!}
+					{!!Form::text('shipping_charges',@num_format($transaction->shipping_charges * $transaction->exchange_rate),['class'=>'form-control input_number','placeholder'=> __('sale.shipping_charges')]);!!}
 					</div>
 				</div>
 			</div>
@@ -691,7 +684,7 @@
 								{!! Form::text('additional_expense_key_1', $transaction->additional_expense_key_1, ['class' => 'form-control', 'id' => 'additional_expense_key_1']); !!}
 							</td>
 							<td>
-								{!! Form::text('additional_expense_value_1', @num_format($transaction->additional_expense_value_1), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_1']); !!}
+								{!! Form::text('additional_expense_value_1', @num_format($transaction->additional_expense_value_1 * $transaction->exchange_rate), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_1']); !!}
 							</td>
 						</tr>
 						<tr>
@@ -699,7 +692,7 @@
 								{!! Form::text('additional_expense_key_2', $transaction->additional_expense_key_2, ['class' => 'form-control', 'id' => 'additional_expense_key_2']); !!}
 							</td>
 							<td>
-								{!! Form::text('additional_expense_value_2', @num_format($transaction->additional_expense_value_2), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_2']); !!}
+								{!! Form::text('additional_expense_value_2', @num_format($transaction->additional_expense_value_2 * $transaction->exchange_rate), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_2']); !!}
 							</td>
 						</tr>
 						<tr>
@@ -707,7 +700,7 @@
 								{!! Form::text('additional_expense_key_3', $transaction->additional_expense_key_3, ['class' => 'form-control', 'id' => 'additional_expense_key_3']); !!}
 							</td>
 							<td>
-								{!! Form::text('additional_expense_value_3', @num_format($transaction->additional_expense_value_3), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_3']); !!}
+								{!! Form::text('additional_expense_value_3', @num_format($transaction->additional_expense_value_3 * $transaction->exchange_rate), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_3']); !!}
 							</td>
 						</tr>
 						<tr>
@@ -715,7 +708,7 @@
 								{!! Form::text('additional_expense_key_4', $transaction->additional_expense_key_4, ['class' => 'form-control', 'id' => 'additional_expense_key_4']); !!}
 							</td>
 							<td>
-								{!! Form::text('additional_expense_value_4', @num_format($transaction->additional_expense_value_4), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_4']); !!}
+								{!! Form::text('additional_expense_value_4', @num_format($transaction->additional_expense_value_4 * $transaction->exchange_rate), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_4']); !!}
 							</td>
 						</tr>
 					</tbody>

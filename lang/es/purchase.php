@@ -51,7 +51,7 @@
      'allow_purchase_different_currency' => 'Compras en otra moneda',
      'purchase_currency' => 'Moneda de compra',
      'p_exchange_rate' => 'Tasa de cambio de moneda',
-     'diff_purchase_currency_help' => 'La divisa de compra está configurada en <strong> :currency </strong>',
+     'diff_purchase_currency_help' => 'La divisa está configurada en <strong> :currency </strong>',
      'list_purchase' => 'Lista de compras',
      'attach_document' => 'Documento adjunto',
      'download_document' => 'Descargar documento',

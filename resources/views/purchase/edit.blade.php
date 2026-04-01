@@ -6,6 +6,7 @@
 @php
   $custom_labels = json_decode(session('business.custom_labels'), true);
 @endphp
+
 <!-- Content Header (Page header) -->
 <section class="content-header">
     <h1 class="tw-text-xl md:tw-text-3xl tw-font-bold tw-text-black">@lang('purchase.edit_purchase') <i class="fa fa-keyboard-o hover-q text-muted" aria-hidden="true" data-container="body" data-toggle="popover" data-placement="bottom" data-content="@include('purchase.partials.keyboard_shortcuts_details')" data-html="true" data-trigger="hover" data-original-title="" title=""></i></h1>
@@ -13,7 +14,6 @@
 
 <!-- Main content -->
 <section class="content">
-
   <!-- Page level currency setting -->
   <input type="hidden" id="p_code" value="{{$currency_details->code}}">
   <input type="hidden" id="p_symbol" value="{{$currency_details->symbol}}">
@@ -111,7 +111,6 @@
                     {!! Form::label('pay_term_number', __('contact.pay_term') . ':') !!} @show_tooltip(__('tooltip.pay_term'))
                     <br/>
                     {!! Form::number('pay_term_number', $purchase->pay_term_number, ['class' => 'form-control width-40 pull-left', 'min' => 0, 'placeholder' => __('contact.pay_term')]); !!}
-
                     {!! Form::select('pay_term_type', 
                       ['months' => __('lang_v1.months'), 
                         'days' => __('lang_v1.days')], 
@@ -171,12 +170,13 @@
             }
           @endphp
 
-          <div class="col-md-4">
+            <div class="col-md-4">
                 <div class="form-group">
                     {!! Form::label('custom_field_2', $label_2 ) !!}
                     {!! Form::text('custom_field_2', $purchase->custom_field_2, ['class' => 'form-control','placeholder' => $custom_field_2_label, 'required' => $is_custom_field_2_required]); !!}
                 </div>
             </div>
+
         @endif
         @if(!empty($custom_field_3_label))
           @php
@@ -247,7 +247,6 @@
         <div class="row">
             <div class="col-sm-12">
               @include('purchase.partials.edit_purchase_entry_row')
-
               <hr/>
               <div class="pull-right col-md-5">
                 <table class="pull-right col-md-12">
@@ -278,7 +277,6 @@
             </div>
         </div>
     @endcomponent
-
 
     @component('components.widget', ['class' => 'box-primary'])
         <div class="row">
@@ -354,6 +352,7 @@
             </div>
         </div>
     @endcomponent
+    
     @component('components.widget', ['class' => 'box-primary'])
     <div class="row">
       <div class="col-md-4">
