@@ -507,7 +507,7 @@
               <td><b>(-)</b></td>
               <td><div class="pull-right">
                 @if($sell->discount_type == 'percentage')
-                  <span class="display_currency">{{ $sell->discount_amount * $currency_factor }}</span> %
+                  <strong> <small> {{ number_format($sell->discount_amount * $currency_factor, 2) }}%</small></strong>   <span class="display_currency" data-currency_symbol="true">{{$discount * $currency_factor}}</span>
                 @else
                   <span class="display_currency" data-currency_symbol="true">{{ $sell->discount_amount * $currency_factor }}</span>
                 @endif
@@ -598,14 +598,16 @@
               <td><span class="display_currency pull-right" data-currency_symbol="true" >{{ $total_paid }}</span></td>
             </tr>
             <tr>
-              <th>{{ __('sale.total_remaining') }}:</th>
+              <th>{{ __('sale.total_remaining') }}: </th>
               <td></td>
               <td>
                 <!-- Converting total paid to string for floating point substraction issue -->
                 @php
                   $total_paid = (string) $total_paid;
                 @endphp
-                <span class="display_currency pull-right" data-currency_symbol="true" >{{ ($sell->final_total * $currency_factor) - $total_paid }}</span></td>
+                <span class="display_currency pull-right" data-currency_symbol="true" >{{ round($sell->final_total * $currency_factor - $total_paid,2) }}</span>
+           
+              </td>
             </tr>
             @endif
           </table>
