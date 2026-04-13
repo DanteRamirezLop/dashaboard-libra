@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Datatables;
 use DB;
 use Illuminate\Http\Request;
+use App\PaymentApplication;
 
 class TransactionPaymentController extends Controller
 {
@@ -351,7 +352,7 @@ class TransactionPaymentController extends Controller
         }
 
         if (request()->ajax()) {
-            try {
+             try {
                 $payment = TransactionPayment::findOrFail($id);
                 DB::beginTransaction();
 
@@ -434,14 +435,14 @@ class TransactionPaymentController extends Controller
                 }
 
                 $output = ['success' => true,'msg' => __('purchase.payment_deleted_success')];
-                DB::commit();
+                 DB::commit();
             } catch (\Exception $e) {
                 DB::rollBack();
                 \Log::emergency('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
                 $output = ['success' => false,'msg' => __('messages.something_went_wrong')];
             }
 
-            return $output;
+             return $output;
         }
     }
 
@@ -490,7 +491,6 @@ class TransactionPaymentController extends Controller
                 $exchange_rate = $exchange_rate_record ? $exchange_rate_record->sale : 1;
                 $currency_id = $transaction->currency_id;
                 $currency_details = $this->transactionUtil->currencyDetails($business_id, $currency_id, $exchange_rate);
-                //$currency_details = $this->transactionUtil->currencyDetails($business_id);
            
                 $view = view('transaction_payment.payment_row')->with(compact('transaction', 'payment_types', 'payment_line', 'amount_formated', 'accounts', 'exchange_rate', 'currency_details'))->render();
 

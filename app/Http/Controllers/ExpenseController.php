@@ -19,6 +19,8 @@ use Excel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Yajra\DataTables\Facades\DataTables;
+use Carbon\Carbon;
+use App\ExchangeRates;
 
 class ExpenseController extends Controller
 {
@@ -343,13 +345,24 @@ class ExpenseController extends Controller
             $accounts = Account::forDropdown($business_id, true, false, true);
         }
 
+         //*** CAMBIO DE MONEDA ***/
+        $currency_id = request()->get('currency');   
+        $search_date = Carbon::now()->format('y-m-d');
+        $exchange_rate = ExchangeRates::where('search_date',$search_date)->first();
+        $exchange_rate = $exchange_rate ?  $exchange_rate->sale  : 1;
+        if($currency_id){
+            $currency_details = $this->transactionUtil->currencyDetails($business_id, $currency_id, $exchange_rate);
+        }else{
+            $currency_details = $this->transactionUtil->currencyDetails($business_id);
+        }
+
         if (request()->ajax()) {
             return view('expense.add_expense_modal')
-                ->with(compact('expense_categories', 'business_locations', 'users', 'taxes', 'payment_line', 'payment_types', 'accounts', 'bl_attributes', 'contacts'));
+                ->with(compact('currency_details','expense_categories', 'business_locations', 'users', 'taxes', 'payment_line', 'payment_types', 'accounts', 'bl_attributes', 'contacts'));
         }
 
         return view('expense.create')
-            ->with(compact('expense_categories', 'business_locations', 'users', 'taxes', 'payment_line', 'payment_types', 'accounts', 'bl_attributes', 'contacts'));
+            ->with(compact('currency_details','expense_categories', 'business_locations', 'users', 'taxes', 'payment_line', 'payment_types', 'accounts', 'bl_attributes', 'contacts'));
     }
 
     /**

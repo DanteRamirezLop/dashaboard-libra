@@ -246,6 +246,7 @@
         <tr>
             <td>{{ $loop->iteration }}</td>
             <td>
+                <strong>{{ $sell_line->product->product_custom_field1 }} </strong>
                 {{ $sell_line->product->name }}
                 @if( $sell_line->product->type == 'variable')
                 - {{ $sell_line->variations->product_variation->name ?? ''}}
@@ -606,7 +607,6 @@
                   $total_paid = (string) $total_paid;
                 @endphp
                 <span class="display_currency pull-right" data-currency_symbol="true" >{{ round($sell->final_total * $currency_factor - $total_paid,2) }}</span>
-           
               </td>
             </tr>
             @endif
