@@ -343,8 +343,7 @@ class SellController extends Controller
                     }
                 }
             }
-
-            //$business_details = $this->businessUtil->getDetails($business_id);
+            
             if ($this->businessUtil->isModuleEnabled('subscription')) {
                 $sells->addSelect('transactions.is_recurring', 'transactions.recur_parent_id');
             }
