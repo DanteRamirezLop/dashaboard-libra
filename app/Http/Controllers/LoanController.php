@@ -55,8 +55,8 @@ class LoanController extends Controller {
     }
 
     public function index(){   
+        $business_id = request()->session()->get('user.business_id');
         if (request()->ajax()) {
-            $business_id = request()->session()->get('user.business_id');
            $psAgg = DB::table('payment_schedules as ps')
             ->leftJoin('schedule_versions as sv', 'sv.id', '=', 'ps.schedule_version_id')
             ->selectRaw("
@@ -119,6 +119,9 @@ class LoanController extends Controller {
             })
             ->where('loans.business_id', $business_id)
             ->where('loans.status', '!=', 'quotation')
+            ->when(! empty(request()->input('service_staffs')), function ($q) {
+                $q->where('loans.waiter', request()->input('service_staffs'));
+            })
             ->select(
                 'loans.id',
                 'loans.balance_to_financed',
@@ -145,8 +148,18 @@ class LoanController extends Controller {
                 DB::raw('COALESCE(psa.delay,0) as delay'),
                 DB::raw('COALESCE(da.mora,0) as mora'),
                 DB::raw('COALESCE(psa.for_due,0) as for_due'),
-            )->get();
-        
+            )->get()
+            ->when(request()->input('only_delay'), function ($collection) {
+                return $collection->filter(function ($row) {
+                    $mora = round($row->mora);
+                    $total_delay = $mora ? bcsub($row->delay, $row->total_only_payments, 4) : 0;
+                    if ($total_delay < 0 && $total_delay > -0.25) {
+                        $total_delay = 0;
+                    }
+                    return $total_delay != 0;
+                });
+            });
+
             return Datatables::of($loans)->addColumn(
                     'action',
                      function ($row){
@@ -210,15 +223,14 @@ class LoanController extends Controller {
                      }
                 )
                  ->addColumn('total_delay', function ($row) {
-                     
-                   $mora = round($row->mora);
+                    //Total Vencido
+                    $mora = round($row->mora);
                     if($mora){
                         $total_delay = bcsub($row->delay, $row->total_only_payments, 4);
                     }else{
                         $total_delay = 0;
                     }
-
-                     if($total_delay < 0 && $total_delay > -0.25) {
+                    if($total_delay < 0 && $total_delay > -0.25) {
                         $total_delay = 0;
                     }
                     $total_delay_html = '<span class="payment_due" data-orig-value="'.$total_delay.'">'.$this->transactionUtil->num_f($total_delay, true).'</span>';
@@ -226,6 +238,7 @@ class LoanController extends Controller {
                 })
 
                 ->addColumn('total_to_delay', function ($row) {
+        
                     $mora = round($row->mora);
                     if($mora){
                         $paid_partial = 0;
@@ -279,8 +292,14 @@ class LoanController extends Controller {
                 ->rawColumns(['action','label','seller','total','final_total','total_paid','total_remaining','total_delay','total_to_delay','total_mora','total_remaining_mora'])
                 ->make(true);
         }
+         //Service staff filter
+        $service_staffs = null;
+        if ($this->productUtil->isModuleEnabled('service_staff')) {
+            $service_staffs = $this->productUtil->serviceStaffDropdown($business_id);
+        }
+
         $type = request()->get('id');
-        return view('loan.index',compact('type'));
+        return view('loan.index',compact('type','service_staffs'));
     }
 
 

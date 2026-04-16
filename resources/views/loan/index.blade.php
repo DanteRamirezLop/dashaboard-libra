@@ -8,8 +8,13 @@
 </section>
 
 <!-- Main content -->
-<section class="content no-print">
+    <section class="content no-print">
         <input type="hidden" value="{{$type}}" id="loan_type">
+        @component('components.filters', ['title' => __('report.filters')])
+     
+         @include('loan.loan_list_filters')
+
+              @endcomponent
         <!-- Nueva tabla -->
         @component('components.widget', ['class' => 'box-primary', 'title' => __('loans.all_loans')])
             @can('customer.view_own')
@@ -78,11 +83,24 @@
 @section('javascript')
 <script type="text/javascript">
 $(document).ready( function(){
+
      loan_table = $('#loan_table').DataTable({
         processing: true,
         serverSide: true,
         aaSorting: [[1, 'desc']],
-        ajax: '/loans',
+        ajax: {
+            url: '/loans',
+            data: function(d) {
+                 var waiter = $("#service_staffs option:selected").text();
+                    if (waiter.toLowerCase() === "todos") {
+                        waiter = '';
+                    }
+                d.service_staffs = waiter;
+                if ($('#only_delay').is(':checked')) {
+                    d.only_delay = 1;
+                }
+            }
+        },
         columnDefs: [
             {
                 targets: 3,
@@ -151,9 +169,16 @@ $(document).ready( function(){
         },
     });
 
+    $(document).on('change', '#service_staffs', function() {
+        loan_table.ajax.reload();
+    });
+
+     $('#only_delay').on('ifChanged', function(event) {
+        loan_table.ajax.reload();
+    });
+
     $(document).on('click', '.delete_loan_button', function(e) {
         e.preventDefault();
-        console.log('daddaan');
         swal({
             title: LANG.sure,
             icon: 'warning',

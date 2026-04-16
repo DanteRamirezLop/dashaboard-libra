@@ -40,6 +40,7 @@
                 </div>
             @endif
         @endcomponent
+        
         @component('components.widget', ['class' => 'box-primary', 'title' => __('lang_v1.all_sales')])
             @can('direct_sell.access')
                 @slot('tool')
