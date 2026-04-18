@@ -49,7 +49,7 @@
                                 <tr>
                                     <th scope="row">Inicial + Coste tramite + Inicial GPS + Inicial seguro</th>
                                     <td> 
-                                       @format_currency($loan->initial_amount + $loan->initial_admin_fee + $loan->gps + $loan->insurance)
+                                       @format_currency($loan->initial_amount + $loan->initial_admin_fee + $loan->initial_gps + $loan->initial_insurance)
                                     </td>
                                 </tr>
                                 <tr>
