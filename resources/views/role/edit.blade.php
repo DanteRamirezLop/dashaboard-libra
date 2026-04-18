@@ -1579,7 +1579,7 @@
         <!-- SECCION DE PRESTAMOS -->
      <div class="row check_group">
         <div class="col-md-1">
-          <h4>@lang( 'loand.loands') </h4>
+          <h4>@lang( 'loans.loans') </h4>
         </div>
         <div class="col-md-2">
           <div class="checkbox">
@@ -1592,25 +1592,16 @@
           <div class="col-md-12">
             <div class="checkbox">
               <label>
-                {!! Form::radio('radio_option[loands_quotation_view]', 'loand.own_quotation', in_array('loand.own_quotation', $role_permissions), 
-                [ 'class' => 'input-icheck']); !!}   {{ __( 'loand.add_edit_view_own_quotation_loands' ) }}
+                {!! Form::radio('radio_option[loands_quotation_view]', 'loans.own_quotation', in_array('loans.own_quotation', $role_permissions), 
+                [ 'class' => 'input-icheck']); !!}   {{ __( 'loans.add_edit_view_own_quotation_loands' ) }}
               </label>
             </div>
           </div>
           <div class="col-md-12">
             <div class="checkbox">
               <label>
-                {!! Form::radio('radio_option[loands_quotation_view]', 'loand.all_quotation',  in_array('loand.all_quotation', $role_permissions), 
-                [ 'class' => 'input-icheck']); !!} {{ __( 'loand.add_edit_view_all_quotation_loands' ) }}
-              </label>
-            </div>
-          </div>
-
-          <div class="col-md-12">
-            <div class="checkbox">
-              <label>
-                {!! Form::checkbox('permissions[]', 'loand.view', in_array('loand.view', $role_permissions), 
-                [ 'class' => 'input-icheck']); !!} {{ __( 'loand.view_loands' ) }}
+                {!! Form::radio('radio_option[loands_quotation_view]', 'loans.all_quotation',  in_array('loans.all_quotation', $role_permissions), 
+                [ 'class' => 'input-icheck']); !!} {{ __( 'loans.add_edit_view_all_quotation_loands' ) }}
               </label>
             </div>
           </div>
@@ -1618,8 +1609,8 @@
           <div class="col-md-12">
             <div class="checkbox">
               <label>
-                {!! Form::checkbox('permissions[]', 'loand.create', in_array('loand.create', $role_permissions), 
-                [ 'class' => 'input-icheck']); !!} {{ __( 'loand.create_loands' ) }}
+                {!! Form::checkbox('permissions[]', 'loans.view', in_array('loans.view', $role_permissions), 
+                [ 'class' => 'input-icheck']); !!} {{ __( 'loans.view_loands' ) }}
               </label>
             </div>
           </div>
@@ -1627,8 +1618,8 @@
           <div class="col-md-12">
             <div class="checkbox">
               <label>
-                {!! Form::checkbox('permissions[]', 'loand.update', in_array('loand.update', $role_permissions), 
-                [ 'class' => 'input-icheck']); !!} {{ __( 'loand.edit_loands' ) }}
+                {!! Form::checkbox('permissions[]', 'loans.create', in_array('loans.create', $role_permissions), 
+                [ 'class' => 'input-icheck']); !!} {{ __( 'loans.create_loands' ) }}
               </label>
             </div>
           </div>
@@ -1636,8 +1627,17 @@
           <div class="col-md-12">
             <div class="checkbox">
               <label>
-                {!! Form::checkbox('permissions[]', 'loand.delete', in_array('loand.delete', $role_permissions), 
-                [ 'class' => 'input-icheck']); !!} {{ __( 'loand.delete_loands' ) }}
+                {!! Form::checkbox('permissions[]', 'loans.update', in_array('loans.update', $role_permissions), 
+                [ 'class' => 'input-icheck']); !!} {{ __( 'loans.edit_loands' ) }}
+              </label>
+            </div>
+          </div>
+
+          <div class="col-md-12">
+            <div class="checkbox">
+              <label>
+                {!! Form::checkbox('permissions[]', 'loans.delete', in_array('loans.delete', $role_permissions), 
+                [ 'class' => 'input-icheck']); !!} {{ __( 'loans.delete_loands' ) }}
               </label>
             </div>
           </div>
@@ -1646,7 +1646,7 @@
             <div class="checkbox">
               <label>
                 {!! Form::checkbox('permissions[]', 'loand_settings.access', in_array('loand_settings.access', $role_permissions), 
-                [ 'class' => 'input-icheck']); !!} {{ __( 'loand.access_loand_settings' ) }}
+                [ 'class' => 'input-icheck']); !!} {{ __( 'loans.access_loand_settings' ) }}
               </label>
             </div>
           </div>
