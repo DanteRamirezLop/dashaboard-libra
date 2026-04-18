@@ -70,7 +70,7 @@
                                 </tr>
                                 <tr>
                                     <th scope="row">Coste del tramite</th>
-                                    <td>@format_currency($loan->admin_fee)</td>
+                                    <td>@format_currency($loan->initial_admin_fee)</td>
                                 </tr>
                                 <tr>
                                     <th scope="row">Costo total del GPS</th>
