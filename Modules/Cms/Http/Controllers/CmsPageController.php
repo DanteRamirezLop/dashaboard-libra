@@ -35,7 +35,7 @@ class CmsPageController extends Controller
     {
 		$post_type = $request->get('type', 'page');
         $post_business = $request->get('business');
-        $pages = CmsPage::where('type', $post_type)->where('business_id',$post_business)->orderBy('created_at', 'DESC')->paginate(15);
+        $pages = CmsPage::where('type', $post_type)->orderBy('created_at', 'DESC')->paginate(15);
 
         $business = Business::skip(1)->take(12)->get();
         if($post_type == 'gallery'){
@@ -43,6 +43,9 @@ class CmsPageController extends Controller
         }else{
             return view('cms::page.index')->with(compact('pages', 'post_type','business','post_business'));      
         }   
+
+
+      
     }
 
     /**
