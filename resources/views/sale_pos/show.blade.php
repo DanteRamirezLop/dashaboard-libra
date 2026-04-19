@@ -447,12 +447,8 @@
                 <td><span class="display_currency" data-currency_symbol="true">{{ $payment_amount_converted }}</span></td>
                 
                 <td>
-                  @if($payment_line->exchange_rate)
                    Se cancelo {{number_format(($payment_line->amount * $payment_line->exchange_rate),2)}}
                    {{$payment_line->currency->currency}}
-                  @else
-                      -
-                  @endif
                 </td>
 
                 <td>
