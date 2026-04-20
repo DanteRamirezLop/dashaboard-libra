@@ -805,7 +805,7 @@ class AdminSidebarMenu
             }
 
              //prestamos
-            if ($is_admin || auth()->user()->hasAnyPermission(['loans.own_quotation','loans.all_quotation' ])) {
+            if ($is_admin || auth()->user()->hasAnyPermission(['loans.own_quotation','loans.all_quotation','loans.view' ])) {
                 $menu->dropdown(
                     __('loans.loans'),
                      function ($sub) {
@@ -826,23 +826,25 @@ class AdminSidebarMenu
                             );
                         }
 
-                        $sub->url(
-                            action([\App\Http\Controllers\LoanQuotationController::class, 'index']),
-                            __('loans.loan_quotation_list'),
-                            ['icon' => '', 'active' => request()->segment(1) == 'loans-quotations'  && request()->segment(2) == null]
-                        );
+                        if(auth()->user()->hasAnyPermission(['loans.own_quotation','loans.all_quotation'])) {
+                            $sub->url(
+                                action([\App\Http\Controllers\LoanQuotationController::class, 'index']),
+                                __('loans.loan_quotation_list'),
+                                ['icon' => '', 'active' => request()->segment(1) == 'loans-quotations'  && request()->segment(2) == null]
+                            );
         
-                         $sub->url(
-                             action([\App\Http\Controllers\LoanQuotationController::class, 'create']),
-                            __('loans.add_loan_quotation'),
-                             ['icon' => '', 'active' => request()->segment(1) == 'loans-quotations' && request()->segment(2) == 'create']
-                         );
+                            $sub->url(
+                                action([\App\Http\Controllers\LoanQuotationController::class, 'create']),
+                                __('loans.add_loan_quotation'),
+                                ['icon' => '', 'active' => request()->segment(1) == 'loans-quotations' && request()->segment(2) == 'create']
+                            );
 
-                         $sub->url(
+                            $sub->url(
                                 action([\App\Http\Controllers\LoanQuotationController::class, 'report']),
                                 __('loans.report_quotations'),
                                 ['icon' => '', 'active' => request()->segment(1) == 'report-loans-quotations' && request()->segment(2) == null]
-                            );   
+                            );  
+                         } 
 
                          if (auth()->user()->can('loand_settings.access')) {
                             $sub->url(
