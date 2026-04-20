@@ -805,25 +805,27 @@ class AdminSidebarMenu
             }
 
              //prestamos
-            if ($is_admin || auth()->user()->hasAnyPermission(['loans.own_quotation','loan.all_quotations' ])) {
+            if ($is_admin || auth()->user()->hasAnyPermission(['loans.own_quotation','loans.all_quotation' ])) {
                 $menu->dropdown(
                     __('loans.loans'),
                      function ($sub) {
 
-                        if(auth()->user()->can('loand.view')) {
+                        if(auth()->user()->can('loans.view')) {
                             $sub->url(
                                 action([\App\Http\Controllers\LoanController::class, 'index']),
                                 __('loans.loan_list'),
                                 ['icon' => '', 'active' => request()->segment(1) == 'loans'  && request()->segment(2) == null]
                             );
                         }
-                        if(auth()->user()->can('loand.create')) {
+                        
+                        if(auth()->user()->can('loans.create')) {
                             $sub->url(
                                 action([\App\Http\Controllers\LoanController::class, 'create']),
                                 __('loans.add_loan'),
                                 ['icon' => '', 'active' => request()->segment(1) == 'loans' && request()->segment(2) == 'create']
                             );
                         }
+
                         $sub->url(
                             action([\App\Http\Controllers\LoanQuotationController::class, 'index']),
                             __('loans.loan_quotation_list'),

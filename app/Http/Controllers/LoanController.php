@@ -901,7 +901,7 @@ class LoanController extends Controller {
 
     public function destroy($id)
     {
-        if (! auth()->user()->can('loand.delete')) {
+        if (! auth()->user()->can('loans.delete')) {
             abort(403, 'Unauthorized action.');
         }
 
