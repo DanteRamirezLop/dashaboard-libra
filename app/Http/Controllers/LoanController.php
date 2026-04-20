@@ -119,6 +119,7 @@ class LoanController extends Controller {
             })
             ->where('loans.business_id', $business_id)
             ->where('loans.status', '!=', 'quotation')
+                ->where('loans.type', '!=', 'rent-sale')
             ->when(! empty(request()->input('service_staffs')), function ($q) {
                 $q->where('loans.waiter', request()->input('service_staffs'));
             })
@@ -236,9 +237,7 @@ class LoanController extends Controller {
                     $total_delay_html = '<span class="payment_due" data-orig-value="'.$total_delay.'">'.$this->transactionUtil->num_f($total_delay, true).'</span>';
                     return $total_delay_html;
                 })
-
                 ->addColumn('total_to_delay', function ($row) {
-        
                     $mora = round($row->mora);
                     if($mora){
                         $paid_partial = 0;
@@ -286,8 +285,8 @@ class LoanController extends Controller {
                     '<span class="total-paid" data-orig-value="{{$total_paid}}">@format_currency($total_paid)</span>'
                 )
 
-                ->editColumn('balance_to_financed','@format_currency(number_format($balance_to_financed))')
-                ->editColumn('total_cost_loan','@format_currency(number_format($total_cost_loan))')
+                ->editColumn('balance_to_financed','@format_currency($balance_to_financed)')
+                ->editColumn('total_cost_loan','@format_currency($total_cost_loan)')
                 ->editColumn('created_at','{{date("Y/m/d",strtotime($created_at))}}')
                 ->rawColumns(['action','label','seller','total','final_total','total_paid','total_remaining','total_delay','total_to_delay','total_mora','total_remaining_mora'])
                 ->make(true);
