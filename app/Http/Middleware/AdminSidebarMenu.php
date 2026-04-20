@@ -817,20 +817,13 @@ class AdminSidebarMenu
                                 ['icon' => '', 'active' => request()->segment(1) == 'loans'  && request()->segment(2) == null]
                             );
                         }
-                        if(auth()->user()->can('loans.create')) {
+                        if(auth()->user()->can('loand.create')) {
                             $sub->url(
                                 action([\App\Http\Controllers\LoanController::class, 'create']),
                                 __('loans.add_loan'),
                                 ['icon' => '', 'active' => request()->segment(1) == 'loans' && request()->segment(2) == 'create']
                             );
                         }
-                        // if(auth()->user()->can('loans.view')) {
-                        //     $sub->url(
-                        //         action([\App\Http\Controllers\LoanController::class, 'report']),
-                        //         __('loans.report_loans'),
-                        //         ['icon' => '', 'active' => request()->segment(1) == 'report-loans'  && request()->segment(2) == null]
-                        //     );
-                        //  }
                         $sub->url(
                             action([\App\Http\Controllers\LoanQuotationController::class, 'index']),
                             __('loans.loan_quotation_list'),
