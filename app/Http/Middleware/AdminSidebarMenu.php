@@ -826,7 +826,9 @@ class AdminSidebarMenu
                             );
                         }
 
-                        if( auth()->user()->hasAnyPermission(['loans.own_quotation','loans.all_quotation'])) {
+                        if(auth()->user()->can('loans.own_quotation') || auth()->user()->can('loans.all_quotation')){ 
+                       
+                            
                             $sub->url(
                                 action([\App\Http\Controllers\LoanQuotationController::class, 'index']),
                                 __('loans.loan_quotation_list'),
