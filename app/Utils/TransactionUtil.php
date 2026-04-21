@@ -258,7 +258,7 @@ class TransactionUtil extends Util
             'additional_expense_key_3' => ! empty($input['additional_expense_key_3']) ? $input['additional_expense_key_3'] : null,
             'additional_expense_key_4' => ! empty($input['additional_expense_key_4']) ? $input['additional_expense_key_4'] : null,
             'is_kitchen_order' => ! empty($input['is_kitchen_order']) ? 1 : 0,
-            'currency_id' => isset($input['currency_id']) ? $input['currency_id'] : null,
+            'currency_id' => isset($input['currency_id']) ? $input['currency_id'] : 2,
         ]);
 
         return $transaction;

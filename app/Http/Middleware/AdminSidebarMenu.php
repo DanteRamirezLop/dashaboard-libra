@@ -822,25 +822,38 @@ class AdminSidebarMenu
                             $sub->url(
                                 action([\App\Http\Controllers\LoanController::class, 'create']),
                                 __('loans.add_loan'),
-                                ['icon' => '', 'active' => request()->segment(1) == 'loans' && request()->segment(2) == 'create']
+                                ['icon' => '', 'active' => request()->segment(1) == 'loans' && request()->segment(2) == 'create' && request()->get('type') == null]
                             );
                         }
 
+                        if(auth()->user()->can('loans.view')) {
+                            $sub->url(
+                                action([\App\Http\Controllers\LoanController::class, 'listRentSale']),
+                                'Lista de alquiler venta',
+                                ['icon' => '', 'active' => request()->segment(1) == 'loan'  && request()->segment(2) == 'list-rent-sale']
+                            );
+                        }
+
+                       if(auth()->user()->can('loans.create')) {
+                         $sub->url(
+                             action([\App\Http\Controllers\LoanController::class, 'create'], ['type' => 'rent-sale']),
+                            'Agregar alquiler venta',
+                            ['icon' => '', 'active' => request()->segment(1) == 'loans' && request()->segment(2) == 'create' && request()->get('type') == 'rent-sale']
+                           
+                         );
+                       }
+                        
                         if(auth()->user()->can('loans.own_quotation') || auth()->user()->can('loans.all_quotation')){ 
-                       
-                            
                             $sub->url(
                                 action([\App\Http\Controllers\LoanQuotationController::class, 'index']),
                                 __('loans.loan_quotation_list'),
                                 ['icon' => '', 'active' => request()->segment(1) == 'loans-quotations'  && request()->segment(2) == null]
                             );
-        
                             $sub->url(
                                 action([\App\Http\Controllers\LoanQuotationController::class, 'create']),
                                 __('loans.add_loan_quotation'),
                                 ['icon' => '', 'active' => request()->segment(1) == 'loans-quotations' && request()->segment(2) == 'create']
                             );
-
                             $sub->url(
                                 action([\App\Http\Controllers\LoanQuotationController::class, 'report']),
                                 __('loans.report_quotations'),

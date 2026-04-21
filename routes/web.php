@@ -474,6 +474,8 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('loan/addCapital/{loan_id}/{type}', [LoanController::class,'addCapital'])->name('add.capital.loan');
     Route::post('get-customer-sunat',[LoanController::class,'getCustomerSunat']);
     Route::post('letter-annexe-update',[LoanController::class,'updateLetterAnnexe']);
+    //RENTA DE MAQUINARIA EN LA SECCION DE PRESTAMOS
+    Route::get('/loan/list-rent-sale', [LoanController::class,'listRentSale'])->name('rent.sale.loan'); 
 
     //COTIZACIONES DE PRESTAMOS
     Route::resource('loans-quotations', LoanQuotationController::class);

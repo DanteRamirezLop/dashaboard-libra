@@ -12,9 +12,9 @@
         <input type="hidden" value="{{$type}}" id="loan_type">
         @component('components.filters', ['title' => __('report.filters')])
      
-         @include('loan.loan_list_filters')
+            @include('loan.loan_list_filters')
 
-              @endcomponent
+        @endcomponent
         <!-- Nueva tabla -->
         @component('components.widget', ['class' => 'box-primary', 'title' => __('loans.all_loans')])
             @can('customer.view_own')
@@ -83,13 +83,13 @@
 @section('javascript')
 <script type="text/javascript">
 $(document).ready( function(){
-
+     var url = window.location.href;
      loan_table = $('#loan_table').DataTable({
         processing: true,
         serverSide: true,
         aaSorting: [[1, 'desc']],
         ajax: {
-            url: '/loans',
+            url: url,
             data: function(d) {
                  var waiter = $("#service_staffs option:selected").text();
                     if (waiter.toLowerCase() === "todos") {

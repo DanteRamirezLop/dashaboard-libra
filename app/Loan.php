@@ -13,7 +13,6 @@ use Carbon\Carbon;
 
 class Loan extends Model
 {
-
     //Loands status = ['quotation','approved','partial','in arrears','cancelled','paid']
     use HasFactory;
     protected $table = 'loans';
@@ -51,7 +50,8 @@ class Loan extends Model
         'initial_fraction',
         'mounth_initial',
         'start_rate',
-        'interest_saved'
+        'interest_saved',
+        'type',
     ];
     
     public function contact()
