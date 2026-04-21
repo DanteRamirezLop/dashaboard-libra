@@ -111,21 +111,24 @@ class MsmNotification extends Command
                     }
                 }
 
-                // if($numeros){ 
-                //     $phones = array_unique($numeros);
-                //     $mobile_number = implode(',', $phones);
-                //     #Envio de mensaje SMS a los clientes
-                //     try {
-                //         $data = [];
-                //         $business = Business::find(4);//Codifo de la empresa en duro
-                //         $data['sms_settings'] = $business->sms_settings ?? [];
-                //         $data['mobile_number'] = $mobile_number;
-                //         $data['sms_body'] = "Hola! XCMG Libra International te recuerda, el pago de tu préstamo está proximo a vencer.";
-                //         $this->notificationUtil->sendSms($data);
-                //     } catch (\Exception $e) {
-                //         \Log::emergency('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
-                //     }
-                // }
+                if($numeros){ 
+                    $phones = array_unique($numeros);
+                    $mobile_number = implode(',', $phones);
+                    #Envio de mensaje SMS a los clientes
+                    try {
+                        $data = [];
+                        $business = Business::find(4);//Codifo de la empresa en duro
+                        $data['sms_settings'] = $business->sms_settings ?? [];
+                        $data['mobile_number'] = $mobile_number;
+                        $data['sms_body'] = "Hola! XCMG Libra International te recuerda, el pago de tu préstamo está proximo a vencer.";
+                        $this->notificationUtil->sendSms($data);
+                    } catch (\Exception $e) {
+                        \Log::emergency('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
+                    }
+                }
+
+
+                 
             DB::commit();
             Log::info('JOB de SMS se ejecuto correctamente el '. now());
         } catch (\Exception $e) {
