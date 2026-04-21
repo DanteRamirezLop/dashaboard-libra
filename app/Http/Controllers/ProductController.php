@@ -457,7 +457,7 @@ class ProductController extends Controller
             $product_details = $request->only($form_fields);
 
             //slug 
-            $product_details['product_custom_field10'] = Str::slug($product_details['name']);
+            $product_details['product_custom_field5'] = Str::slug($product_details['name']);
             $product_details['business_id'] = $business_id;
             $product_details['created_by'] = $request->session()->get('user.id');
 
