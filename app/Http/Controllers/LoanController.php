@@ -876,7 +876,7 @@ class LoanController extends Controller {
 
         $customer = Contact::find($loan->customer_id);
 		$user = User::find($loan->user_id);
-        $total =  $loan->amount + $loan->admin_fee + $loan->gps  + $loan->insurance  +  $loan->initial_amount + $loan->start_rate;
+        $total =  $loan->total_cost_loan + $loan->initial_admin_fee + $loan->initial_gps  + $loan->initial_insurance  +  $loan->initial_amount + $loan->start_rate;
         // ver si no tiene cuotas parciales para habilitar el pago a capital                       
         $canPayCapital = !PaymentSchedule::where('loan_id',$loan->id)->whereNotIn('status',['paid','pending'])->exists();
         //hay mora?

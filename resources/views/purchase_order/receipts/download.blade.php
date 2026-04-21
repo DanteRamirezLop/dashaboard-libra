@@ -259,6 +259,8 @@
                     <td colspan="2"></td>
                     <td style="text-align: center; font-size: 13px;"colspan="2"><b>Subtotal:</b></td>  <td  colspan="2" style="width: 10% !important; text-align: center; font-size: 12px;"> @format_currency(($total_before_tax * $purchase->exchange_rate), $currency_details)</td>
                 </tr>
+
+                @if(!empty($purchase_line) && !empty($purchase_line->tax_id) && !empty($taxes[$purchase_line->tax_id]))
                 <tr>
                     <td colspan="2"></td>
                     <td style="text-align: center; font-size: 13px;"colspan="2">
@@ -267,6 +269,9 @@
                         @format_currency(($total_tax * $purchase->exchange_rate), $currency_details)   
                     </td>
                 </tr>
+                @endif
+
+
                 <tr>
                     <td colspan="2" style="text-align: center; font-size: 12px;"></td>
                     <td style="text-align: center; font-size: 13px;" colspan="2"><b>Total</b></td> 
