@@ -427,7 +427,7 @@ Tumbes</p>
                             Tasa de interés anual
                         </td>
                         <td align="right" style="width: 40%; height: 25px; font-size: 0.9rem;">
-                            {{$loan->annual_interest_rate}}%
+                            {{number_format($loan->annual_interest_rate,2)}} %
                         </td>
                     </tr>
 
