@@ -648,9 +648,11 @@
 
 	        	<div class="col-md-4">
 			        <div class="form-group">
-			            {!! Form::label('shipping_custom_field_1', $label_1 ) !!}
-			            {!! Form::text('shipping_custom_field_1', !empty($walk_in_customer['shipping_custom_field_details']['shipping_custom_field_1']) ? $walk_in_customer['shipping_custom_field_details']['shipping_custom_field_1'] : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_1, 'required' => $is_shipping_custom_field_1_required]); !!}
-			        </div>
+			            {!! Form::label('shipping_custom_field_1', $label_1 ) !!} 
+			            <!-- {!! Form::text('shipping_custom_field_1', !empty($walk_in_customer['shipping_custom_field_details']['shipping_custom_field_1']) ? $walk_in_customer['shipping_custom_field_details']['shipping_custom_field_1'] : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_1, 'required' => $is_shipping_custom_field_1_required]); !!}
+			        -->
+						 {!! Form::select('shipping_custom_field_1',['No','Si'], null, ['class' => 'form-control','placeholder' => __('messages.please_select')]); !!}
+					</div>
 			    </div>
 	        @endif
 			
