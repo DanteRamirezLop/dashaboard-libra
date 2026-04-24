@@ -145,7 +145,9 @@
                     <td style="font-size: 12px;height: 20px; border-color: #fff !important;"><strong>PROVEEDOR:</strong></td>
                     <td style="height: 20px; font-size: 12px;border-color: #fff !important;"> 
                         @if (!empty($purchase->contact->supplier_business_name))
-                        {{$purchase->contact->supplier_business_name}}
+                            {{$purchase->contact->supplier_business_name}}
+                        @else
+                            {{$purchase->contact->name}}
                         @endif
                     </td>
                     <td style="font-size: 12px;height: 20px;border-color: #fff !important;"><strong>CONTACTO DE VENTA:</strong></td>
