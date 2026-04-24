@@ -648,10 +648,10 @@
 
 	        	<div class="col-md-4">
 			        <div class="form-group">
-			            {!! Form::label('shipping_custom_field_1', $label_1 ) !!} 
+			           {!! Form::label('shipping_custom_field_1', $label_1 ) !!} 
 			            <!-- {!! Form::text('shipping_custom_field_1', !empty($walk_in_customer['shipping_custom_field_details']['shipping_custom_field_1']) ? $walk_in_customer['shipping_custom_field_details']['shipping_custom_field_1'] : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_1, 'required' => $is_shipping_custom_field_1_required]); !!}
 			        -->
-						 {!! Form::select('shipping_custom_field_1',['No','Si'], null, ['class' => 'form-control','placeholder' => __('messages.please_select')]); !!}
+						 {!! Form::select('shipping_custom_field_1',[0 => 'No', 1 => 'Si'], null, ['class' => 'form-control','placeholder' => __('messages.please_select')]); !!}
 					</div>
 			    </div>
 	        @endif
@@ -948,7 +948,8 @@
 </section>
 
 <div class="modal fade contact_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel">
-	@include('contact.create', ['quick_add' => true])
+	<!-- include('contact.create', ['quick_add' => true]) -->
+	@include('contact.create_api_sunat', ['quick_add' => true])
 </div>
 <!-- /.content -->
 <div class="modal fade register_details_modal" tabindex="-1" role="dialog" 
@@ -1061,5 +1062,69 @@
 			PurchaseCurrency.init();
 
     	});
+
+		// Búsqueda SUNAT dentro del modal contact_modal
+		(function() {
+			var token = $('meta[name="csrf-token"]').attr('content');
+
+			function selectContactInSell(id, name) {
+				var $sel = $('select#customer_id');
+				if ($sel.find('option[value="' + id + '"]').length === 0) {
+					$sel.append($('<option>', { value: id, text: name }));
+				}
+				$sel.val(id).trigger('change');
+				$('div.contact_modal').modal('hide');
+			}
+
+			function searchSunat(type, value) {
+				if (!value) {
+					swal('Oops...!!', 'Ingresa el ' + type.toUpperCase(), 'warning');
+					return;
+				}
+				var len = type === 'dni' ? 8 : 11;
+				if (value.length != len) {
+					swal('Oops...!!', 'El ' + type.toUpperCase() + ' tiene ' + len + ' dígitos', 'warning');
+					return;
+				}
+				swal({ title: 'Cargando...', text: '', timer: 2500, allowOutsideClick: false });
+				var data = { _token: token, type: type };
+				data[type] = value;
+				$.ajax({
+					type: 'POST',
+					url: '/get-customer-sunat',
+					dataType: 'json',
+					data: data,
+					success: function(response) {
+						if (response.status) {
+							selectContactInSell(response.contact_id, response.name);
+						} else {
+							swal('Oops...!!', response.msg, 'warning');
+						}
+					},
+					error: function() {
+						swal('Error...!!', 'Lo sentimos, algo salió mal inténtalo más tarde!', 'error');
+					}
+				});
+			}
+
+			$(document).on('click', '#search_dni', function() {
+				searchSunat('dni', $('#dni').val());
+			});
+
+			$(document).on('click', '#search_ruc', function() {
+				searchSunat('ruc', $('#ruc_business').val());
+			});
+
+			$(document).on('ifChecked', 'input[name="optionCustomer"]', function() {
+				if ($(this).val() == 1) {
+					$('.contact_modal #individual').show();
+					$('.contact_modal #business').hide();
+				} else {
+					$('.contact_modal #individual').hide();
+					$('.contact_modal #business').show();
+				}
+			});
+		})();
+
     </script>
 @endsection

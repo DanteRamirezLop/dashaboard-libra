@@ -588,7 +588,7 @@
 	        	<div class="col-md-4">
 			        <div class="form-group">
 			            {!! Form::label('shipping_custom_field_1', $label_1 ) !!}
-			            {!! Form::text('shipping_custom_field_1', !empty($transaction->shipping_custom_field_1) ? $transaction->shipping_custom_field_1 : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_1, 'required' => $is_shipping_custom_field_1_required]); !!}
+			            {!! Form::select('shipping_custom_field_1', ['' => __('messages.please_select'), 0 => 'No', 1 => 'Si'], !empty($transaction->shipping_custom_field_1) ? $transaction->shipping_custom_field_1 : null, ['class' => 'form-control', 'required' => $is_shipping_custom_field_1_required]); !!}
 			        </div>
 			    </div>
 	        @endif

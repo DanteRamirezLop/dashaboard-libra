@@ -40,6 +40,7 @@ class Kernel extends ConsoleKernel
                     //->everyThirtyMinutes()
                     ->emailOutputTo($email);
         }
+
     }
 
     /**
