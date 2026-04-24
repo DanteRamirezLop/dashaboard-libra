@@ -270,6 +270,8 @@
       <button type="button" class="btn btn-default" data-dismiss="modal">@lang( 'messages.close' )</button>
     </div>
 
+    {!! Form::hidden('sunat_contact_id', null, ['id' => 'sunat_contact_id']) !!}
+    {!! Form::hidden('hidden_id', null, ['id' => 'hidden_id']) !!}
     {!! Form::close() !!}
   
   </div><!-- /.modal-content -->

@@ -1063,6 +1063,17 @@
 
     	});
 
+		//CREAR CONTACTIO VIA SUNAT
+		$('input[type=radio][name=optionCustomer]').on('ifChecked', function(){
+			if ($(this).val() == 1) {
+				$('div.individual').show();
+                $('div.business').hide();
+			} else {
+				$('div.individual').hide();
+                $('div.business').show();
+			}
+		});
+		
 		// Búsqueda SUNAT dentro del modal contact_modal
 		(function() {
 			var token = $('meta[name="csrf-token"]').attr('content');
@@ -1074,6 +1085,48 @@
 				}
 				$sel.val(id).trigger('change');
 				$('div.contact_modal').modal('hide');
+			}
+
+			function fillSunatForm(response, type) {
+				var $modal = $('div.contact_modal');
+
+				// Tipo de cliente (radio)
+				var radioVal = type === 'ruc' ? '2' : '1';
+				$modal.find('input[name="optionCustomer"][value="' + radioVal + '"]').iCheck('check').trigger('ifChecked');
+
+				// Tipo de contacto
+				$modal.find('select#contact_type').val('customer').trigger('change');
+
+				// DNI/RUC en el campo contact_id del formulario
+				if (response.contact_id_value) {
+					$modal.find('input[name="contact_id"]').val(response.contact_id_value);
+				}
+
+				// Campos persona natural
+				if (response.first_name)  $modal.find('input[name="first_name"]').val(response.first_name);
+				if (response.last_name)   $modal.find('input[name="last_name"]').val(response.last_name);
+
+				// Campos empresa
+				if (response.supplier_business_name) {
+					$modal.find('input[name="supplier_business_name"]').val(response.supplier_business_name);
+				}
+
+				// Dirección
+				if (response.address_line_1) $modal.find('input[name="address_line_1"]').val(response.address_line_1);
+				if (response.city)           $modal.find('input[name="city"]').val(response.city);
+				if (response.state)          $modal.find('input[name="state"]').val(response.state);
+
+				// Email y móvil: solo poblar si tienen valores reales (no placeholders)
+				if (response.mobile && response.mobile !== '999999999') {
+					$modal.find('input[name="mobile"]').val(response.mobile);
+				}
+				if (response.email && response.email !== 'ejemplo@gmail.com') {
+					$modal.find('input[name="email"]').val(response.email);
+				}
+
+				// Guardar el ID de BD para el update posterior
+				$modal.find('#sunat_contact_id').val(response.contact_id);
+				$modal.find('#hidden_id').val(response.contact_id);
 			}
 
 			function searchSunat(type, value) {
@@ -1096,7 +1149,9 @@
 					data: data,
 					success: function(response) {
 						if (response.status) {
-							selectContactInSell(response.contact_id, response.name);
+							swal.close();
+							fillSunatForm(response, type);
+							// El modal queda abierto para que el usuario complete email/móvil
 						} else {
 							swal('Oops...!!', response.msg, 'warning');
 						}
@@ -1124,6 +1179,45 @@
 					$('.contact_modal #business').show();
 				}
 			});
+
+			// Cuando hay un contacto SUNAT ya creado en BD, el submit actualiza en vez de crear
+			var _origSubmitQuick = (typeof submitQuickContactForm === 'function') ? submitQuickContactForm : null;
+			window.submitQuickContactForm = function(form) {
+				var sunatId = $('#sunat_contact_id').val();
+				if (!sunatId) {
+					if (_origSubmitQuick) _origSubmitQuick(form);
+					return;
+				}
+				var name = ($('.contact_modal #individual').is(':visible'))
+					? ($('.contact_modal input[name="first_name"]').val() + ' ' + $('.contact_modal input[name="last_name"]').val()).trim()
+					: $('.contact_modal input[name="supplier_business_name"]').val();
+
+				$.ajax({
+					method: 'POST',
+					url: '/contacts/' + sunatId,
+					dataType: 'json',
+					data: $(form).serialize() + '&_method=PUT',
+					beforeSend: function() {
+						__disable_submit_button($(form).find('button[type="submit"]'));
+					},
+					success: function(result) {
+						if (result.success) {
+							var displayName = (result.data && (result.data.name || result.data.supplier_business_name))
+								? (result.data.name || result.data.supplier_business_name)
+								: name;
+							selectContactInSell(sunatId, displayName);
+							toastr.success(result.msg);
+						} else {
+							toastr.error(result.msg);
+							$(form).find('button[type="submit"]').removeAttr('disabled');
+						}
+					},
+					error: function() {
+						toastr.error('Error al guardar el contacto');
+						$(form).find('button[type="submit"]').removeAttr('disabled');
+					}
+				});
+			};
 		})();
 
     </script>

@@ -1112,11 +1112,19 @@ class LoanController extends Controller {
         if ($contact) {
             $this->ensureContactAccess($contact, $query, $created_by);
             return response()->json([
-                'status'     => true,
-                'name'       => $type === 'dni' ? $contact->name : $contact->supplier_business_name,
-                'contact_id' => $contact->id,
-                'mobile'     => $contact->mobile,
-                'email'      => $contact->email,
+                'status'                 => true,
+                'name'                   => $type === 'dni' ? $contact->name : $contact->supplier_business_name,
+                'contact_id'             => $contact->id,
+                'first_name'             => $contact->first_name,
+                'last_name'              => $contact->last_name,
+                'supplier_business_name' => $contact->supplier_business_name,
+                'mobile'                 => $contact->mobile,
+                'email'                  => $contact->email,
+                'address_line_1'         => $contact->address_line_1,
+                'city'                   => $contact->city,
+                'state'                  => $contact->state,
+                'contact_id_value'       => $contact->contact_id,
+                'customer_type'          => $type === 'dni' ? 1 : 2,
             ]);
         }
 
@@ -1148,11 +1156,19 @@ class LoanController extends Controller {
         $contact = $this->createContactFromApi($type, $data['data'], $business_id, $created_by);
         $contact->save();
         return response()->json([
-            'status'     => true,
-            'name'       => $type === 'dni' ? $contact->name : $contact->supplier_business_name,
-            'contact_id' => $contact->id,
-            'mobile'     => $contact->mobile,
-            'email'      => $contact->email,
+            'status'                 => true,
+            'name'                   => $type === 'dni' ? $contact->name : $contact->supplier_business_name,
+            'contact_id'             => $contact->id,
+            'first_name'             => $contact->first_name,
+            'last_name'              => $contact->last_name,
+            'supplier_business_name' => $contact->supplier_business_name,
+            'mobile'                 => null,
+            'email'                  => null,
+            'address_line_1'         => $contact->address_line_1,
+            'city'                   => $contact->city,
+            'state'                  => $contact->state,
+            'contact_id_value'       => $contact->contact_id,
+            'customer_type'          => $type === 'dni' ? 1 : 2,
         ]);
     }
 
