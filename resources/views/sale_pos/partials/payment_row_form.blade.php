@@ -120,7 +120,7 @@
 					<span class="input-group-addon">
 					<i class="fas fa-money-bill-alt"></i>
 					</span>
-					{!! Form::select("payment[$row_index][currency]",['2'=>'Dolar (USD)','94'=>'Sol (PE)'], $currency_details->currency_id, ['class' => 'form-control currency_exchange_to_pay_dropdown', 'required']); !!}
+					{!! Form::select("payment[$row_index][currency]",['2'=>'Dolar (USD)','94'=>'Sol (PE)'], $payment_line['currency_id'] , ['class' => 'form-control currency_exchange_to_pay_dropdown', 'required']); !!}
 				</div>
 			</div>
 		</div>
