@@ -16,6 +16,7 @@ use Datatables;
 use DB;
 use Illuminate\Http\Request;
 use App\PaymentApplication;
+use App\PaymentSchedule;
 
 class TransactionPaymentController extends Controller
 {
