@@ -17,6 +17,7 @@ use DB;
 use Illuminate\Http\Request;
 use App\PaymentApplication;
 use App\PaymentSchedule;
+use App\Delay;
 
 class TransactionPaymentController extends Controller
 {
