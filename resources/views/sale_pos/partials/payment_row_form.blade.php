@@ -111,16 +111,24 @@
             <div class="clearfix"></div>
         @endif
 
-
 		<!-- PAGOS mixtos  -->
+		@php
+			$currency_options = ['2' => 'Dolar (USD)', '94' => 'Sol (PE)'];
+			$selected_currency_id = $payment_line['currency_id'] ?? $currency_details->currency_id;
+		@endphp
 		<div class="col-md-4">
 			<div class="form-group">
-				{!! Form::label('currency', 'Moneda' . ':*') !!} 
+				{!! Form::label('currency', 'Moneda' . ':*') !!}
 				<div class="input-group">
-					<span class="input-group-addon">
+					<span class="input-group-addon" @if(!empty($is_edit)) style="border: 1px solid #d2d6dd; background: #eee;" @endif>
 					<i class="fas fa-money-bill-alt"></i>
 					</span>
-					{!! Form::select("payment[$row_index][currency]",['2'=>'Dolar (USD)','94'=>'Sol (PE)'], $payment_line['currency_id'] , ['class' => 'form-control currency_exchange_to_pay_dropdown', 'required']); !!}
+					@if(!empty($is_edit))
+						{!! Form::hidden("payment[$row_index][currency]", $selected_currency_id); !!}
+						<p class="form-control-static" style="padding-top:7px; border: 1px solid #d2d6dd; border-left: none;; background: #eee;">{{ $currency_options[$selected_currency_id] ?? $selected_currency_id }}</p>
+					@else
+						{!! Form::select("payment[$row_index][currency]", $currency_options, $selected_currency_id, ['class' => 'form-control currency_exchange_to_pay_dropdown', 'required']); !!}
+					@endif
 				</div>
 			</div>
 		</div>
@@ -163,10 +171,19 @@
 		<div class="form-group">
 			{!! Form::label("amount_$row_index" ,__('sale.amount') . ':*') !!}
 			<div class="input-group">
+				@if(!empty($is_edit) && !empty($payment_line['exchange_rate']))
+					<span class="input-group-addon" style="border: 1px solid #d2d6dd; background: #eee;">
+						<i class="fas fa-money-bill-alt"></i>
+					</span>
+					<p class="form-control-static" style="padding-top:7px; border: 1px solid #d2d6dd; border-left: none; background: #eee;">
+						{{ @num_format($payment_line['amount'] * $payment_line['exchange_rate']) }}
+					</p>
+				@else
 				<span class="input-group-addon">
 					<i class="fas fa-money-bill-alt"></i>
 				</span>
-				{!! Form::text("payment[$row_index][amount]", @num_format($payment_line['amount']), ['class' => 'form-control payment-amount input_number', 'required', 'id' => "amount_$row_index", 'placeholder' => __('sale.amount'), 'readonly' => $readonly]); !!}
+				@endif
+				{!! Form::text("payment[$row_index][amount]", @num_format($payment_line['amount']), ['class' => 'form-control payment-amount input_number', 'required', 'id' => "amount_$row_index", 'placeholder' => __('sale.amount'), 'readonly' => $readonly, 'style' => (!empty($is_edit) && !empty($payment_line['exchange_rate'])) ? 'display:none;' : '']); !!}
 			</div>
 		</div>
 	</div>
