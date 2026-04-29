@@ -861,6 +861,7 @@
 					</div>
 					@include('sale_pos.partials.payment_row_form', ['row_index' => 0, 'show_date' => true, 'show_denomination' => true])
                 </div>
+				
                 <div class="payment_row">
 					<div class="row">
 						<div class="col-md-12">
@@ -926,8 +927,6 @@
 				</div>
 			@endif
 			@endcomponent
-
-
 		@endcan
 	@endif
 

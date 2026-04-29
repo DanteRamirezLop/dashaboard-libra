@@ -210,4 +210,5 @@
 			{!! Form::textarea("payment[$row_index][note]", $payment_line['note'], ['class' => 'form-control', 'rows' => 3, 'id' => "note_$row_index"]); !!}
 		</div>
 	</div>
+
 </div>
