@@ -870,6 +870,10 @@ $(document).ready(function() {
         calculate_balance_due();
     });
 
+    $(document).on('change', '#amount_to_change', function() {
+        calculate_balance_due();
+    });
+
     $(document).on('change', '.currency_exchange_to_pay_dropdown', function() {
         var payment_row = $(this).closest('.row');
         var amount_input = payment_row.find('input.payment-amount');
