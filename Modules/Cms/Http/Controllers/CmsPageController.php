@@ -9,7 +9,7 @@ use Illuminate\Routing\Controller;
 use Modules\Cms\Entities\CmsPage;
 use Modules\Cms\Entities\CmsPageMeta;
 use Modules\Cms\Entities\Business;
-
+use Carbon\Carbon;
 
 class CmsPageController extends Controller
 {
@@ -168,6 +168,10 @@ class CmsPageController extends Controller
                 }
             }
 
+            if($request->date){
+                 $cur_date = Carbon::createFromFormat('Y-m-d', $request->date)->format('Y-m-d H:i:s');
+                 $input['created_at'] = $cur_date;
+            }
             $input['is_enabled'] = ! empty($request->is_enabled);
 
             $page->update($input);

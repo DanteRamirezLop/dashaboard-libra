@@ -121,6 +121,13 @@
                                 </label> 
                             </div>
                         </div>
+
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                {!! Form::label('date', 'Update date' . ':' )!!}
+                                {!! Form::date('date', $page->created_at, ['class' => 'form-control' ]) !!}
+                            </div>
+                        </div>
 						
 						<div class="col-md-12">
                             <div class="form-group">
