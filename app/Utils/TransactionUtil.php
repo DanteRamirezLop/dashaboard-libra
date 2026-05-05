@@ -998,6 +998,30 @@ class TransactionUtil extends Util
 
         $payment['amount'] = $uf_data ? $this->num_uf($payment['amount']) : $payment['amount'];
 
+        // Mapear exchange_rate_sell → exchange_rate con la misma lógica del flujo de creación
+        $diff_currency = !empty($payment['diff_currency']);
+        if ($diff_currency) {
+            if (isset($payment['exchange_rate_sell'])) {
+                $er = (float) $payment['exchange_rate_sell'];
+                $payment['amount'] = $er != 0 ? round($payment['amount'] / $er, 4) : $payment['amount'];
+                $payment['exchange_rate'] = 1;
+            } else {
+                $er = !empty($transaction->exchange_rate) ? $transaction->exchange_rate : 1;
+                $payment['amount'] = round($payment['amount'] / $er, 4);
+                $payment['exchange_rate'] = $er;
+            }
+        } else {
+            $payment['exchange_rate'] = isset($payment['exchange_rate_sell']) ? (float) $payment['exchange_rate_sell'] : 1;
+        }
+
+        // Mapear currency (select del formulario) → currency_id (columna DB)
+        if (isset($payment['currency'])) {
+            $payment['currency_id'] = $payment['currency'];
+            unset($payment['currency']);
+        }
+
+        unset($payment['exchange_rate_sell'], $payment['diff_currency']);
+
         $tp = TransactionPayment::where('id', $payment_id)
                             ->first();
 

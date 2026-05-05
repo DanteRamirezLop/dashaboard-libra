@@ -310,7 +310,7 @@
 							<span class="input-group-addon">
 								{{ $currency_details->symbol }}
 							</span>
-							{!! Form::number('exchange_rate', $transaction->exchange_rate, ['class' => 'form-control', 'readonly', 'step' => 0.001]); !!}
+							{!! Form::number('', $transaction->exchange_rate, ['class' => 'form-control', 'readonly', 'step' => 0.001]); !!}
 						</div>
 						<span class="help-block text-muted">
 							{{ $currency_details->name }}
@@ -787,6 +787,7 @@
 	@endif
 
 
+
 	@if($transaction->type = 'sell')
 	@can('sell.payments')
 		@component('components.widget', ['class' => 'box-solid', 'title' => __('purchase.add_payment')])
@@ -804,7 +805,9 @@
         			{!! Form::hidden("payment[$loop->index][payment_id]", $payment_line['id']); !!}
         		@endif
 				<div class="payment_row" id="payment_rows_div">
+	
 					@include('sale_pos.partials.payment_row_form', ['row_index' => $loop->index, 'show_date' => true, 'payment_line' => $payment_line, 'show_denomination' => true, 'is_edit' => true])
+				
 				</div>
 			@endforeach
 			
@@ -823,6 +826,7 @@
             	@endif
 			</div>
 		</div>
+
 		<div class="row @if($change_return['amount'] == 0) hide @endif payment_row" id="change_return_payment_data">
 			<div class="col-md-4">
 				<div class="form-group">
@@ -833,7 +837,6 @@
 						</span>
 						@php
 							$_payment_method = empty($change_return['method']) && array_key_exists('cash', $payment_types) ? 'cash' : $change_return['method'];
-
 							$_payment_types = $payment_types;
 							if(isset($_payment_types['advance'])) {
 								unset($_payment_types['advance']);
@@ -856,7 +859,10 @@
 				</div>
 			</div>
 			@endif
+
+		
 			@include('sale_pos.partials.payment_type_details', ['payment_line' => $change_return, 'row_index' => 'change_return'])
+		
 		</div>
 		@endcomponent
 	@endcan
@@ -909,6 +915,16 @@
     			__currency_thousand_separator = $('input#p_thousand').val();
     			__currency_decimal_separator = $('input#p_decimal').val();
     		}
+
+    		PurchaseCurrency.init();
+
+    		// Inicializar visibilidad del fieldset de tasa de cambio sin borrar el monto existente
+    		$('.currency_exchange_to_pay_dropdown').each(function () {
+    			var $amountField = $(this).closest('.payment_row').find('.payment-amount');
+    			var savedAmount = $amountField.val();
+    			$(this).trigger('change');
+    			$amountField.val(savedAmount);
+    		});
 
     		$('#shipping_documents').fileinput({
 		        showUpload: false,
