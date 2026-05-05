@@ -403,7 +403,7 @@ Tumbes</p>
                             <strong> Inicial + Coste tramite + Inicial GPS + Inicial seguro </strong>
                         </td>
                         <td align="right" style="width: 40%; height: 25px; font-size: 0.9rem;">
-                            <strong> ${{number_format($loan->initial_amount + $loan->initial_admin_fee + $loan->gps + $loan->insurance ,2)}} </strong>
+                            <strong> ${{number_format($loan->initial_amount + $loan->initial_admin_fee + $loan->initial_gps + $loan->initial_insurance ,2)}} </strong>
                         </td>
                     </tr>
                 </table>
