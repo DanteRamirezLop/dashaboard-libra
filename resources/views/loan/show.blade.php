@@ -10,7 +10,6 @@
 </section>
 <!-- Main content -->
 <section class="content no-print">
-
         <div class="row">
             <div class="col-lg-12">
                 @component('components.widget', ['class' => 'box-success', 'title' => 'Resumen del préstamo']) 
@@ -30,7 +29,6 @@
                                     <th scope="row">Código VIN</th>
                                     <td>{{$loan->vin}}</td>
                                 </tr>
-                                
                                 <tr>
                                     <th scope="row">Fecha del prestamo</th>
                                     <td>
@@ -48,7 +46,6 @@
                             </tbody>
                         </table>                
                     </div>
-
                     <div class="col-lg-6">                
                         <table class="table table-bordered table-striped dataTable">
                             <tbody>     
@@ -342,6 +339,48 @@
                         ignoreReadonly: true,
                     });
                 },
+            });
+        });
+
+        // Editar día de fecha de pago (solo pendientes)
+        $(document).on('click', '.edit-date-btn', function () {
+            var $td = $(this).closest('td');
+            $td.find('.date-display-text').hide();
+            $(this).hide();
+            $td.find('.date-edit-form').show();
+            $td.find('.day-input').focus().select();
+        });
+
+        $(document).on('click', '.cancel-date-btn', function () {
+            var $td = $(this).closest('td');
+            $td.find('.date-edit-form').hide();
+            $td.find('.date-display-text').show();
+            $td.find('.edit-date-btn').show();
+        });
+
+        $(document).on('click', '.save-date-btn', function () {
+            var id   = $(this).data('id');
+            var day  = $(this).closest('td').find('.day-input').val();
+            var $btn = $(this);
+            $btn.prop('disabled', true);
+            $.ajax({
+                url: '/loan/schedule/' + id + '/date',
+                type: 'PATCH',
+                data: { day: day, _token: '{{ csrf_token() }}' },
+                dataType: 'json',
+                success: function (result) {
+                    if (result.success) {
+                        toastr.success(result.msg);
+                        $('#table_quotes').load('/loans/table/{{ $loan->id }}');
+                    } else {
+                        toastr.error(result.msg);
+                        $btn.prop('disabled', false);
+                    }
+                },
+                error: function () {
+                    toastr.error('Error al actualizar la fecha.');
+                    $btn.prop('disabled', false);
+                }
             });
         });
 

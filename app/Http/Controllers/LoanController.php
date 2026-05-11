@@ -327,12 +327,10 @@ class LoanController extends Controller {
     {
         try {
                 $loan_type = $request->input('type') ? $request->input('type') : 'sale'; //Defiene si el prestamo es un venta o alquiler venta
-
                 $output = DB::transaction(function () use ($request) {
                 // -------------------- Inputs --------------------
                 $business_id = $request->session()->get('user.business_id');
                 $user_id     = auth()->id();
-               
                 $initial_amount           = (float) $request->input('pay_initial');
                 $annual_interest_rate     = (float) $request->input('multiplayer'); // antes: multiplier
                 $number_month             = (int) $request->input('number_month');
@@ -1507,5 +1505,31 @@ class LoanController extends Controller {
             'state'                  => $data['departamento'] ?? null,
             'address_line_1'         => $data['direccion_completa'] ?? null,
         ]);
+    }
+
+    public function updateScheduleDay(Request $request, $id)
+    {
+        try {
+            $schedule = PaymentSchedule::findOrFail($id);
+
+            if ($schedule->status !== 'pending') {
+                return response()->json(['success' => false, 'msg' => 'Solo se puede editar cuotas pendientes.']);
+            }
+
+            $day = (int) $request->input('day');
+            $current = Carbon::parse($schedule->sheduled_date);
+            $maxDay  = $current->daysInMonth;
+
+            if ($day < 1 || $day > $maxDay) {
+                return response()->json(['success' => false, 'msg' => "El día debe estar entre 1 y {$maxDay}."]);
+            }
+
+            $schedule->sheduled_date = $current->day($day)->toDateString();
+            $schedule->save();
+
+            return response()->json(['success' => true, 'msg' => 'Fecha actualizada correctamente.']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'msg' => 'Error al actualizar la fecha.']);
+        }
     }
 }

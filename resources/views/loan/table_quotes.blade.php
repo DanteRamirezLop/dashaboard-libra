@@ -21,12 +21,38 @@
         @foreach($paymentSchedules as $key=>$item)
             <tr>
                 <td>{{$item->number_letter}} </td>                            
-                <td>     
+                <td>
                     @php
                         $fecha = Carbon::parse($item->sheduled_date);
-                        $date = $fecha->isoFormat('dddd MMMM D\, Y'); 
+                        $date = $fecha->isoFormat('dddd MMMM D\, Y');
                     @endphp
-                    {{$date}}
+                    @if($item->status == 'pending')
+                        <span class="date-display-text">{{$date}}</span>
+                        <button class="btn btn-xs btn-link edit-date-btn"
+                            data-id="{{$item->id}}"
+                            data-day="{{$fecha->day}}"
+                            data-month-year="{{$fecha->isoFormat('MMMM Y')}}"
+                            title="Editar día">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <span class="date-edit-form" style="display:none;">
+                            <span class="text-muted">{{$fecha->isoFormat('MMMM Y')}} &mdash; Día:</span>
+                            <input type="number" class="form-control input-sm day-input mb-2"
+                                value="{{$fecha->day}}" min="1" max="{{$fecha->daysInMonth}}"
+                                style="width:60px;display:inline-block;vertical-align:middle;">
+                            
+                            <button class="tw-dw-btn tw-dw-btn-outline tw-dw-btn-xs tw-dw-btn-success save-date-btn" data-id="{{$item->id}}">
+                              <i class="fas fa-check-circle"></i>
+                            </button>
+                            <button class="tw-dw-btn tw-dw-btn-outline tw-dw-btn-xs tw-dw-btn-error cancel-date-btn">
+                               <i class="fa fa-times-circle"></i>
+                            </button>
+                        </span>
+
+                       
+                    @else
+                        {{$date}}  
+                    @endif
                 </td>
                 <td>
                     {!!$item->getLoanStatus() !!}
