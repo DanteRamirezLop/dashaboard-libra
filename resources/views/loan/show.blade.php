@@ -342,6 +342,40 @@
             });
         });
 
+        // Revertir estado overdue → pending (solo sin mora asociada)
+        $(document).on('click', '.revert-pending-btn', function () {
+            var id   = $(this).data('id');
+            var $btn = $(this);
+            swal({
+                title: '¿Estás seguro?',
+                text: 'La cuota volverá al estado Pendiente.',
+                icon: 'warning',
+                buttons: true,
+            }).then(function (confirm) {
+                if (!confirm) return;
+                $btn.prop('disabled', true);
+                $.ajax({
+                    url: '/loan/schedule/' + id + '/revert-pending',
+                    type: 'PATCH',
+                    data: { _token: '{{ csrf_token() }}' },
+                    dataType: 'json',
+                    success: function (result) {
+                        if (result.success) {
+                            toastr.success(result.msg);
+                            $('#table_quotes').load('/loans/table/{{ $loan->id }}');
+                        } else {
+                            toastr.error(result.msg);
+                            $btn.prop('disabled', false);
+                        }
+                    },
+                    error: function () {
+                        toastr.error('Error al revertir el estado.');
+                        $btn.prop('disabled', false);
+                    }
+                });
+            });
+        });
+
         // Editar día de fecha de pago (solo pendientes)
         $(document).on('click', '.edit-date-btn', function () {
             var $td = $(this).closest('td');
@@ -360,13 +394,13 @@
 
         $(document).on('click', '.save-date-btn', function () {
             var id   = $(this).data('id');
-            var day  = $(this).closest('td').find('.day-input').val();
+            var date = $(this).closest('td').find('.date-input').val();
             var $btn = $(this);
             $btn.prop('disabled', true);
             $.ajax({
                 url: '/loan/schedule/' + id + '/date',
                 type: 'PATCH',
-                data: { day: day, _token: '{{ csrf_token() }}' },
+                data: { date: date, _token: '{{ csrf_token() }}' },
                 dataType: 'json',
                 success: function (result) {
                     if (result.success) {

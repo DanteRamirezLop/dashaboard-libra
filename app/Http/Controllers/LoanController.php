@@ -1507,6 +1507,28 @@ class LoanController extends Controller {
         ]);
     }
 
+    public function revertToPending(Request $request, $id)
+    {
+        try {
+            $schedule = PaymentSchedule::with('delay')->findOrFail($id);
+
+            if ($schedule->status !== 'overdue') {
+                return response()->json(['success' => false, 'msg' => 'Solo se pueden revertir cuotas con estado Atrasado.']);
+            }
+
+            if ($schedule->delay) {
+                return response()->json(['success' => false, 'msg' => 'No se puede revertir: la cuota tiene una mora asociada.']);
+            }
+
+            $schedule->status = 'pending';
+            $schedule->save();
+
+            return response()->json(['success' => true, 'msg' => 'Cuota revertida a Pendiente correctamente.']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'msg' => 'Error al revertir el estado.']);
+        }
+    }
+
     public function updateScheduleDay(Request $request, $id)
     {
         try {
@@ -1516,15 +1538,12 @@ class LoanController extends Controller {
                 return response()->json(['success' => false, 'msg' => 'Solo se puede editar cuotas pendientes.']);
             }
 
-            $day = (int) $request->input('day');
-            $current = Carbon::parse($schedule->sheduled_date);
-            $maxDay  = $current->daysInMonth;
-
-            if ($day < 1 || $day > $maxDay) {
-                return response()->json(['success' => false, 'msg' => "El día debe estar entre 1 y {$maxDay}."]);
+            $newDate = $request->input('date');
+            if (!$newDate || !strtotime($newDate)) {
+                return response()->json(['success' => false, 'msg' => 'Fecha inválida.']);
             }
 
-            $schedule->sheduled_date = $current->day($day)->toDateString();
+            $schedule->sheduled_date = Carbon::parse($newDate)->toDateString();
             $schedule->save();
 
             return response()->json(['success' => true, 'msg' => 'Fecha actualizada correctamente.']);
