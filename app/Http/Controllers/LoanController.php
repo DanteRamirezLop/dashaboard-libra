@@ -185,12 +185,12 @@ class LoanController extends Controller {
                                 $html .= '<li><a href="'.action([\App\Http\Controllers\TransactionPaymentController::class, 'show'], [$row->transaction_id]).'" class="view_payment_modal"><i class="fas fa-money-bill-alt"></i> '.__('purchase.view_payments').'</a></li>';
                                 $html .= '<li><a href="#" data-href="'.action([\App\Http\Controllers\SellController::class, 'show'], [$row->transaction_id]).'" class="btn-modal" data-container=".view_modal"><i class="fas fa-eye" aria-hidden="true"></i> '.__('messages.view').'</a></li>';
                                 $html .= '<li><a href="'.action([\App\Http\Controllers\LoanController::class, 'destroy'], [$row->id]).'" class="delete_loan_button"> <i class="fas fa-trash"></i> '.__('messages.delete').'</a></li>';
-                                if (in_array($row->status, ['in arrears', 'partial', 'approved'])) {
-                                    if(!$row->refinanced_at){ 
-                                        $html .= '<li class="divider"></li>';
-                                        $html .= '<li><a href="#" class="open_refinance_modal" data-href="'.route('loan.refinance.form', $row->id).'"><i class="fa fa-landmark" aria-hidden="true"></i> Refinanciar</a></li>';
-                                    }
-                                }
+                                // if (in_array($row->status, ['in arrears', 'partial', 'approved'])) {
+                                //     if(!$row->refinanced_at){ 
+                                //         $html .= '<li class="divider"></li>';
+                                //         $html .= '<li><a href="#" class="open_refinance_modal" data-href="'.route('loan.refinance.form', $row->id).'"><i class="fa fa-landmark" aria-hidden="true"></i> Refinanciar</a></li>';
+                                //     }
+                                // }
                         }else{
                           $html = '<div class="btn-group">
                                     <button type="button" class="btn btn-info dropdown-toggle btn-xs"
@@ -249,20 +249,21 @@ class LoanController extends Controller {
                     return $total_delay_html;
                 })
                 ->addColumn('total_to_delay', function ($row) {
-                    // TOTAL POR VENCER          
-                    if($row->refinanced_at){
-                        //PRESTAMO CON REFINANCIAMIENTO
-                        $total_to_delay =  $row->for_due;
-                    }else{
-                        //PRESTAMO COMUN
-                        $mora = round($row->mora);
-                        if($mora){
-                            $paid_partial = 0;
-                        }else{
-                            $paid_partial = bcsub($row->delay, $row->total_only_payments, 4);
-                        }
-                        $total_to_delay =  $row->for_due + $paid_partial;
-                    }
+                    // TOTAL POR VENCER   
+                        
+                    // if($row->refinanced_at){
+                    //     $total_to_delay =  $row->for_due;
+                    // }else{
+                    //     $mora = round($row->mora);
+                    //     if($mora){
+                    //         $paid_partial = 0;
+                    //     }else{
+                    //         $paid_partial = bcsub($row->delay, $row->total_only_payments, 4);
+                    //     }
+                    //     $total_to_delay =  $row->for_due + $paid_partial;
+                    // }
+
+                    $total_to_delay = 0;
 
                     $total_to_delay_html = '<span class="payment_due" data-orig-value="'.$total_to_delay.'">'.$this->transactionUtil->num_f($total_to_delay, true).'</span>';
                     return $total_to_delay_html;
