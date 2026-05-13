@@ -72,7 +72,10 @@
 </section>
 
 <!-- /.content -->
-<div class="modal fade payment_modal" tabindex="-1" role="dialog" 
+<div class="modal fade refinance_modal" tabindex="-1" role="dialog"
+    aria-labelledby="refinanceModalLabel">
+</div>
+<div class="modal fade payment_modal" tabindex="-1" role="dialog"
     aria-labelledby="gridSystemModalLabel">
 </div>
 <div class="modal fade edit_payment_modal" tabindex="-1" role="dialog" 
@@ -225,4 +228,24 @@ $(document).ready( function(){
 });
 </script>
 <script src="{{ asset('js/payment.js')}}"></script>
+<script>
+$(document).on('click', '.open_refinance_modal', function(e) {
+    e.preventDefault();
+    var href = $(this).data('href');
+    $.ajax({
+        method: 'GET',
+        url: href,
+        success: function(result) {
+            if (result.status === 'ok') {
+                $('.refinance_modal').html(result.view).modal('show');
+            } else {
+                toastr.error('No se pudo cargar el formulario de refinanciamiento.');
+            }
+        },
+        error: function() {
+            toastr.error('Error al cargar el formulario de refinanciamiento.');
+        }
+    });
+});
+</script>
 @endsection

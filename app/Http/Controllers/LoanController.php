@@ -136,6 +136,7 @@ class LoanController extends Controller {
                 'loans.product_name',
                 'loans.number_month',
                 'loans.waiter',
+                'Loans.refinanced_at',
                 'transactions.final_total as final_total',
                 DB::raw('(SELECT SUM(IF(TP.is_return = 1,-1*TP.amount,TP.amount))
                         FROM transaction_payments AS TP
@@ -184,9 +185,15 @@ class LoanController extends Controller {
                                 $html .= '<li><a href="'.action([\App\Http\Controllers\TransactionPaymentController::class, 'show'], [$row->transaction_id]).'" class="view_payment_modal"><i class="fas fa-money-bill-alt"></i> '.__('purchase.view_payments').'</a></li>';
                                 $html .= '<li><a href="#" data-href="'.action([\App\Http\Controllers\SellController::class, 'show'], [$row->transaction_id]).'" class="btn-modal" data-container=".view_modal"><i class="fas fa-eye" aria-hidden="true"></i> '.__('messages.view').'</a></li>';
                                 $html .= '<li><a href="'.action([\App\Http\Controllers\LoanController::class, 'destroy'], [$row->id]).'" class="delete_loan_button"> <i class="fas fa-trash"></i> '.__('messages.delete').'</a></li>';
+                                if (in_array($row->status, ['in arrears', 'partial', 'approved'])) {
+                                    if(!$row->refinanced_at){ 
+                                        $html .= '<li class="divider"></li>';
+                                        $html .= '<li><a href="#" class="open_refinance_modal" data-href="'.route('loan.refinance.form', $row->id).'"><i class="fa fa-landmark" aria-hidden="true"></i> Refinanciar</a></li>';
+                                    }
+                                }
                         }else{
                           $html = '<div class="btn-group">
-                                    <button type="button" class="btn btn-info dropdown-toggle btn-xs" 
+                                    <button type="button" class="btn btn-info dropdown-toggle btn-xs"
                                         data-toggle="dropdown" aria-expanded="false">'.
                                         __('messages.actions').
                                         '<span class="caret"></span><span class="sr-only">Toggle Dropdown
@@ -197,7 +204,7 @@ class LoanController extends Controller {
 
                             $html .= '<li class="divider"></li>';
                             $html .= '<li><a href="'.action([\App\Http\Controllers\LoanController::class, 'show'], [$row->id]).'" "><i class="fas fa fa-calendar" aria-hidden="true"></i> Calendario de pagos</a></li>';
-                        } 
+                        }
                         $html .= '</ul></div>';
                         return $html;
                      }
@@ -220,6 +227,9 @@ class LoanController extends Controller {
                             case"paid":
                                 $label = '<span class="label label-success">pagado</span>';
                                 break;
+                            case"refinanced":
+                                $label = '<span class="label label-warning">Refinanciado</span>';
+                                break;
                         }
                         return $label;
                      }
@@ -239,39 +249,52 @@ class LoanController extends Controller {
                     return $total_delay_html;
                 })
                 ->addColumn('total_to_delay', function ($row) {
-                    $mora = round($row->mora);
-                    if($mora){
-                        $paid_partial = 0;
+                    // TOTAL POR VENCER          
+                    if($row->refinanced_at){
+                        //PRESTAMO CON REFINANCIAMIENTO
+                        $total_to_delay =  $row->for_due;
                     }else{
-                        $paid_partial = bcsub($row->delay, $row->total_only_payments, 4);
+                        //PRESTAMO COMUN
+                        $mora = round($row->mora);
+                        if($mora){
+                            $paid_partial = 0;
+                        }else{
+                            $paid_partial = bcsub($row->delay, $row->total_only_payments, 4);
+                        }
+                        $total_to_delay =  $row->for_due + $paid_partial;
                     }
-                    $total_to_delay =  $row->for_due + $paid_partial;
+
                     $total_to_delay_html = '<span class="payment_due" data-orig-value="'.$total_to_delay.'">'.$this->transactionUtil->num_f($total_to_delay, true).'</span>';
                     return $total_to_delay_html;
+
+                    
                 })
                 ->addColumn('total_remaining', function ($row) {
+                    // total vencido
                      $mora = round($row->mora);
                     if($mora){
                          $total_remaining = bcsub($row->delay, $row->total_only_payments, 4) + $row->mora;
                     }else{
                         $total_remaining = 0;
                     }
-                    
+
                     if($total_remaining < 0 && $total_remaining > -0.25) {
                         $total_remaining = 0;
                     }
-                    
+
                     $total_remaining_html = '<span class="payment_due" data-orig-value="'.$total_remaining.'">'.$this->transactionUtil->num_f($total_remaining, true).'</span>';
                     return $total_remaining_html;
                 })
 
                  ->addColumn('total_mora', function ($row) {
+                    //mora
                     $total_mora = $row->mora;
                     $total_mora_html = '<span class="payment_due" data-orig-value="'.$total_mora.'">'.$this->transactionUtil->num_f($total_mora, true).'</span>';
                     return $total_mora_html;
                 })
 
                  ->addColumn('total_remaining_mora', function ($row) {
+                    // TOTAL DEBIDO
                     $total_remaining = $row->final_total - $row->total_paid;
                     $total_remaining_html = '<span class="payment_due" data-orig-value="'.$total_remaining.'">'.$this->transactionUtil->num_f($total_remaining, true).'</span>';
                     return $total_remaining_html;
@@ -910,6 +933,156 @@ class LoanController extends Controller {
         return $output;
     }
 
+    // ─── REFINANCIAMIENTO ────────────────────────────────────────────────────
+
+    public function refinanceForm($id)
+    {
+        if (! request()->ajax()) {
+            abort(403);
+        }
+
+        $business_id = request()->session()->get('user.business_id');
+        $loan        = Loan::where('business_id', $business_id)->findOrFail($id);
+        $transaction = Transaction::findOrFail($loan->transaction_id);
+
+        $total_paid = TransactionPayment::where('transaction_id', $transaction->id)
+            ->selectRaw('COALESCE(SUM(IF(is_return=1,-1,1)*amount),0) as paid')
+            ->value('paid') ?? 0;
+
+        $total_debt  = round($transaction->final_total - $total_paid, 4);
+        $total_mora  = Delay::where('loan_id', $loan->id)
+            ->where('status', 'late')
+            ->sum('late_amount');
+        $total_mora  = round($total_mora, 4);
+
+        $payment_types = $this->transactionUtil->payment_types(null, false, $business_id);
+        $accounts      = $this->moduleUtil->accountsDropdown($business_id, true, false, true);
+
+        $view = view('loan.refinance_modal', compact(
+            'loan', 'total_debt', 'total_mora', 'payment_types', 'accounts'
+        ))->render();
+
+        return response()->json(['status' => 'ok', 'view' => $view]);
+    }
+
+    public function refinanceStore(Request $request, $id)
+    {
+        try {
+            $business_id = $request->session()->get('user.business_id');
+            $user_id     = auth()->id();
+
+            $forgiven_mora     = (float) $this->transactionUtil->num_uf($request->input('forgiven_mora', 0));
+            $refinance_amount  = (float) $this->transactionUtil->num_uf($request->input('refinance_amount'));
+            $installments      = $request->input('installments', []); // [['date'=>..,'amount'=>..]]
+            $reason            = $request->input('reason', 'Refinanciamiento');
+
+            // Validar que las cuotas sumen el monto a refinanciar
+            $installments_total = array_sum(array_column($installments, 'amount'));
+            if (round($installments_total, 2) != round($refinance_amount, 2)) {
+                return redirect()->back()->with('status', [
+                    'success' => false,
+                    'msg'     => 'La suma de las cuotas (' . number_format($installments_total, 2) . ') no coincide con el monto a refinanciar (' . number_format($refinance_amount, 2) . ').',
+                ]);
+            }
+
+            DB::transaction(function () use (
+                $id, $business_id, $user_id,
+                $forgiven_mora, $refinance_amount, $installments, $reason
+            ) {
+                $loan = Loan::where('business_id', $business_id)->findOrFail($id);
+
+                // 1. Soft-delete todos los delays pendientes
+                Delay::where('loan_id', $id)
+                    ->whereNull('deleted_at')
+                    ->update(['deleted_at' => now()]);
+
+                // 2. Registrar la condonación de mora contra la transacción original de la venta
+                if ($forgiven_mora > 0) {
+                    PaymentApplication::create([
+                        'loan_id'           => $id,
+                        'transaction_id'    => $loan->transaction_id,
+                        'concept'           => 'Condonación de mora por refinanciamiento - ' . $reason,
+                        'amount'            => $forgiven_mora,
+                        'amount_discounted' => $forgiven_mora,
+                        'applied_at'        => now(),
+                    ]);
+
+                    $transaction = Transaction::find($loan->transaction_id);
+                    $transaction->discount_type = 'discount_type';
+                    $transaction->discount_amount = $forgiven_mora;
+                    $transaction->final_total -= $forgiven_mora;
+                    $transaction->save();
+                }
+
+                // 3. Marcar cuotas pendientes/vencidas como 'refinanced'
+                PaymentSchedule::where('loan_id', $id)
+                    ->whereIn('status', ['pending', 'overdue'])
+                    ->update(['status' => 'refinanced']);
+                // 3. Marcar cuotas anteriores como refinanciados 
+                PaymentSchedule::where('loan_id', $id)
+                    ->update(['refinanced_at' => now()]);
+
+                // 4. Actualizar el préstamo con los nuevos términos (sin crear uno nuevo)
+                // $loan->balance_to_financed   = $refinance_amount;
+                // $loan->total_cost_loan       = $refinance_amount;
+                // $loan->total_amount_interest = 0;
+                // $loan->annual_interest_rate  = 0;
+                // $loan->number_month          = count($installments);
+                // $loan->type_quotation        = 2;
+                $loan->status                = 'partial';
+                $loan->refinanced_at         = now();
+                $loan->save();
+
+                // 5. Insertar el nuevo cronograma sobre el mismo préstamo
+                $balance = $refinance_amount;
+                $rows    = [];
+                $now     = now();
+
+                foreach ($installments as $index => $item) {
+                    $amount        = round((float) $item['amount'], 4);
+                    $principal     = min($amount, $balance);
+                    $balance_after = round(max(0.0, $balance - $principal), 4);
+
+                    $rows[] = [
+                        'loan_id'          => $loan->id,
+                        'number_quota'     => $index + 1,
+                        'sheduled_date'    => Carbon::parse($item['date'])->toDateString(),
+                        'mount_quota'      => $amount,
+                        'status'           => 'pending',
+                        'opening_balance'  => round($balance, 4),
+                        'capital'          => $principal,
+                        'interests'        => 0,
+                        'final_balance'    => $balance_after,
+                        'gps_quota'        => 0,
+                        'sure_quota'       => 0,
+                        'admin_fee_quota'  => 0,
+                        'initial'          => 0,
+                        'created_at'       => $now,
+                        'updated_at'       => $now,
+                    ];
+
+                    $balance = $balance_after;
+                }
+
+                PaymentSchedule::insert($rows);
+            });
+
+            return redirect(route('loans.show', $id))->with('status', [
+                'success' => true,
+                'msg'     => 'Refinanciamiento aplicado correctamente.',
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::emergency('Refinancing error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            return redirect()->back()->with('status', [
+                'success' => false,
+                'msg'     => 'Error al procesar el refinanciamiento: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+
     public function destroy($id)
     {
         if (! auth()->user()->can('loans.delete')) {
@@ -1076,7 +1249,7 @@ class LoanController extends Controller {
         $paymentSchedules = PaymentSchedule::where('loan_id', $loan->id)->get();
         $customer = Contact::find($loan->customer_id);
 		$user = User::find($loan->user_id);
-        $total =  $loan->amount + $loan->admin_fee + $loan->gps  + $loan->insurance  +  $loan->initial_amount;
+         $total =  $loan->total_cost_loan + $loan->initial_admin_fee + $loan->initial_gps  + $loan->initial_insurance  +  $loan->initial_amount + $loan->start_rate;
         return view('loan.number_letter')->with(compact('annexes','paymentSchedules','type','customer','loan','user','total'));
     }
 

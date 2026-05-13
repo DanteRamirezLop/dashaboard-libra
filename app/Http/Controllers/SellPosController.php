@@ -507,6 +507,8 @@ class SellPosController extends Controller
 
                 $is_credit_sale = isset($input['is_credit_sale']) && $input['is_credit_sale'] == 1 ? true : false;
 
+
+                
                 if (!$transaction->is_suspend && !empty($input['payment']) && !$is_credit_sale) {
                     $this->transactionUtil->createOrUpdatePaymentLines($transaction, $input['payment']);
                 }
@@ -1400,11 +1402,17 @@ class SellPosController extends Controller
                     $input['payment'][] = $change_return;
 
                     if (!$is_direct_sale || auth()->user()->can('sell.payments')) {
-                        $this->transactionUtil->createOrUpdatePaymentLines($transaction, $input['payment']);
+                        $existing_payment_count = TransactionPayment::where('transaction_id', $transaction->id)
+                            ->where('is_return', 0)
+                            ->count();
 
-                        //Update cash register
-                        if (!$is_direct_sale) {
-                            $this->cashRegisterUtil->updateSellPayments($status_before, $transaction, $input['payment']);
+                        if ($existing_payment_count <= 1) {
+                            $this->transactionUtil->createOrUpdatePaymentLines($transaction, $input['payment']);
+
+                            //Update cash register
+                            if (!$is_direct_sale) {
+                                $this->cashRegisterUtil->updateSellPayments($status_before, $transaction, $input['payment']);
+                            }
                         }
                     }
                 }
@@ -1463,6 +1471,8 @@ class SellPosController extends Controller
                 $this->transactionUtil->activityLog($transaction, 'edited', $transaction_before);
 
                 SellCreatedOrModified::dispatch($transaction);
+
+                //aqui agregar un LOG para registrar lo que pasa cuando hay mas de 2 pagos
 
                 DB::commit();
 

@@ -836,6 +836,8 @@
 			</div>
 		</div>
 
+
+
 		<div class="row @if($change_return['amount'] == 0) hide @endif payment_row" id="change_return_payment_data">
 			<div class="col-md-4">
 				<div class="form-group">
@@ -868,7 +870,7 @@
 				</div>
 			</div>
 			@endif
-
+			
 		
 			@include('sale_pos.partials.payment_type_details', ['payment_line' => $change_return, 'row_index' => 'change_return'])
 		

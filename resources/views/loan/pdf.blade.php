@@ -341,7 +341,7 @@
                 <td align="center">@format_currency($sell->total_before_tax)</td>
             </tr>
             <tr>
-                <td align="left">Descuento por capitalización</td>
+                <td align="left">Descuento por capitalización / Regularización</td>
                 <td align="center"><b>(-)</b></td>
                 <td align="center"><div><span @if( $sell->discount_type == 'fixed') data-currency_symbol="true" @endif> @format_currency($sell->discount_amount) </span> @if( $sell->discount_type == 'percentage') {{ '%'}} @endif</span></div></td>
             </tr>
@@ -442,6 +442,7 @@
       </table>
 
       <h2 class="text-center">Letras</h2>
+        @php $currentRefinancedAt = false; @endphp
         <table  width="100%" class="w-full" border='1' align='center' cellpadding='3' cellspacing='0'>
             <tr class="bg-gray">
                 <th style="width: 11%;">N° de letra</th>
@@ -451,8 +452,19 @@
                 <th style="width: 35%;">N° Referencias</th>
             </tr>
             @foreach($paymentShedules as $key=>$paymentShedule)
+            @if($paymentShedule->status === 'refinanced')
+                @continue
+            @endif
+            @if($currentRefinancedAt !== false && $currentRefinancedAt !== $paymentShedule->refinanced_at && $paymentShedule->refinanced_at)
+            <tr class="bg-gray-light">
+                <td colspan="5" align="center">
+                    <strong>Refinanciamiento: {{ date('d/m/Y', strtotime($paymentShedule->refinanced_at)) }}</strong>
+                </td>
+            </tr>
+            @endif
+            @php $currentRefinancedAt = $paymentShedule->refinanced_at; @endphp
             <tr>
-                <td align="center"> 
+                <td align="center">
                     {{$paymentShedule->number_letter}}
                  </td>
                 <td align="center">{{  date('d/m/Y', strtotime($paymentShedule->sheduled_date)) }} </td>

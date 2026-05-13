@@ -17,6 +17,7 @@ class Loan extends Model
     use HasFactory;
     protected $table = 'loans';
     protected $fillable = [
+        'parent_loan_id',
         'customer_id',
         'user_id',
 		'business_id',
@@ -24,17 +25,17 @@ class Loan extends Model
         'status',
         'product_name',
         'date',
-        'number_month', 
+        'number_month',
         'quotes',
         'customer_name',
-        'type_quotation', 
+        'type_quotation',
         'annual_interest_rate',
-        'total_amount_interest', 
+        'total_amount_interest',
         'total_cost_loan',
-		'balance_to_financed', 
+		'balance_to_financed',
         'initial_gps',
         'initial_insurance',
-        'initial_admin_fee', 
+        'initial_admin_fee',
         'gps_quotes',
         'insurance_quotes',
         'admin_fee_quotes',
@@ -52,6 +53,7 @@ class Loan extends Model
         'start_rate',
         'interest_saved',
         'type',
+        'refinanced_at',
     ];
     
     public function contact()
@@ -79,6 +81,14 @@ class Loan extends Model
 
     public function paymentSchedule(){
         return $this->hasMany(PaymentSchedule::class);
+    }
+
+    public function parentLoan(){
+        return $this->belongsTo(Loan::class, 'parent_loan_id');
+    }
+
+    public function refinancedLoans(){
+        return $this->hasMany(Loan::class, 'parent_loan_id');
     }
     
      protected static function booted()

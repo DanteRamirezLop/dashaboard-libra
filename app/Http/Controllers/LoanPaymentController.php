@@ -400,6 +400,7 @@ class LoanPaymentController extends Controller
 
     public function statemenPDF($id){
 
+    //paid
         $loan = Loan::find($id);
         // ¿hay versión activa para este préstamo?
         $hasActiveVersion = DB::table('payment_schedules as psx')
@@ -433,18 +434,6 @@ class LoanPaymentController extends Controller
             $query->references = $references;
             return $query;
         });
-
-
-        //CORRIGE EL PROBLEMA DE N+1
-        // $psIds = $tbl_ps->pluck('id');
-        // $refsByPs = TransactionPayment::whereIn('payment_schedule_id', $psIds)
-        //     ->pluck('payment_ref_no', 'payment_schedule_id')
-        //     ->groupBy(fn($ref, $psId) => $psId);
-
-        // $paymentShedules = $tbl_ps->map(function($ps) use ($refsByPs) {
-        //     $ps->references = ($refsByPs[$ps->id] ?? collect())->values()->all();
-        //     return $ps;
-        // });
 
         $customer = Contact::find($loan->customer_id);
         $dateNow = Carbon::now();
@@ -513,6 +502,7 @@ class LoanPaymentController extends Controller
         // Calcula la deuda de las letras hasta el momento 
         $paymentSchedules = (clone $psBase)
             ->whereBetween('ps.sheduled_date', [$startFechaLoan, $dateNow])
+            ->where('ps.status', '!=', 'refinanced')
             ->orderBy('ps.sheduled_date', 'asc')
             ->get();
                 
@@ -544,28 +534,7 @@ class LoanPaymentController extends Controller
         return $pdf->download($loan->customer_name.'.pdf');
     }
 
-    //  private function daysInPeriod(PaymentSchedule $current, string $loanStartDate){
-
-    //     $prev = PaymentSchedule::where('loan_id', $current->loan_id)
-    //     ->where('schedule_version_id', $current->schedule_version_id) // si usas versiones
-    //     ->where('number_quota', '<', $current->number_quota)
-    //     ->orderBy('number_quota', 'desc')
-    //     ->first();
-
-    //     $prevScheduledDate = $prev?->scheduled_date;
-    //     $scheduledDate = $current->sheduled_date;
-
-    //     $end = Carbon::parse($scheduledDate)->startOfDay();
-    //     if ($prevScheduledDate) {
-    //         $start = Carbon::parse($prevScheduledDate)->startOfDay();
-    //     } else {
-    //         $start = Carbon::parse($loanStartDate)->startOfDay();
-    //     }
-
-    //     // Días entre inicio (exclusivo) y fin (inclusive para devengo típico)
-    //     // En la práctica bancaria suele bastar diffInDays().
-    //     return max(1, $start->diffInDays($end));
-    // }
+    
 
 
 }

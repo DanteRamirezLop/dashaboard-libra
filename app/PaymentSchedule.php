@@ -27,6 +27,7 @@ class PaymentSchedule extends Model
         'initial',
         'shedule_version_id',
         'ref_payment_schedule_id',
+        'refinanced_at',
     ];
 
      public function loan()
@@ -71,6 +72,9 @@ class PaymentSchedule extends Model
                 break;
             case 'partial':
                $status = '<span class="label label-info">parcial</span>';
+                break;
+            case 'refinanced':
+               $status = '<span class="label label-warning">refinanciado</span>';
                 break;
         }
 

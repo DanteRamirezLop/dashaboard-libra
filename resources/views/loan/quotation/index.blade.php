@@ -23,7 +23,7 @@
                     </a>
                 </li>
             </ul>
-            <div>
+        <div>
             @component('components.widget', ['class' => 'box-primary','title' =>'Todas las cotizaciones'])
                 @can('customer.view_own')
                     @slot('tool')

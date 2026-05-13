@@ -15,7 +15,7 @@
 	<div class="row">
         <div class="col-lg-12">
             @component('components.widget', ['class' => 'box-success', 'title' => 'Resumen del préstamo'])  
-                <div class="col-lg-6">                
+                <div class="col-lg-6">   
                     <table class="table table-bordered table-striped dataTable">
                         <tbody>
                             <tr>
@@ -48,7 +48,8 @@
                     </table>                
                 </div>
     
-                <div class="col-lg-6">                
+                <div class="col-lg-6">             
+
                     <table class="table table-bordered table-striped dataTable">
                         <tbody>     
                             <tr>
@@ -88,7 +89,8 @@
                                 <td><strong> @format_currency($loan->total_cost_loan) </strong></td>
                             </tr>
                         </tbody>
-                    </table>                
+                    </table> 
+                              
                 </div>
                 @endcomponent
             </div>

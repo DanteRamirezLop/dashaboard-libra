@@ -1,101 +1,63 @@
 
+@php
+    $currentSchedules    = $paymentSchedules->whereNull('refinanced_at');
+    $refinancedSchedules = $paymentSchedules->whereNotNull('refinanced_at');
+    $hasRefinanced       = $refinancedSchedules->isNotEmpty();
+@endphp
+
+@if($hasRefinanced)
+<ul class="nav nav-tabs" role="tablist">
+    <li role="presentation" class="active">
+        <a href="#tab-current" aria-controls="tab-current" role="tab" data-toggle="tab">
+            <i class="fa fa-calendar-alt"></i> Cronograma Actual
+            <span class="badge">{{ $currentSchedules->count() }}</span>
+        </a>
+    </li>
+    <li role="presentation">
+        <a href="#tab-refinanced" aria-controls="tab-refinanced" role="tab" data-toggle="tab">
+            <i class="fa fa-history"></i> Cronograma Refinanciado
+            <span class="badge">{{ $refinancedSchedules->count() }}</span>
+        </a>
+    </li>
+</ul>
+<div class="tab-content" style="padding-top:15px">
+    <div role="tabpanel" class="tab-pane active" id="tab-current">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped" id="loans_table">
+                @include('loan.partials._schedule_thead')
+                <tbody>
+                    @foreach($currentSchedules as $item)
+                        @include('loan.partials._schedule_row', ['item' => $item, 'showActions' => true])
+                    @endforeach
+                </tbody>
+            </table>
+    
+        </div>
+    </div>
+    <div role="tabpanel" class="tab-pane" id="tab-refinanced">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped" id="loans_table_refinanced">
+                @include('loan.partials._schedule_thead')
+                <tbody>
+                    @foreach($refinancedSchedules as $item)
+                        @include('loan.partials._schedule_row', ['item' => $item, 'showActions' => false])
+                    @endforeach
+                </tbody>
+            </table>
+       
+        </div>
+    </div>
+</div>
+
+@else
+
 <table class="table table-bordered table-striped" id="loans_table">
-    <thead>
-        <tr>
-            <th>&nbsp;N° Letra</th>
-            <th>Fecha vencimiento</th>
-            <th>Estado</th> 
-            <th>Saldo inicial</th>
-            <th>+Tramite&nbsp;</th> 
-            <th>+GPS&nbsp;&nbsp;</th> 
-            <th>+Seguro</th>     
-            <th>+Inicial</th>
-            <th>Pago</th> 
-            <th>Capital</th> 
-            <th>Intereses</th> 
-            <th>Saldo final</th> 
-            <th>@lang( 'messages.action' )</th>
-        </tr>
-    </thead>
+    @include('loan.partials._schedule_thead')
     <tbody>
-        @foreach($paymentSchedules as $key=>$item)
-            <tr>
-                <td>{{$item->number_letter}} </td>                            
-                <td>
-                    @php
-                        $fecha = Carbon::parse($item->sheduled_date);
-                        $date = $fecha->isoFormat('dddd MMMM D\, Y');
-                    @endphp
-                    @if($item->status == 'pending')
-                        <span class="date-display-text">{{$date}}</span>
-                        <button class="btn btn-xs btn-link edit-date-btn"
-                            data-id="{{$item->id}}"
-                            title="Editar fecha">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <span class="date-edit-form" style="display:none;">
-                            <input type="date" class="form-control input-sm date-input"
-                                value="{{$fecha->format('Y-m-d')}}"
-                                style="width:150px;display:inline-block;vertical-align:middle;">
-                            <button class="tw-dw-btn tw-dw-btn-outline tw-dw-btn-xs tw-dw-btn-success save-date-btn" data-id="{{$item->id}}">
-                                <i class="fas fa-check-circle"></i>
-                            </button>
-                            <button class="tw-dw-btn tw-dw-btn-outline tw-dw-btn-xs tw-dw-btn-error cancel-date-btn">
-                                <i class="fa fa-times-circle"></i>
-                            </button>
-                        </span>
-                    @else
-                        {{$date}}
-                    @endif
-                </td>
-                <td>
-                    {!!$item->getLoanStatus() !!}
-                </td>
-                
-                <td>@format_currency($item->opening_balance)</td>
-                <td>@format_currency($item->admin_fee_quota)</td>
-                <td>@format_currency($item->gps_quota)</td>
-                <td>@format_currency($item->sure_quota)</td>
-                <td>@format_currency($item->initial)</td>
-                <td>@format_currency(($item->mount_quota + $item->gps_quota + $item->sure_quota + $item->admin_fee_quota + $item->initial )) </td> 
-                <td>@format_currency($item->capital)</td>
-                <td>@format_currency($item->interests)</td>
-                <td>@format_currency($item->final_balance)</td>
-                    
-                <td>
-                    @if($item->status == "paid")
-                        <span class="label bg-light-green"><i class="fas fa-check"></i> @lang( 'loans.paid_payment' )</span>
-                    @else
-                        <a href="{{route('add.pay.loan',$item->id)}}" class="tw-dw-btn tw-dw-btn-outline tw-dw-btn-xs tw-dw-btn-success add_payment_modal"><i class="fas fa-money-bill-alt"></i> Agregar Pago  &nbsp;</a> <br>
-                    @endif
-
-                    @if($item->status == 'overdue' && !$item->delay)
-                        <button type="button"
-                            class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline tw-dw-btn-warning revert-pending-btn mt-1"
-                            data-id="{{$item->id}}">
-                            <i class="fa fa-undo"></i> Revertir a Pendiente
-                        </button> <br>
-                    @endif
-
-                    @if($item->delay)
-                        @if($item->delay->status == "late")
-                            <a href="{{route('delays.show',$item->id)}}" class="tw-dw-btn tw-dw-btn-outline tw-dw-btn-xs tw-dw-btn-error">
-                                <i class="fas fa fa-money-bill-alt"></i> Gestionar Mora
-                            </a>
-                        @else
-                            <a href="{{route('delays.show',$item->id)}}" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline tw-dw-btn-info">
-                                <i class="fa fa-eye"></i> Ver Mora
-                            </a>
-                        @endif
-                    @else
-                        <button type="button" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline tw-dw-btn-info add-create-delay"
-                            data-href="{{route('add.delay.loan',$item->id)}}"
-                            data-container=".delay_modal">
-                            <i class="fa fa-plus"></i> Agregar Mora &nbsp;&nbsp;
-                        </button>
-                    @endif
-                </td>
-            </tr>
+        @foreach($currentSchedules as $item)
+            @include('loan.partials._schedule_row', ['item' => $item, 'showActions' => true])
         @endforeach
     </tbody>
 </table>
+
+@endif

@@ -46,7 +46,7 @@
                             </tbody>
                         </table>                
                     </div>
-                    <div class="col-lg-6">                
+                    <div class="col-lg-6">     
                         <table class="table table-bordered table-striped dataTable">
                             <tbody>     
                                 <tr>
@@ -97,7 +97,7 @@
                                 </tr>
                                 @endif
                             </tbody>
-                        </table>                
+                        </table>  
                     </div>
                 </div>
                 @endcomponent
@@ -128,16 +128,16 @@
         @endif
        
         @component('components.widget', ['class' => 'box-primary', 'title' => __('loans.all_lletters_payments')]) 
-            <div class="box-tools grap-2">
+            <!-- <div class="box-tools grap-2">
                 <button class="tw-dw-btn tw-dw-btn-primary tw-dw-btn-sm tw-text-white" id="update-btn" data-id="{{$loan->id}}" > <i class="fa fa-sync "></i> Actualizar Estados</button>  
-                <span class="label label-default text-center ">
+                 <span class="label label-default text-center ">
                     @if($countVersion)
                          Nuevo conograma de pagos versión <span class="label" style="background-color: #fff !important;color: #615ca8 !important;">{{$countVersion}}</span>
                     @else
                         Conograma de pagos original
                     @endif
-                </span>
-            </div>
+                </span> 
+            </div> -->
             <div class="tab-content mt-5">
                 <div class="table-responsive" id="table_quotes"> 
                     @include('loan.table_quotes')
@@ -145,7 +145,8 @@
             </div>  
         @endcomponent
 
-        @if($there_is_mora)
+        <!-- PROXIMA CORRECION Y MEJORA DEL PAGO A CAPITAL -->
+        <!-- @if($there_is_mora)
             <div class="box box-warning" >
                 <div class="box-body text-center">
                     <h3 class="text-center"> <i class="fa fa-exclamation-triangle text-yellow"></i>  Tienes deuda por concepto de mora</h3>
@@ -168,7 +169,8 @@
                     </div>
                 </div>
             @endif
-        @endif
+        @endif -->
+        
 </section>
 <!-- /.content -->
 <div class="modal fade payment_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>

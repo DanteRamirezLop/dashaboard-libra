@@ -4,6 +4,9 @@
         $currency_options = ['2' => 'Dolar (USD)', '94' => 'Sol (PE)'];
         $selected_currency_id = $payment_line['currency_id'] ?? ($currency_details->currency_id ?? null);
         $currency_label = $currency_options[$selected_currency_id] ?? $selected_currency_id;
+
+
+        $readonly = $payment_line['method'] == 'advance' ? true : false;
     @endphp
 
     @if(!empty($show_date))
@@ -72,12 +75,35 @@
     </div>
     @endif
 
-    @if(!empty($payment_line['note']))
+ 
     <div class="col-md-12">
         <div class="form-group">
             {!! Form::label("note_ro_$row_index", __('sale.payment_note') . ':') !!}
             {!! Form::textarea("", $payment_line['note'], ['class' => 'form-control', 'rows' => 2, 'readonly', 'disabled']); !!}
         </div>
     </div>
-    @endif
+
+
+    <!-- VARIABLE COMPLEMENTARIAS -->
+
+    <div class="{{$col_class}} hidden">
+		<div class="form-group">
+			{!! Form::label("amount_$row_index" ,__('sale.amount') . ':*') !!}
+			<div class="input-group">
+				<span class="input-group-addon">
+					<i class="fas fa-money-bill-alt"></i>
+				</span>
+				{!! Form::text("payment[$row_index][amount]", @num_format($payment_line['amount']), ['class' => 'form-control payment-amount input_number', 'required', 'id' => "amount_$row_index", 'placeholder' => __('sale.amount'), 'readonly' => $readonly]); !!}
+			</div>
+		</div>
+	</div>
+
+
+    
+
+
+	
+	
+
+   
 </div>
