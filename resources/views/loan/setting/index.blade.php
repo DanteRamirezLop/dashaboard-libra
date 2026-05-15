@@ -24,38 +24,8 @@
                 </div>
             </div>
     @endcomponent
-            <!-- <div class="row mt-5">
-                <div class="col-sm-12">
-                    <div class="form-group">
-                        {!! Form::label('cotización', 'Porcentaje de Inicial:') !!}
-                    </div>
-                </div>
-            </div> -->
 
-            <!-- <div class="row">
-                <div class="col-sm-3">
-                    <div class="input-group">
-                        <div class="input-group-addon"><b>%</b></div>
-                        <input type="number" id="tagInput" placeholder="Ejemplo: 25" class="form-control">
-                    </div>
-                </div>
-                <div class="col-sm-3">
-                    <button id="addTagBtn" class="btn btn-primary"> <i class="fa fa-plus"></i> Agregar </button>
-                </div>
-            </div>
-
-            <div class="row m-5">
-                <div class="col-md-12 mt-5">
-                    <div class="row mb-3"> <span>Valores:</span> </div>
-                    <div id="tagList" class="row">
-                        @foreach($percentages as $key=>$percentage)
-                            <div class="col-md-1"> {{$percentage}}% 
-                                <button class="removeTag btn btn-xs btn-danger" data-value="{{$key}}" > <i class="glyphicon glyphicon-trash"></i></button>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </div> -->
+    
     @component('components.widget', ['class' => 'box-primary','title' =>''])             
         <div class="row">
             <div class="col-sm-12">

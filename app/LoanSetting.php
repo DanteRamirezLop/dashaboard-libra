@@ -11,7 +11,7 @@ use Spatie\Permission\Guard;
 
 class LoanSetting extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
     protected $table = 'loan_settings';
 
     protected $fillable = [
@@ -28,11 +28,6 @@ class LoanSetting extends Model
         parent::__construct($attributes);
         $this->guarded[] = $this->primaryKey;
     }
-
-    // public function getTable()
-    // {
-    //     return config('permission.table_names.goals', parent::getTable());
-    // }
 
     public function user()
     {

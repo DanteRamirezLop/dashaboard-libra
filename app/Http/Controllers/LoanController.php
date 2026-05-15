@@ -363,7 +363,7 @@ class LoanController extends Controller {
                 $option_seguro  = (int) $request->input('option_seguro');
 
                 // -------------------- Tipo de prestamo --------------------
-                $type = $request->input('pay_initial');
+                $type = $request->input('type') ? $request->input('type') : 'sale';
                 // -------------------- Validaciones de meses --------------------
                 if ($number_month < $meses_gps_seguro || $number_month < $mounth_fracction_initial) {
                     return [

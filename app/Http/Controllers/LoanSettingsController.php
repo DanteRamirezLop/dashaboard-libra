@@ -17,6 +17,8 @@ class LoanSettingsController extends Controller
         if($goalInitial->description){
             $percentages = json_decode($goalInitial->description);
         }
+
+      
         $loanSettings = LoanSetting::orderBy('id', 'asc')->skip(2)->take(10)->get();
         return view('loan.setting.index', compact('percentages', 'terms', 'loanSettings'));
     }
