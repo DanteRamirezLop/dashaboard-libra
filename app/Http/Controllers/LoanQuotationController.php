@@ -89,10 +89,19 @@ class LoanQuotationController extends Controller
                     @endcan
                 ')
         
+                ->filterColumn('seller', function ($query, $keyword) {
+                    $query->where(function ($q) use ($keyword) {
+                        $q->whereHas('user', function ($u) use ($keyword) {
+                            $u->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$keyword}%"]);
+                        });
+                        if (stripos('Oficina', $keyword) !== false) {
+                            $q->orWhereHas('user.roles', fn ($r) => $r->where('name', 'Admin'));
+                        }
+                    });
+                })
                 ->editColumn('seller', fn ($row) => $row->getNameUser())
                 ->editColumn('annual_interest_rate', fn ($row) => $row->annual_interest_rate . '%')
                 ->editColumn('created_at', fn ($row) => optional($row->created_at)->format('Y/m/d'))
-                ->editColumn('type_quotation', fn ($row) => $row->product_name) // (si realmente existe ese atributo)
                 ->editColumn('balance_to_financed', '@format_currency($balance_to_financed)')
                 ->editColumn('product_price', '@format_currency($product_price)')
                 ->editColumn('total_cost_loan', '@format_currency($total_cost_loan)')
@@ -156,8 +165,7 @@ class LoanQuotationController extends Controller
         return view('loan.quotation.create', $data);
     }
 
-
-    public function store(Request $request)
+     public function store(Request $request)
     {
         try {
             // DATOS COMUNES
@@ -308,19 +316,21 @@ class LoanQuotationController extends Controller
                 'status'              => 'quotation',
                 'product_name'        => $product_name,
                 'date'                => Carbon::now(),
+
                 'customer_name'       => $customer_name,
                 'type_quotation'      => (int) $type_quotation,
-                'number_month'        => $number_month,
                 'annual_interest_rate'=> $annual_interest_rate,
                 'total_amount_interest' => $intereses,
                 'total_cost_loan'     => $coste_prestamo_gps_seguro,
-                'quotes'              => json_encode($json),
+                'balance_to_financed' => $loan_amount,
                 'initial_admin_fee'   => $admin_fee,
                 'initial_gps'         => $gps_init,
                 'initial_insurance'   => $seguro_init,
+
+                'number_month'        => $number_month,
+                'quotes'              => json_encode($json),
                 'gps_quotes'          => $gps_quotes,
                 'insurance_quotes'    => $insurance_quotes,
-                'loan_amount'         => $loan_amount,
                 'product_price'       => $product_mount,
                 'initial_percentage'  => $pay_initial,
                 'initial_amount'      => $initial_amount,
@@ -340,15 +350,14 @@ class LoanQuotationController extends Controller
     }
 
 
+
     public function storeAdmin(Request $request){
         try {
             $output = DB::transaction(function () use ($request) {
 
                 $business_id = $request->session()->get('user.business_id');
-
                 $product_id  = (int) $request->input('product_id');
                 $customer_id = (int) $request->input('contact_id');
-
                 $initial_amount   = (float) $request->input('pay_initial', 0);
                 $type_initial     = (int) $request->input('type_initial', 1);
                 $annualRate       = (float) $request->input('annual_interest_rate', 0); // Tasa anual (input antiguo)
@@ -388,8 +397,6 @@ class LoanQuotationController extends Controller
                 $goals = LoanSetting::whereIn('name', [
                     'terminos-y-condiciones',
                     'coste-tramite',
-                    'gps',
-                    'seguro',
                 ])->get()->keyBy('name');
 
                 $terms = (string) optional($goals->get('terminos-y-condiciones'))->description;
@@ -407,7 +414,7 @@ class LoanQuotationController extends Controller
                 $initial_percentage         = 0;
 
                 $amount_fracction           = 0;
-                $mounth_fracction           = 0;
+                $initial_fraction_months    = 0;
                 $initial_cuotes             = 0;
                 $taxes_fraccion             = 0;
 
@@ -417,7 +424,8 @@ class LoanQuotationController extends Controller
                 if ($typeQuotation === 2) {
 
                     $number_month = (int) $request->input('number_month', 0);
-                    $meses_gps_seguro = ($number_month < 12) ? $number_month : 12;
+                    $meses_gps    = $option_gps;    // 0, 12 o 24
+                    $meses_seguro = $option_seguro; // 0, 12 o 24
 
                     // Trámite
                     if ($option_tramite === 1) {
@@ -425,25 +433,19 @@ class LoanQuotationController extends Controller
                     }
 
                     // GPS
-                    if ($option_gps === 1) {
-                        $gps_tbl = $goals->get('gps');
-                        $initial_gps = (float) $gps_tbl->amount_inicial;
-                        $gps_amount_total = (float) $gps_tbl->amount_total;
-
-                        $gps_quotes = $gps_amount_total - $initial_gps;
-                        $gps_coutes = $meses_gps_seguro > 0 ? ($gps_quotes / $meses_gps_seguro) : 0;
+                    if ($option_gps > 0) {
+                        $initial_gps = (float) $request->input('gps_initial', 0);
+                        $gps_quotes  = (float) $request->input('gps_finance', 0);
+                        $gps_coutes  = $meses_gps > 0 ? ($gps_quotes / $meses_gps) : 0;
                     } else {
                         $gps_coutes = 0;
                     }
 
                     // Seguro
-                    if ($option_seguro === 1) {
-                        $seguro_tbl = $goals->get('seguro');
-                        $initial_insurance = (float) $seguro_tbl->amount_inicial;
-                        $seguro_amount_total = (float) $seguro_tbl->amount_total;
-
-                        $insurance_quotes = $seguro_amount_total - $initial_insurance;
-                        $seguro_coutes = $meses_gps_seguro > 0 ? ($insurance_quotes / $meses_gps_seguro) : 0;
+                    if ($option_seguro > 0) {
+                        $initial_insurance = (float) $request->input('insurance_initial', 0);
+                        $insurance_quotes  = (float) $request->input('insurance_finance', 0);
+                        $seguro_coutes     = $meses_seguro > 0 ? ($insurance_quotes / $meses_seguro) : 0;
                     } else {
                         $seguro_coutes = 0;
                     }
@@ -453,12 +455,12 @@ class LoanQuotationController extends Controller
 
                     // Inicial fraccionada
                     if ($type_initial === 2) {
-                        $amount_fracction = (float) $request->input('amount_fracction', 0);
-                        $mounth_fracction = (int) $request->input('mounth_fracction', 0);
-                        $rate_fracction   = (float) $request->input('rate_fracction', 0);
+                        $amount_fracction        = (float) $request->input('amount_fracction', 0);
+                        $initial_fraction_months = (int) $request->input('mounth_fracction', 0);
+                        $rate_fracction          = (float) $request->input('rate_fracction', 0);
 
-                        $initial_cuotes = $this->calculateQuote($rate_fracction, $mounth_fracction, $amount_fracction);
-                        $mount_aux = $initial_cuotes * $mounth_fracction;
+                        $initial_cuotes = $this->calculateQuote($rate_fracction, $initial_fraction_months, $amount_fracction);
+                        $mount_aux = $initial_cuotes * $initial_fraction_months;
                         $taxes_fraccion = round($mount_aux - $amount_fracction, 4);
                     }
 
@@ -492,9 +494,9 @@ class LoanQuotationController extends Controller
                         $saldo = $saldo - $amortizacion;
                         if ($saldo < 0) { $saldo = 0; }
 
-                        $initial_fraccion = ($type_initial === 2 && $i <= $mounth_fracction) ? $initial_cuotes : 0;
-                        $gps = ($i <= $meses_gps_seguro) ? $gps_coutes : 0;
-                        $seguro = ($i <= $meses_gps_seguro) ? $seguro_coutes : 0;
+                        $initial_fraccion = ($type_initial === 2 && $i <= $initial_fraction_months) ? $initial_cuotes : 0;
+                        $gps    = ($i <= $meses_gps)    ? $gps_coutes    : 0;
+                        $seguro = ($i <= $meses_seguro) ? $seguro_coutes : 0;
 
                         $json[] = [
                             'id'            => $i,
@@ -555,7 +557,7 @@ class LoanQuotationController extends Controller
                     'terms'                  => $terms,
                     'waiter'                 => $waiter,
                     'initial_fraction'       => $amount_fracction,
-                    'mounth_initial'         => $mounth_fracction,
+                    'mounth_initial'         => $initial_fraction_months,
                     'start_rate'             => $taxes_fraccion,
                 ]);
 

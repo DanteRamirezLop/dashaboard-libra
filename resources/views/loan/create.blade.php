@@ -59,7 +59,7 @@
 
         @component('components.widget', ['class' => 'box-primary','title' =>''])
             {!! Form::open(['url' => action([\App\Http\Controllers\LoanController::class, 'store']), 'method' => 'post', 'id'=>'cotizar_add_form' ]) !!}
-                <input type="hidden" name="type" id="type" value="{{$type}}">
+                 <input type="hidden" name="type" id="type" value="{{$type}}">
                 <div class="row">
                     <div class="col-md-3">
                         <div class="form-group col-sm-12">

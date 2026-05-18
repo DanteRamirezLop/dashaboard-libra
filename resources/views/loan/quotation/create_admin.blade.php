@@ -3,7 +3,6 @@
 
 @section('content')
 
-
 <section class="content-header no-print">
     <h1 class="tw-text-xl md:tw-text-3xl tw-font-bold tw-text-black tw-flex tw-gap-2">
          Agregar cotización
@@ -104,9 +103,9 @@
                         <select class="form-control" required name="product_id" id="product">
                             <option value="0" selected disabled>@lang('messages.please_select' )</option>
                             @foreach($products as $key=>$item)
-                            <option value="{{$item->id}}">{{$item->name}}</option>
+                            <option value="{{$item->id}}" data-reposicion="{{ $item->product_custom_field10 ?? 0 }}" data-gps="{{ $item->product_custom_field11 ?? 0 }}">{{$item->name}}</option>
                             @endforeach
-                        </select> 
+                        </select>
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -129,6 +128,8 @@
                         </select> 
                     </div>
                 </div>
+            </div>
+            <div class="row">
                 <div class="col-md-3">
                     <div class="form-group">
                             {!! Form::label('service_type',  'Tipo de cotización:*', ['style' => 'margin-left:20px;'])!!}
@@ -263,65 +264,58 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-2">
-                    <div class="form-group ">
-                            {!! Form::label('option_tramite',  'Incluir coste tramite:', ['style' => 'margin-left:20px;'])!!}
-                        <br>
-                        <label class="radio-inline">
-                            {!! Form::radio('option_tramite', '1', false, [ 'class' => 'input-icheck', 'name'=>"option_tramite", 'checked']); !!}
-                             Si  
-                        </label>
-                        <label class="radio-inline">
-                            {!! Form::radio('option_tramite', '2', false, [ 'class' => 'input-icheck', 'name'=>"option_tramite"]); !!}
-                            No
-                        </label>
-                    </div>
-                     <div class="form-group">
-                         <div style="margin-left:20px; font-size: small;">
-                            <strong>Inicial:</strong> @format_currency($filing_fee_initial) /
-                            <strong>Financiar:</strong> @format_currency($filing_fee - $filing_fee_initial)
-                        </div>    
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="form-group">
-                            {!! Form::label('option_gps',  'Incluir coste de GPS: ', ['style' => 'margin-left:20px;'])!!}
-                        <br>
-                        <label class="radio-inline">
-                            {!! Form::radio('option_gps', '1', false, [ 'class' => 'input-icheck', 'name'=>"option_gps", 'checked']); !!}
-                             Si  
-                        </label>
-                        <label class="radio-inline">
-                            {!! Form::radio('option_gps', '2', false, [ 'class' => 'input-icheck', 'name'=>"option_gps"]); !!}
-                            No
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <div style="margin-left:20px; font-size: small;">
-                            <strong>Inicial:</strong> @format_currency($gps_initial) /
-                            <strong>Financiar:</strong> @format_currency($gps - $gps_initial)
-                        </div>    
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="form-group">
-                        {!! Form::label('option_seguro',  'Incluir coste Seguro:', ['style' => 'margin-left:20px;'])!!}
-                        <label class="radio-inline">
-                            {!! Form::radio('option_seguro', '1', false, [ 'class' => 'input-icheck', 'name'=>"option_seguro", 'checked']); !!}
-                             Si 
-                        </label>
-                        <label class="radio-inline">
-                            {!! Form::radio('option_seguro', '2', false, [ 'class' => 'input-icheck', 'name'=>"option_seguro"]); !!}
-                            No
-                        </label>
-                    </div>
-                    <div class="form-group">
-                         <div style="margin-left:20px; font-size: small;">
-                            <strong>Inicial:</strong> @format_currency($insurance_initial) /
-                            <strong>Financiar:</strong> @format_currency($insurance - $insurance_initial)
-                        </div>    
-                    </div>
-                </div>
+ 
+                
+                        <div class="col-md-2">
+                            <div class="form-group ">
+                                {!! Form::label('option_tramite',  'Incluir coste tramite:', ['style' => 'margin-left:20px;'])!!}
+                                <br>
+                                <label class="radio-inline">
+                                    {!! Form::radio('option_tramite', '1', false, [ 'class' => 'input-icheck', 'name'=>"option_tramite", 'checked']); !!}
+                                    Si  
+                                </label>
+                                <label class="radio-inline">
+                                    {!! Form::radio('option_tramite', '2', false, [ 'class' => 'input-icheck', 'name'=>"option_tramite"]); !!}
+                                    No
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <div style="margin-left:20px; font-size: small;">
+                                    <strong>Inicial:</strong> @format_currency($filing_fee_initial) <br>
+                                    <strong>Financiar:</strong> @format_currency($filing_fee - $filing_fee_initial)
+                                </div>    
+                            </div>
+                        </div>
+
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                {!! Form::label('option_gps', 'GPS (meses): ', ['style' => 'margin-left:20px;']) !!}
+                                {!! Form::select('option_gps', ['0' => 'Sin GPS', '12' => '12 meses', '24' => '24 meses'], '0', ['id' => 'option_gps', 'class' => 'form-control', 'style' => 'margin-left:20px; width:calc(100% - 20px);']) !!}
+                            </div>
+                            <div class="form-group">
+                                <div style="margin-left:20px; font-size: small;">
+                                    <strong>Inicial:</strong> <span id="gps_inicial_display">—</span> <br>
+                                    <strong>Financiar:</strong> <span id="gps_financiar_display">—</span>
+                                </div>
+                            </div>
+                            <input type="hidden" name="gps_initial" id="gps_initial_input" value="0">
+                            <input type="hidden" name="gps_finance" id="gps_finance_input" value="0">
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                {!! Form::label('option_seguro', 'Seguro (meses): ', ['style' => 'margin-left:20px;']) !!}
+                                {!! Form::select('option_seguro', ['0' => 'Sin Seguro', '12' => '12 meses', '24' => '24 meses'], '0', ['id' => 'option_seguro', 'class' => 'form-control', 'style' => 'margin-left:20px; width:calc(100% - 20px);']) !!}
+                            </div>
+                            <div class="form-group">
+                                <div style="margin-left:20px; font-size: small;">
+                                    <strong>Inicial:</strong> <span id="seguro_inicial_display">—</span> <br>
+                                    <strong>Financiar:</strong> <span id="seguro_financiar_display">—</span>
+                                </div>
+                            </div>
+                            <input type="hidden" name="insurance_initial" id="insurance_initial_input" value="0">
+                            <input type="hidden" name="insurance_finance" id="insurance_finance_input" value="0">
+                        </div>
+
             </div>
 
     @endcomponent
@@ -341,7 +335,36 @@
     
     <script type="text/javascript">
 
-       $.validator.addMethod("menorOIgualQue", function(value, element, param) {
+       $.validator.addMethod("tieneReposicion", function(value, element) {
+            if (!value || value == '0') return true;
+            if ($('input[name="option"]:checked').val() != '2') return true; // solo aplica en crédito
+            var reposicion = parseFloat($('#product option:selected').data('reposicion')) || 0;
+            return reposicion > 0;
+        }, "El producto seleccionado no tiene valor de reposición configurado.");
+
+        $.validator.addMethod("tieneGPS", function(value, element) {
+            if (!value || value == '0') return true;
+            if ($('input[name="option"]:checked').val() != '2') return true; // solo aplica en crédito
+            var gps = parseFloat($('#product option:selected').data('gps')) || 0;
+            return gps > 0;
+        }, "El producto seleccionado no tiene valor de GPS configurado.");
+
+        $.validator.addMethod("noMayorQueNumberMonth", function(value, element) {
+            var val = parseInt(value) || 0;
+            if (val === 0) return true;
+            if ($('input[name="option"]:checked').val() != '2') return true;
+            var meses = parseInt($('#number_month').val()) || 0;
+            return val <= meses;
+        }, "No puede ser mayor al número de cuotas del préstamo.");
+
+        $.validator.addMethod("noMayorQuePagoInicial", function(value, element) {
+            var monto = parseFloat(value) || 0;
+            if (monto <= 0) return true;
+            var inicial = parseFloat($('#pay_initial').val()) || 0;
+            return monto <= inicial;
+        }, "El monto a fraccionar no puede ser mayor al pago de inicial.");
+
+        $.validator.addMethod("menorOIgualQue", function(value, element, param) {
             // value = valor del 2do select (el que estás validando)
             let primero = parseFloat($('#mounth_fracction').val());
             let segundo = parseFloat($('#number_month').val());
@@ -354,8 +377,21 @@
 
         $('form#cotizar_add_form').validate({
             rules: {
+                product_id: {
+                    tieneReposicion: true,
+                    tieneGPS: true,
+                },
                 number_month: {
                     menorOIgualQue: "#mounth_fracction"
+                },
+                option_gps: {
+                    noMayorQueNumberMonth: true
+                },
+                option_seguro: {
+                    noMayorQueNumberMonth: true
+                },
+                amount_fracction: {
+                    noMayorQuePagoInicial: true
                 }
             },
             errorPlacement: function(error, element) {
@@ -369,6 +405,12 @@
             },
             submitHandler: function(form) {
                 form.submit();
+            }
+        });
+
+        $('#pay_initial').on('input', function() {
+            if ($('#amount_fracction').val()) {
+                $('#amount_fracction').valid();
             }
         });
 
@@ -392,19 +434,14 @@
                     $("#credito").show();
                 }
             });
-            $('input[type=radio][name=option_seguro]').on('ifChecked', function(){
-                if ($(this).val() == 1) {
-                    $("#tramite").hide();
-                } else {
+            $('#option_seguro').on('change', function(){
+                if ($(this).val() == '0') {
                     $("#tramite").show();
+                } else {
+                    $("#tramite").hide();
                 }
             });
-             $('input[type=radio][name=option_gps]').on('ifChecked', function(){
-                if ($(this).val() == 1) {
-                    $("#gps").hide();
-                } else {
-                    $("#gps").show();
-                }
+             $('#option_gps').on('change', function(){
             });
             $('input[type=radio][name=option_tramite]').on('ifChecked', function(){
                 if ($(this).val() == 1) {
@@ -427,7 +464,6 @@
              //Calculate % initial en porcentage
              $('#pay_initial').on('input', function() {
                 let precio = parseFloat($('#prices').val());
-                console.log(precio);
                 let inicial = parseFloat($(this).val());
                 if (!isNaN(precio) && precio > 0 && !isNaN(inicial)) {
                     let porcentaje = (inicial / precio) * 100;
@@ -548,14 +584,60 @@
                 });
             });
 
-            //cargar precios 
+            function calcularGPS() {
+                var gpsPorMes = parseFloat($('#product option:selected').data('gps')) || 0;
+                var meses = parseInt($('#option_gps').val()) || 0;
+
+                if (gpsPorMes <= 0 || meses <= 0) {
+                    $('#gps_inicial_display').text('—');
+                    $('#gps_financiar_display').text('—');
+                    $('#gps_initial_input').val(0);
+                    $('#gps_finance_input').val(0);
+                    return;
+                }
+
+                var total = gpsPorMes * meses;
+                var inicial = total / 2;
+                var financiar = total / 2;
+                var fmt = new Intl.NumberFormat('es-PE', { style: 'currency', currency: '{{ $currency->code }}', minimumFractionDigits: 2 });
+                $('#gps_inicial_display').text(fmt.format(inicial));
+                $('#gps_financiar_display').text(fmt.format(financiar));
+                $('#gps_initial_input').val(inicial.toFixed(2));
+                $('#gps_finance_input').val(financiar.toFixed(2));
+            }
+
+            function calcularSeguro() {
+                var reposicion = parseFloat($('#product option:selected').data('reposicion')) || 0;
+                var meses = parseInt($('#option_seguro').val()) || 0;
+
+                if (reposicion <= 0 || meses <= 0) {
+                    $('#seguro_inicial_display').text('—');
+                    $('#seguro_financiar_display').text('—');
+                    $('#insurance_initial_input').val(0);
+                    $('#insurance_finance_input').val(0);
+                    return;
+                }
+
+                var años = meses > 12 ? 2 : 1;
+                var costoTotal = reposicion * 6.79 / 1000 * 1.2154 * años;
+                var inicial = costoTotal / 2;
+                var financiar = costoTotal / 2;
+
+                var fmt = new Intl.NumberFormat('es-PE', { style: 'currency', currency: '{{ $currency->code }}', minimumFractionDigits: 2 });
+                $('#seguro_inicial_display').text(fmt.format(inicial));
+                $('#seguro_financiar_display').text(fmt.format(financiar));
+                $('#insurance_initial_input').val(inicial.toFixed(2));
+                $('#insurance_finance_input').val(financiar.toFixed(2));
+            }
+
+            //cargar precios
             $('#product').on('change', function() {
                 var selectedValue = $(this).val();
                 $.ajax({
                     type: "post",
                     url: "/get-prices",
                     dataType: 'json',
-                    data: { 
+                    data: {
                         _token: token_location,
                         id: selectedValue
                         },
@@ -565,8 +647,36 @@
                         }
                     }
                 });
+                calcularGPS();
+                calcularSeguro();
             });
 
+            $('#option_gps').on('change', function(){
+                calcularGPS();
+            });
+
+            $('#option_seguro').on('change', function(){
+                calcularSeguro();
+            });
+
+            function filtrarOpcionesGpsSeguro() {
+                var meses = parseInt($('#number_month').val()) || 0;
+                ['#option_gps', '#option_seguro'].forEach(function(id) {
+                    var $select = $(id);
+                    var valorActual = parseInt($select.val()) || 0;
+                    $select.find('option').each(function() {
+                        var val = parseInt($(this).val()) || 0;
+                        $(this).prop('disabled', val > 0 && val > meses);
+                    });
+                    if (valorActual > meses) {
+                        $select.val('0').trigger('change');
+                    }
+                });
+            }
+
+            $('#number_month').on('change', function() {
+                filtrarOpcionesGpsSeguro();
+            });
 
         });
     </script>

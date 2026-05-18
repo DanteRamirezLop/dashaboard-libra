@@ -481,7 +481,7 @@ Tumbes</p>
                             Tasa de inicial
                         </td>
                         <td align="right" style="width: 40%; height: 25px; font-size: 0.9rem;">
-                            ${{number_format($loan->start_total_amount_interest,2)}}
+                            ${{number_format($loan->start_rate,2)}} 
                         </td>
                     </tr>
                     
