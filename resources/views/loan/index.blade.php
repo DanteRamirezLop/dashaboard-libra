@@ -4,7 +4,7 @@
 @section('content')
  <!-- Content Header (Page header) -->
 <section class="content-header no-print">
-    <h1  class="tw-text-xl md:tw-text-3xl tw-font-bold tw-text-black">{{__('loans.loans')}}</h1>
+    <h1  class="tw-text-xl md:tw-text-3xl tw-font-bold tw-text-black">{{__('loans.loans')}} **</h1>
 </section>
 
 <!-- Main content -->
@@ -20,7 +20,7 @@
             @can('customer.view_own')
                 @slot('tool')
                     <div class="box-tools">
-                        <a href="{{route('loans.create')}}" class="tw-dw-btn tw-bg-gradient-to-r tw-from-indigo-600 tw-to-blue-500 tw-font-bold tw-text-white tw-border-none tw-rounded-full"> <i class="fa fa-plus"></i> @lang('messages.add') </a>
+                        <a href="{{ request()->is('loan/list-rent-sale') ? route('loans.create') . '?type=rent-sale' : route('loans.create') }}" class="tw-dw-btn tw-bg-gradient-to-r tw-from-indigo-600 tw-to-blue-500 tw-font-bold tw-text-white tw-border-none tw-rounded-full"> <i class="fa fa-plus"></i> @lang('messages.add') </a>
                     </div>
                 @endslot
             @endcan
