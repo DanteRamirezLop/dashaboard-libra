@@ -332,10 +332,9 @@
 @section('javascript')
 
     <script src="{{ asset('js/pos.js') }}"></script>
-    
     <script type="text/javascript">
 
-$.validator.addMethod("tieneGPS", function(value, element) {
+        $.validator.addMethod("tieneGPS", function(value, element) {
             if (!value || value == '0') return true;
             if ($('input[name="option"]:checked').val() != '2') return true; // solo aplica en crédito
             var gps = parseFloat($('#product option:selected').data('gps')) || 0;
@@ -611,7 +610,7 @@ $.validator.addMethod("tieneGPS", function(value, element) {
                 }
 
                 var años = meses >= 36 ? 3 : (meses > 12 ? 2 : 1);
-                var costoTotal = reposicion * 6.79 / 1000 * 1.2154 * años;
+                var costoTotal = reposicion * 6.79 / 1000 * 1.2154 * años * 1.5;
                 var inicial = costoTotal / 2;
                 var financiar = costoTotal / 2;
 
