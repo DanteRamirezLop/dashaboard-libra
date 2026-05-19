@@ -103,7 +103,7 @@
                         <select class="form-control" required name="product_id" id="product">
                             <option value="0" selected disabled>@lang('messages.please_select' )</option>
                             @foreach($products as $key=>$item)
-                            <option value="{{$item->id}}" data-reposicion="{{ $item->product_custom_field10 ?? 0 }}" data-gps="{{ $item->product_custom_field11 ?? 0 }}">{{$item->name}}</option>
+                            <option value="{{$item->id}}" data-gps="{{ $item->product_custom_field11 ?? 150 }}">{{$item->name}}</option>
                             @endforeach
                         </select>
                     </div>
@@ -335,14 +335,7 @@
     
     <script type="text/javascript">
 
-       $.validator.addMethod("tieneReposicion", function(value, element) {
-            if (!value || value == '0') return true;
-            if ($('input[name="option"]:checked').val() != '2') return true; // solo aplica en crédito
-            var reposicion = parseFloat($('#product option:selected').data('reposicion')) || 0;
-            return reposicion > 0;
-        }, "El producto seleccionado no tiene valor de reposición configurado.");
-
-        $.validator.addMethod("tieneGPS", function(value, element) {
+$.validator.addMethod("tieneGPS", function(value, element) {
             if (!value || value == '0') return true;
             if ($('input[name="option"]:checked').val() != '2') return true; // solo aplica en crédito
             var gps = parseFloat($('#product option:selected').data('gps')) || 0;
@@ -378,7 +371,6 @@
         $('form#cotizar_add_form').validate({
             rules: {
                 product_id: {
-                    tieneReposicion: true,
                     tieneGPS: true,
                 },
                 number_month: {
@@ -607,7 +599,7 @@
             }
 
             function calcularSeguro() {
-                var reposicion = parseFloat($('#product option:selected').data('reposicion')) || 0;
+                var reposicion = parseFloat($('#prices').val()) || 0;
                 var meses = parseInt($('#option_seguro').val()) || 0;
 
                 if (reposicion <= 0 || meses <= 0) {
@@ -656,6 +648,10 @@
             });
 
             $('#option_seguro').on('change', function(){
+                calcularSeguro();
+            });
+
+            $('#prices').on('change', function(){
                 calcularSeguro();
             });
 
