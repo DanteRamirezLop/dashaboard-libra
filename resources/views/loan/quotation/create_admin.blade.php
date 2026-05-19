@@ -290,7 +290,7 @@
                         <div class="col-md-2">
                             <div class="form-group">
                                 {!! Form::label('option_gps', 'GPS (meses): ', ['style' => 'margin-left:20px;']) !!}
-                                {!! Form::select('option_gps', ['0' => 'Sin GPS', '12' => '12 meses', '24' => '24 meses'], '0', ['id' => 'option_gps', 'class' => 'form-control', 'style' => 'margin-left:20px; width:calc(100% - 20px);']) !!}
+                                {!! Form::select('option_gps', ['0' => 'Sin GPS', '12' => '12 meses', '24' => '24 meses','36' => '36 meses'], '0', ['id' => 'option_gps', 'class' => 'form-control', 'style' => 'margin-left:20px; width:calc(100% - 20px);']) !!}
                             </div>
                             <div class="form-group">
                                 <div style="margin-left:20px; font-size: small;">
@@ -304,7 +304,7 @@
                         <div class="col-md-2">
                             <div class="form-group">
                                 {!! Form::label('option_seguro', 'Seguro (meses): ', ['style' => 'margin-left:20px;']) !!}
-                                {!! Form::select('option_seguro', ['0' => 'Sin Seguro', '12' => '12 meses', '24' => '24 meses'], '0', ['id' => 'option_seguro', 'class' => 'form-control', 'style' => 'margin-left:20px; width:calc(100% - 20px);']) !!}
+                                {!! Form::select('option_seguro', ['0' => 'Sin Seguro', '12' => '12 meses', '24' => '24 meses','36' => '36 meses'], '0', ['id' => 'option_seguro', 'class' => 'form-control', 'style' => 'margin-left:20px; width:calc(100% - 20px);']) !!}
                             </div>
                             <div class="form-group">
                                 <div style="margin-left:20px; font-size: small;">
@@ -618,7 +618,7 @@
                     return;
                 }
 
-                var años = meses > 12 ? 2 : 1;
+                var años = meses >= 36 ? 3 : (meses > 12 ? 2 : 1);
                 var costoTotal = reposicion * 6.79 / 1000 * 1.2154 * años;
                 var inicial = costoTotal / 2;
                 var financiar = costoTotal / 2;
