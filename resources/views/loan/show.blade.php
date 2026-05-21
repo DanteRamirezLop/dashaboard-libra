@@ -146,7 +146,7 @@
         @endcomponent
 
         <!-- PROXIMA CORRECION Y MEJORA DEL PAGO A CAPITAL -->
-        <!-- @if($there_is_mora)
+        @if($there_is_mora)
             <div class="box box-warning" >
                 <div class="box-body text-center">
                     <h3 class="text-center"> <i class="fa fa-exclamation-triangle text-yellow"></i>  Tienes deuda por concepto de mora</h3>
@@ -154,7 +154,7 @@
                 </div>
             </div>
         @else
-            @if($canPayCapital)
+            
             <div class="box box-primary" >
                 <div class="box-header">
                     <span class="box-title mt-5">Pago a capital</span> 
@@ -162,14 +162,8 @@
                     <a class="margin-left-10 btn btn btn-success pull-right add_payment_modal"  href="{{route('add.capital.loan',['loan_id'=>$loan->id,'type'=>'parcial']) }}"> <i class="fas fa fa-hand-holding-usd"></i> Pagar a capital</a> 
                 </div>
             </div>
-            @else
-                <div class="box box-warning" >
-                    <div class="box-body text-center">
-                        <h3 class="text-center"> <i class="fa fa-exclamation-triangle text-yellow"></i>  Tienes que completar todos tus pagos parciales</h3>
-                    </div>
-                </div>
-            @endif
-        @endif -->
+            
+        @endif 
         
 </section>
 <!-- /.content -->

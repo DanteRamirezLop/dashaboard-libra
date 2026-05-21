@@ -64,19 +64,19 @@ class LoanPaymentController extends Controller
             ->orderBy('id')
             ->get();
 
-        $nextPending = $rows->firstWhere('status', 'pending');
+        $nextPending = $rows->first(fn($r) => in_array($r->status, ['pending']));
         if (!$nextPending) {
             return; // no hay cuotas pendientes
         }
 
-        $pendingRows = $rows->where('status', 'pending')->values();
+        $pendingRows = $rows->filter(fn($r) => in_array($r->status, ['pending']))->values();
         $pendingCount = $pendingRows->count();
-        $monthlyRate = ($loan->multiplier / 100) / 12;
+        $monthlyRate = ($loan->annual_interest_rate / 100) / 12;
         $balanceBefore = (float) $nextPending->opening_balance;
         $oldInstallment = ((float) $nextPending->capital) + ( (float) $nextPending->interests );
         $oldTotals = $this->simulateFrenchScheduleTotals($balanceBefore, $monthlyRate, $pendingCount, $oldInstallment);
         $newBalance = max(0, $balanceBefore - $capitalPayment);
-        $installment = $this->frenchInstallment($newBalance, $monthlyRate, $pendingCount);
+        $installment = $this->calcPMT($newBalance, $monthlyRate, $pendingCount);
         $newTotals = $this->simulateFrenchScheduleTotals($newBalance, $monthlyRate, $pendingCount, $installment);
         // 1) Replicar las cuotas pagadas tal cual, el unico cambio es el schedule_version_id y ref_payment_schedule_id
         foreach ($rows->where('status', '=', 'paid') as $oldRow) {
@@ -102,7 +102,7 @@ class LoanPaymentController extends Controller
                 $newRow = $oldRow->replicate();
                 $newRow->schedule_version_id = $toVersionId;
                 $newRow->opening_balance = $balance;
-                $newRow->mount_quota     = $installment;
+                $newRow->mount_quota     = $installmentFinal;
                 $newRow->interests       = $interests;
                 $newRow->capital         = $principal;
                 $newRow->final_balance   = $balanceAfter;
@@ -399,8 +399,7 @@ class LoanPaymentController extends Controller
     }
 
     public function statemenPDF($id){
-
-    //paid
+        //paid
         $loan = Loan::find($id);
         // ¿hay versión activa para este préstamo?
         $hasActiveVersion = DB::table('payment_schedules as psx')
