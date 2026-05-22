@@ -63,14 +63,24 @@ class TransactionUtil extends Util
 
         $pendingRows = $rows->filter(fn($r) => in_array($r->status, ['pending']))->values();
         $pendingCount = $pendingRows->count();
-        $monthlyRate = ($loan->annual_interest_rate / 100) / 12;
+        $monthlyRate = round(($loan->annual_interest_rate / 100) / 12, 6);
         $balanceBefore = (float) $nextPending->opening_balance;
         $oldInstallment = ((float) $nextPending->capital) + ( (float) $nextPending->interests );
+    
         $oldTotals = $this->simulateFrenchScheduleTotals($balanceBefore, $monthlyRate, $pendingCount, $oldInstallment);
         $newBalance = max(0, $balanceBefore - $capitalPayment);
-
-        $installment = $this->calcPMT($newBalance, $monthlyRate, $pendingCount);
+        $installment = round($this->calcPMT($newBalance, $monthlyRate, $pendingCount), 2);
         $newTotals = $this->simulateFrenchScheduleTotals($newBalance, $monthlyRate, $pendingCount, $installment);
+       
+        Log::info('Renato:',[
+            'oldTotals'=>$oldTotals,
+            'newBalance'=>$newBalance,
+            'installment'=>$installment,
+            'newTotals'=>$newTotals,
+            'monthlyRate'=>$monthlyRate,
+            'pendingCount'=>$pendingCount
+        ]);
+        
         // 1) Replicar las cuotas pagadas tal cual, el unico cambio es el schedule_version_id y ref_payment_schedule_id
         foreach ($rows->where('status', '=', 'paid') as $oldRow) {
             $newRow = $oldRow->replicate();
@@ -113,24 +123,23 @@ class TransactionUtil extends Util
         return $interestSaved;
     }
 
-    private function calcPMT(float $principal, float $monthlyRate, int $n): float
+    private function calcPMT(float $principal, float $monthlyRate,int $n): float
     {
         if ($n <= 0) return 0.0;
         if ($principal <= 0) return 0.0;
 
-        $monthlyRate = round($monthlyRate,5);
         // Si tasa 0, cuota = principal / n
         if (abs($monthlyRate) < 1e-12) {
             return $principal / $n;
         }
         // PMT = P × (r × (1 + r)^n) / ((1 + r)^n − 1)
         $factor = pow(1 + $monthlyRate, $n);
-        return $principal * ($monthlyRate * $factor) / ($factor - 1);
+        return $principal * (($monthlyRate * $factor) / ($factor - 1));
     }
 
 
 
-     private function simulateFrenchScheduleTotals( float $startingBalance, float $monthlyRate, int $n, float $installment ): array 
+     private function simulateFrenchScheduleTotals( float $startingBalance, float $monthlyRate, int $n, float $installment ): array
     {
         $balance = $startingBalance;
         $totalInterests = 0.0;
@@ -152,6 +161,142 @@ class TransactionUtil extends Util
             'total_interests' => round($totalInterests, 2),
             'ending_balance'  => $balance,
         ];
+    }
+
+    // Valor presente de una renta fija: PV = PMT × (1 − (1+r)^−n) / r
+    private function calcPV(float $installment, float $monthlyRate, int $n): float
+    {
+        if ($n <= 0) return 0.0;
+        if (abs($monthlyRate) < 1e-12) {
+            return $installment * $n;
+        }
+        return $installment * (1 - pow(1 + $monthlyRate, -$n)) / $monthlyRate;
+    }
+
+    // Devuelve el monto mínimo de pago a capital necesario para eliminar al menos 1 letra
+    public function calcMinCapitalForReduceLetras(int $loanId, int $scheduleVersionId): float
+    {
+        $scheduleVersionId = $scheduleVersionId ?: null;
+        $loan = Loan::findOrFail($loanId);
+        $rows = PaymentSchedule::query()
+            ->where('loan_id', $loanId)
+            ->where('schedule_version_id', $scheduleVersionId)
+            ->orderBy('id')
+            ->get();
+
+        $nextPending = $rows->first(fn($r) => $r->status === 'pending');
+        if (!$nextPending) return 0.0;
+
+        $pendingCount  = $rows->filter(fn($r) => $r->status === 'pending')->count();
+        $monthlyRate   = round(($loan->annual_interest_rate / 100) / 12, 6);
+        $balanceBefore = (float) $nextPending->opening_balance;
+        $installment   = (float) $nextPending->capital + (float) $nextPending->interests;
+
+        // Saldo máximo que permite n-1 letras con la misma cuota
+        $pvNMinus1 = $this->calcPV($installment, $monthlyRate, $pendingCount - 1);
+
+        return max(0.01, round($balanceBefore - $pvNMinus1, 2));
+    }
+
+    // Calcula cuántos períodos se necesitan dado saldo, tasa y cuota fija (fórmula inversa de PMT)
+    private function calcN(float $balance, float $monthlyRate, float $installment): int
+    {
+        if ($balance <= 0) return 0;
+        if (abs($monthlyRate) < 1e-12) {
+            return (int) ceil($balance / $installment);
+        }
+        $inner = $installment - $balance * $monthlyRate;
+        if ($inner <= 0) {
+            // La cuota no cubre ni los intereses; usar iteración de seguridad
+            return 9999;
+        }
+        $n = log($installment / $inner) / log(1 + $monthlyRate);
+        return (int) ceil($n);
+    }
+
+    // Regenera el calendario manteniendo la misma cuota mensual y reduciendo el número de letras
+    public function regeneratePaymentScheduleReduceLetras(int $loanId, int $fromVersionId, int $toVersionId, float $capitalPayment, string $type_pay)
+    {
+        $fromVersionId = $fromVersionId ?: null;
+        $loan = Loan::findOrFail($loanId);
+        $rows = PaymentSchedule::query()
+            ->where('loan_id', $loanId)
+            ->where('schedule_version_id', $fromVersionId)
+            ->orderBy('id')
+            ->get();
+
+        $nextPending = $rows->first(fn($r) => $r->status === 'pending');
+        if (!$nextPending) {
+            return 0;
+        }
+
+        $pendingRows  = $rows->filter(fn($r) => $r->status === 'pending')->values();
+        $pendingCount = $pendingRows->count();
+        $monthlyRate  = round(($loan->annual_interest_rate / 100) / 12, 6);
+        $balanceBefore   = (float) $nextPending->opening_balance;
+        $oldInstallment  = (float) $nextPending->capital + (float) $nextPending->interests;
+
+        $oldTotals   = $this->simulateFrenchScheduleTotals($balanceBefore, $monthlyRate, $pendingCount, $oldInstallment);
+        $newBalance  = max(0, $balanceBefore - $capitalPayment);
+
+        // Nuevo número de letras (misma cuota, menor saldo)
+        $newPendingCount = $this->calcN($newBalance, $monthlyRate, $oldInstallment);
+        $newPendingCount = min($newPendingCount, $pendingCount); // nunca puede aumentar
+        $newTotals = $this->simulateFrenchScheduleTotals($newBalance, $monthlyRate, $newPendingCount, $oldInstallment);
+
+        // 1) Replicar cuotas ya pagadas
+        foreach ($rows->where('status', 'paid') as $oldRow) {
+            $newRow = $oldRow->replicate();
+            $newRow->schedule_version_id       = $toVersionId;
+            $newRow->ref_payment_schedule_id   = $oldRow->ref_payment_schedule_id ?: $oldRow->id;
+            $newRow->save();
+        }
+
+        // 2) Recalcular las pendientes: las primeras eliminadas pasan a 'paid', el resto se recalcula
+        if ($type_pay === 'parcial') {
+            $eliminatedCount = $pendingCount - $newPendingCount;
+
+            // Las primeras cuotas "absorbidas" por el pago a capital se marcan como pagadas
+            foreach ($pendingRows->take($eliminatedCount) as $oldRow) {
+                $newRow = $oldRow->replicate();
+                $newRow->schedule_version_id     = $toVersionId;
+                $newRow->ref_payment_schedule_id = $oldRow->ref_payment_schedule_id ?: $oldRow->id;
+                $newRow->status                  = 'paid';
+                $newRow->save();
+            }
+
+            // Las cuotas restantes se recalculan con el nuevo saldo
+            $balance = $newBalance;
+            $rowsToGenerate = $pendingRows->skip($eliminatedCount)->values();
+            foreach ($rowsToGenerate as $index => $oldRow) {
+                $isLast    = ($index === $newPendingCount - 1);
+                $interests = round($balance * $monthlyRate, 2);
+                $principal = round($oldInstallment - $interests, 2);
+                if ($isLast) {
+                    $principal = $balance; // cierra saldo exacto
+                }
+                $installmentFinal = round($principal + $interests, 2);
+                $balanceAfter     = round($balance - $principal, 2);
+
+                $newRow = $oldRow->replicate();
+                $newRow->schedule_version_id = $toVersionId;
+                $newRow->opening_balance     = $balance;
+                $newRow->mount_quota         = $installmentFinal;
+                $newRow->interests           = $interests;
+                $newRow->capital             = $principal;
+                $newRow->final_balance       = $balanceAfter;
+                $newRow->save();
+                $balance = $balanceAfter;
+            }
+        } else {
+            $loan->status = 'paid';
+        }
+
+        $interestSaved = round($oldTotals['total_interests'] - $newTotals['total_interests'], 4);
+        $loan->interest_saved = $interestSaved;
+        $loan->save();
+
+        return $interestSaved;
     }
 
 

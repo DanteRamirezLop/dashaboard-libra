@@ -264,10 +264,9 @@
                         </select>
                     </div>
                 </div>
- 
-                
+
                         <div class="col-md-2">
-                            <div class="form-group ">
+                            <div class="form-group">
                                 {!! Form::label('option_tramite',  'Incluir coste tramite:', ['style' => 'margin-left:20px;'])!!}
                                 <br>
                                 <label class="radio-inline">
@@ -287,7 +286,28 @@
                             </div>
                         </div>
 
-                        <div class="col-md-2">
+                        <div class="col-md-12"></div>
+
+                        <div class="col-md-4">
+                            <div class="form-group" style="margin-left:20px;">
+                                {!! Form::label('tipo_calculo', 'Método GPS / Seguro:') !!}
+                                <br>
+                                <label class="radio-inline">
+                                    {!! Form::radio('tipo_calculo', 'producto', true, ['class' => 'input-icheck', 'id' => 'calculo_producto']) !!}
+                                    Por producto
+                                </label>
+                                <label class="radio-inline">
+                                    {!! Form::radio('tipo_calculo', 'fijo', false, ['class' => 'input-icheck', 'id' => 'calculo_fijo']) !!}
+                                    Fijo
+                                </label>
+                            </div>
+                            <div id="info_valores_fijos" style="margin-left:20px; font-size: small; display:none;">
+                                <strong>GPS:</strong> Ini. @format_currency($gps_initial) / Fin. @format_currency($gps - $gps_initial) <br>
+                                <strong>Seguro:</strong> Ini. @format_currency($insurance_initial) / Fin. @format_currency($insurance - $insurance_initial)
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
                             <div class="form-group">
                                 {!! Form::label('option_gps', 'GPS (meses): ', ['style' => 'margin-left:20px;']) !!}
                                 {!! Form::select('option_gps', ['0' => 'Sin GPS', '12' => '12 meses', '24' => '24 meses','36' => '36 meses'], '0', ['id' => 'option_gps', 'class' => 'form-control', 'style' => 'margin-left:20px; width:calc(100% - 20px);']) !!}
@@ -301,7 +321,7 @@
                             <input type="hidden" name="gps_initial" id="gps_initial_input" value="0">
                             <input type="hidden" name="gps_finance" id="gps_finance_input" value="0">
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-4">
                             <div class="form-group">
                                 {!! Form::label('option_seguro', 'Seguro (meses): ', ['style' => 'margin-left:20px;']) !!}
                                 {!! Form::select('option_seguro', ['0' => 'Sin Seguro', '12' => '12 meses', '24' => '24 meses','36' => '36 meses'], '0', ['id' => 'option_seguro', 'class' => 'form-control', 'style' => 'margin-left:20px; width:calc(100% - 20px);']) !!}
@@ -451,6 +471,16 @@
                     $("#business").show();
                 }
             });
+
+            $('input[type=radio][name=tipo_calculo]').on('ifChecked', function(){
+                if ($(this).val() === 'fijo') {
+                    $('#info_valores_fijos').show();
+                } else {
+                    $('#info_valores_fijos').hide();
+                }
+                calcularGPS();
+                calcularSeguro();
+            });
             
              //Calculate % initial en porcentage
              $('#pay_initial').on('input', function() {
@@ -575,11 +605,20 @@
                 });
             });
 
-            function calcularGPS() {
-                var gpsPorMes = parseFloat($('#product option:selected').data('gps')) || 0;
-                var meses = parseInt($('#option_gps').val()) || 0;
+            var GPS_FIJO_INICIAL   = {{ $gps_initial }};
+            var GPS_FIJO_FINANCIAR = {{ $gps - $gps_initial }};
+            var SEG_FIJO_INICIAL   = {{ $insurance_initial }};
+            var SEG_FIJO_FINANCIAR = {{ $insurance - $insurance_initial }};
 
-                if (gpsPorMes <= 0 || meses <= 0) {
+            function getMetodoCalculo() {
+                return $('input[name="tipo_calculo"]:checked').val();
+            }
+
+            function calcularGPS() {
+                var meses = parseInt($('#option_gps').val()) || 0;
+                var fmt = new Intl.NumberFormat('es-PE', { style: 'currency', currency: '{{ $currency->code }}', minimumFractionDigits: 2 });
+
+                if (meses <= 0) {
                     $('#gps_inicial_display').text('—');
                     $('#gps_financiar_display').text('—');
                     $('#gps_initial_input').val(0);
@@ -587,10 +626,24 @@
                     return;
                 }
 
-                var total = gpsPorMes * meses;
-                var inicial = total / 2;
-                var financiar = total / 2;
-                var fmt = new Intl.NumberFormat('es-PE', { style: 'currency', currency: '{{ $currency->code }}', minimumFractionDigits: 2 });
+                var inicial, financiar;
+                if (getMetodoCalculo() === 'fijo') {
+                    inicial   = GPS_FIJO_INICIAL;
+                    financiar = GPS_FIJO_FINANCIAR;
+                } else {
+                    var gpsPorMes = parseFloat($('#product option:selected').data('gps')) || 0;
+                    if (gpsPorMes <= 0) {
+                        $('#gps_inicial_display').text('—');
+                        $('#gps_financiar_display').text('—');
+                        $('#gps_initial_input').val(0);
+                        $('#gps_finance_input').val(0);
+                        return;
+                    }
+                    var total = gpsPorMes * meses;
+                    inicial   = total / 2;
+                    financiar = total / 2;
+                }
+
                 $('#gps_inicial_display').text(fmt.format(inicial));
                 $('#gps_financiar_display').text(fmt.format(financiar));
                 $('#gps_initial_input').val(inicial.toFixed(2));
@@ -598,10 +651,10 @@
             }
 
             function calcularSeguro() {
-                var reposicion = parseFloat($('#prices').val()) || 0;
                 var meses = parseInt($('#option_seguro').val()) || 0;
+                var fmt = new Intl.NumberFormat('es-PE', { style: 'currency', currency: '{{ $currency->code }}', minimumFractionDigits: 2 });
 
-                if (reposicion <= 0 || meses <= 0) {
+                if (meses <= 0) {
                     $('#seguro_inicial_display').text('—');
                     $('#seguro_financiar_display').text('—');
                     $('#insurance_initial_input').val(0);
@@ -609,12 +662,25 @@
                     return;
                 }
 
-                var años = meses >= 36 ? 3 : (meses > 12 ? 2 : 1);
-                var costoTotal = reposicion * 6.79 / 1000 * 1.2154 * años * 1.5;
-                var inicial = costoTotal / 2;
-                var financiar = costoTotal / 2;
+                var inicial, financiar;
+                if (getMetodoCalculo() === 'fijo') {
+                    inicial   = SEG_FIJO_INICIAL;
+                    financiar = SEG_FIJO_FINANCIAR;
+                } else {
+                    var reposicion = parseFloat($('#prices').val()) || 0;
+                    if (reposicion <= 0) {
+                        $('#seguro_inicial_display').text('—');
+                        $('#seguro_financiar_display').text('—');
+                        $('#insurance_initial_input').val(0);
+                        $('#insurance_finance_input').val(0);
+                        return;
+                    }
+                    var años = meses >= 36 ? 3 : (meses > 12 ? 2 : 1);
+                    var costoTotal = reposicion * 6.79 / 1000 * 1.2154 * años * 1.5;
+                    inicial   = costoTotal / 2;
+                    financiar = costoTotal / 2;
+                }
 
-                var fmt = new Intl.NumberFormat('es-PE', { style: 'currency', currency: '{{ $currency->code }}', minimumFractionDigits: 2 });
                 $('#seguro_inicial_display').text(fmt.format(inicial));
                 $('#seguro_financiar_display').text(fmt.format(financiar));
                 $('#insurance_initial_input').val(inicial.toFixed(2));

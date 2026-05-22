@@ -491,6 +491,8 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::resource('loan-payment',LoanPaymentController::class);
     Route::get('generate-statemen/{id}',[LoanPaymentController::class,'statemenPDF'])->name('generate.statemen');
     Route::post('pay-capital',[LoanPaymentController::class,'payCapital'])->name('pay.capital');
+    Route::post('pay-capital-reduce-letras',[LoanPaymentController::class,'payCapitalReduceLetras'])->name('pay.capital.reduce.letras');
+    Route::get('loan/addCapitalReduceLetras/{loan_id}/{type}',[LoanController::class,'addCapitalReduceLetras'])->name('add.capital.reduce.letras.loan');
     Route::post('loan/prices',[LoanController::class,'prices']);
     Route::post('pay-late',[LoanPaymentController::class,'payLate']);
     // Route::get('prueba-job',[LoanPaymentController::class,'pruebaJob']);

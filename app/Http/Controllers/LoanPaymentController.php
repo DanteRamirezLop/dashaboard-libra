@@ -54,97 +54,6 @@ class LoanPaymentController extends Controller
         $this->notificationUtil = $notificationUtil;
     }
 
-      public function regeneratePaymentSchedule( int $loanId, int $fromVersionId, int $toVersionId, float $capitalPayment, $type_pay)
-    { 
-        $fromVersionId = $fromVersionId ? $fromVersionId : NULL;
-        $loan = Loan::findOrFail($loanId);
-        $rows = PaymentSchedule::query()
-            ->where('loan_id', $loanId)
-            ->where('schedule_version_id', $fromVersionId)
-            ->orderBy('id')
-            ->get();
-
-        $nextPending = $rows->first(fn($r) => in_array($r->status, ['pending']));
-        if (!$nextPending) {
-            return; // no hay cuotas pendientes
-        }
-
-        $pendingRows = $rows->filter(fn($r) => in_array($r->status, ['pending']))->values();
-        $pendingCount = $pendingRows->count();
-        $monthlyRate = ($loan->annual_interest_rate / 100) / 12;
-        $balanceBefore = (float) $nextPending->opening_balance;
-        $oldInstallment = ((float) $nextPending->capital) + ( (float) $nextPending->interests );
-        $oldTotals = $this->simulateFrenchScheduleTotals($balanceBefore, $monthlyRate, $pendingCount, $oldInstallment);
-        $newBalance = max(0, $balanceBefore - $capitalPayment);
-        $installment = $this->calcPMT($newBalance, $monthlyRate, $pendingCount);
-        $newTotals = $this->simulateFrenchScheduleTotals($newBalance, $monthlyRate, $pendingCount, $installment);
-        // 1) Replicar las cuotas pagadas tal cual, el unico cambio es el schedule_version_id y ref_payment_schedule_id
-        foreach ($rows->where('status', '=', 'paid') as $oldRow) {
-            $newRow = $oldRow->replicate();
-            $newRow->schedule_version_id = $toVersionId;
-            $newRow->ref_payment_schedule_id = $oldRow->ref_payment_schedule_id ? $oldRow->ref_payment_schedule_id : $oldRow->id;
-            $newRow->save();
-        }
-        // 2) Recalcular solo las pendientes
-        if($type_pay == 'parcial'){ 
-            $balance = $newBalance;
-            foreach ($pendingRows as $index => $oldRow) {
-                $isLastPending = ($index === $pendingCount - 1);
-                $interests  = round($balance * $monthlyRate, 2);
-                $principal  = round($installment - $interests, 2);
-                if ($isLastPending) {
-                    $principal = $balance; // cerrar saldo por redondeos
-                }
-
-                $installmentFinal = round($principal + $interests, 2);
-                $balanceAfter     = round($balance - $principal, 2);
-
-                $newRow = $oldRow->replicate();
-                $newRow->schedule_version_id = $toVersionId;
-                $newRow->opening_balance = $balance;
-                $newRow->mount_quota     = $installmentFinal;
-                $newRow->interests       = $interests;
-                $newRow->capital         = $principal;
-                $newRow->final_balance   = $balanceAfter;
-                $newRow->save();
-                $balance = $balanceAfter;
-            }
-         }else{
-            $loan->status = 'paid'; // Si es pago total, marcar el prestamo como pagado
-        }
-
-        $interestSaved = round($oldTotals['total_interests'] - $newTotals['total_interests'], 4);
-        $loan->interest_saved =  $interestSaved;
-        $loan->save();
-
-        return $interestSaved;
-    }
-
-
-       private function simulateFrenchScheduleTotals( float $startingBalance, float $monthlyRate, int $n, float $installment ): array 
-    {
-        $balance = $startingBalance;
-        $totalInterests = 0.0;
-
-        for ($i = 0; $i < $n; $i++) {
-            $interests = round($balance * $monthlyRate, 2);
-            $principal = round($installment - $interests, 2);
-
-            $isLast = ($i === $n - 1);
-            if ($isLast) {
-                $principal = $balance;
-            }
-
-            $balance = round($balance - $principal, 2);
-            $totalInterests += $interests;
-        }
-
-        return [
-            'total_interests' => round($totalInterests, 2),
-            'ending_balance'  => $balance,
-        ];
-    }
-
     //Pago de las cuotas por medio del calendario de pagos
     public function store(Request $request){
         
@@ -276,7 +185,7 @@ class LoanPaymentController extends Controller
     }
 
     //Pago a capital total - currency
-     public function payCapital(Request $request){
+    public function payCapital(Request $request){
         try {
             $type_pay = $request->input('type_pay'); //partial o total
             $business_id = $request->session()->get('user.business_id');
@@ -398,8 +307,119 @@ class LoanPaymentController extends Controller
         return redirect()->back()->with(['status' => $output]);
     }
 
-    public function statemenPDF($id){
-        //paid
+    //Pago a capital - reduce letras (mantiene cuota, disminuye plazo)
+    public function payCapitalReduceLetras(Request $request){
+        try {
+            $business_id    = $request->session()->get('user.business_id');
+            $transaction_id = $request->input('transaction_id');
+            $loan_id        = $request->input('loan_id');
+            $transaction    = Transaction::where('business_id', $business_id)->findOrFail($transaction_id);
+            $transaction_before = $transaction->replicate();
+
+            if (! (auth()->user()->can('purchase.payments') || auth()->user()->can('sell.payments') || auth()->user()->can('all_expense.access') || auth()->user()->can('view_own_expense'))) {
+                abort(403, 'Unauthorized action.');
+            }
+
+            if ($transaction->payment_status != 'paid') {
+                $inputs = $request->only(['amount', 'method', 'note', 'card_number', 'card_holder_name',
+                    'card_transaction_number', 'card_type', 'card_month', 'card_year', 'card_security',
+                    'cheque_number', 'bank_account_number']);
+
+                $note = 'Pago a capital (reduce letras). ';
+                $note .= $request->input('currency') != 'Dolar' ? $request->input('amount_var').' '.$request->input('currency').' con tipo de cambio '.$request->input('exchange_rate').'. ' : '';
+                $note .= $request->input('note');
+
+                $inputs['note']           = $note;
+                $inputs['paid_on']        = $this->transactionUtil->uf_date($request->input('paid_on'), true);
+                $inputs['transaction_id'] = $transaction->id;
+                $inputs['amount']         = $this->transactionUtil->num_uf($inputs['amount']);
+                $inputs['created_by']     = auth()->user()->id;
+                $inputs['payment_for']    = $transaction->contact_id;
+
+                if ($inputs['method'] == 'custom_pay_1') {
+                    $inputs['transaction_no'] = $request->input('transaction_no_1');
+                } elseif ($inputs['method'] == 'custom_pay_2') {
+                    $inputs['transaction_no'] = $request->input('transaction_no_2');
+                } elseif ($inputs['method'] == 'custom_pay_3') {
+                    $inputs['transaction_no'] = $request->input('transaction_no_3');
+                }
+
+                if (! empty($request->input('account_id')) && $inputs['method'] != 'advance') {
+                    $inputs['account_id'] = $request->input('account_id');
+                }
+
+                $prefix_type = 'purchase_payment';
+                if (in_array($transaction->type, ['sell', 'sell_return'])) {
+                    $prefix_type = 'sell_payment';
+                } elseif (in_array($transaction->type, ['expense', 'expense_refund'])) {
+                    $prefix_type = 'expense_payment';
+                }
+
+                DB::beginTransaction();
+
+                $ref_count = $this->transactionUtil->setAndGetReferenceCount($prefix_type);
+                $inputs['payment_ref_no'] = $this->transactionUtil->generateReferenceNumber($prefix_type, $ref_count);
+                $inputs['business_id']    = $request->session()->get('business.id');
+                $inputs['document']       = $this->transactionUtil->uploadFile($request, 'document', 'documents');
+                $contact_balance = ! empty($transaction->contact) ? $transaction->contact->balance : 0;
+                if ($inputs['method'] == 'advance' && $inputs['amount'] > $contact_balance) {
+                    throw new AdvanceBalanceNotAvailable(__('lang_v1.required_advance_balance_not_available'));
+                }
+
+                if (! empty($inputs['amount'])) {
+                    $tp = TransactionPayment::create($inputs);
+                    if (! empty($request->input('denominations'))) {
+                        $this->transactionUtil->addCashDenominations($tp, $request->input('denominations'));
+                    }
+                    $inputs['transaction_type'] = $transaction->type;
+                    event(new TransactionPaymentAdded($tp, $inputs));
+                }
+
+                $payment_status = $this->transactionUtil->updatePaymentStatus($transaction_id, $transaction->final_total);
+                $transaction->payment_status = $payment_status;
+                $this->transactionUtil->activityLog($transaction, 'payment_edited', $transaction_before);
+
+                // Marcar la primera cuota pendiente como pagada
+                $activeVersion   = ScheduleVersion::where('loan_id', $loan_id)->where('status', 'active')->first();
+                $activeVersionId = $activeVersion ? $activeVersion->id : null;
+
+                $firstPending = PaymentSchedule::where('loan_id', $loan_id)
+                    ->where('schedule_version_id', $activeVersionId)
+                    ->where('status', 'pending')
+                    ->orderBy('id')
+                    ->first();
+
+                if ($firstPending) {
+                    $firstPending->status = 'paid';
+                    $firstPending->save();
+                }
+
+                PaymentApplication::create([
+                    'loan_id'                => $loan_id,
+                    'transaction_id'         => $transaction_id,
+                    'transaction_payment_id' => $tp->id,
+                    'concept'                => 'Pago capital parcial (reduce letras)',
+                    'amount'                 => $inputs['amount'],
+                    'amount_discounted'      => 0,
+                    'applied_at'             => Carbon::now(),
+                ]);
+
+                DB::commit();
+            }
+
+            $output = ['success' => true, 'msg' => __('purchase.payment_added_success')];
+
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            \Log::emergency('ERROR IN PAY CAPITAL REDUCE LETRAS BECAUSE:'.$th->getMessage().' IN FILE:'.$th->getFile().' LINE:'.$th->getLine());
+            $output = ['success' => false, 'msg' => __('messages.something_went_wrong')];
+        }
+
+        return redirect()->back()->with(['status' => $output]);
+    }
+
+    public function statemenPDF($id)
+    {
         $loan = Loan::find($id);
         // ¿hay versión activa para este préstamo?
         $hasActiveVersion = DB::table('payment_schedules as psx')
@@ -532,9 +552,6 @@ class LoanPaymentController extends Controller
         $pdf = Pdf::loadView('loan.pdf',compact('moras','annexes','months_behind','amount_months_late','amount_to_pay','default_interest','paymentShedules','loan','customer','sell','dateNow','total_paid','endOfLoan'));
         return $pdf->download($loan->customer_name.'.pdf');
     }
-
-    
-
 
 }
 

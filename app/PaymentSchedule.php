@@ -9,7 +9,7 @@ use App\TransactionPayment;
 class PaymentSchedule extends Model
 {
     use HasFactory;
-    // status = ['pending', 'paid', 'overdue','partial']
+    // status = ['pending', 'paid', 'overdue','partial','paid-in-capital']
     protected $fillable = [
         'loan_id',
         'number_quota',

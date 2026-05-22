@@ -157,9 +157,25 @@
             
             <div class="box box-primary" >
                 <div class="box-header">
-                    <span class="box-title mt-5">Pago a capital</span> 
-                    <a class="margin-left-10 btn btn btn-success pull-right add_payment_modal"  href="{{route('add.capital.loan',['loan_id'=>$loan->id,'type'=>'total']) }}"> <i class="fas fa fa-money-bill-wave-alt"></i> Pagar todo </a> 
-                    <a class="margin-left-10 btn btn btn-success pull-right add_payment_modal"  href="{{route('add.capital.loan',['loan_id'=>$loan->id,'type'=>'parcial']) }}"> <i class="fas fa fa-hand-holding-usd"></i> Pagar a capital</a> 
+                    <span class="box-title mt-5">Pago a capital</span>
+                    <a class="margin-left-10 btn btn btn-success pull-right add_payment_modal" href="{{route('add.capital.loan',['loan_id'=>$loan->id,'type'=>'total']) }}">
+                        <i class="fas fa fa-money-bill-wave-alt"></i> Pagar todo
+                    </a>
+                    <a class="margin-left-10 btn btn btn-success pull-right add_payment_modal" href="{{route('add.capital.loan',['loan_id'=>$loan->id,'type'=>'parcial']) }}">
+                        <i class="fas fa fa-hand-holding-usd"></i> Pagar a capital
+                    </a>
+                </div>
+            </div>
+
+            <div class="box box-warning" >
+                <div class="box-header">
+                    <span class="box-title mt-5">Pago a capital <small>(reduce letras)</small></span>
+                    <a class="margin-left-10 btn btn btn-warning pull-right add_payment_reduce_letras_modal" href="{{route('add.capital.reduce.letras.loan',['loan_id'=>$loan->id,'type'=>'total']) }}">
+                        <i class="fas fa fa-money-bill-wave-alt"></i> Pagar todo (reduce letras)
+                    </a>
+                    <a class="margin-left-10 btn btn btn-warning pull-right add_payment_reduce_letras_modal" href="{{route('add.capital.reduce.letras.loan',['loan_id'=>$loan->id,'type'=>'parcial']) }}">
+                        <i class="fas fa fa-scissors"></i> Pagar a capital (reduce letras)
+                    </a>
                 </div>
             </div>
             
@@ -168,6 +184,7 @@
 </section>
 <!-- /.content -->
 <div class="modal fade payment_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
+<div class="modal fade payment_reduce_letras_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
 <div class="modal fade delay_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
 
 @stop
@@ -205,6 +222,38 @@
                         set_default_payment_account();
 
                         $('.payment_modal')
+                            .find('input[type="checkbox"].input-icheck')
+                            .each(function() {
+                                $(this).iCheck({
+                                    checkboxClass: 'icheckbox_square-blue',
+                                    radioClass: 'iradio_square-blue',
+                                });
+                            });
+                    } else {
+                        toastr.error(result.msg);
+                    }
+                },
+            });
+        });
+
+        $(document).on('click', '.add_payment_reduce_letras_modal', function(e) {
+            e.preventDefault();
+            var container = $('.payment_reduce_letras_modal');
+            $.ajax({
+                url: $(this).attr('href'),
+                dataType: 'json',
+                success: function(result) {
+                    if (result.status == 'due') {
+                        container.html(result.view).modal('show');
+                        __currency_convert_recursively(container);
+                        $('#paid_on').datetimepicker({
+                            format: moment_date_format + ' ' + moment_time_format,
+                            ignoreReadonly: true,
+                        });
+                        container.find('form#transaction_payment_add_form').validate();
+                        set_default_payment_account();
+
+                        $('.payment_reduce_letras_modal')
                             .find('input[type="checkbox"].input-icheck')
                             .each(function() {
                                 $(this).iCheck({

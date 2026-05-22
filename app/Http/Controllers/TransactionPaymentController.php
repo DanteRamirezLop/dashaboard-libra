@@ -359,11 +359,11 @@ class TransactionPaymentController extends Controller
                 DB::beginTransaction();
 
                 // Eliminar pago a capital
-                $there_is_pay_capital =  PaymentApplication::where('transaction_id',$payment->transaction_id)->whereNull('payment_schedule_id')->exists();
-                if($there_is_pay_capital){
-                    $output = ['success' => false,'msg' => 'Por ahora no se puede eliminar un pago a capital'];
-                    return $output;
-                }
+                // $there_is_pay_capital =  PaymentApplication::where('transaction_id',$payment->transaction_id)->whereNull('payment_schedule_id')->exists();
+                // if($there_is_pay_capital){
+                //     $output = ['success' => false,'msg' => 'Por ahora no se puede eliminar un pago a capital'];
+                //     return $output;
+                // }
 
                 //Eliminar pagos adelantado si es que lo tenga
                 $is_prepayment = PaymentApplication::where('transaction_id',$payment->transaction_id)->where('payment_schedule_id',$payment->payment_schedule_id)->exists();
