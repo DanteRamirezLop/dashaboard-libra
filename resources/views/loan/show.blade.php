@@ -128,16 +128,14 @@
         @endif
        
         @component('components.widget', ['class' => 'box-primary', 'title' => __('loans.all_lletters_payments')]) 
-            <!-- <div class="box-tools grap-2">
-                <button class="tw-dw-btn tw-dw-btn-primary tw-dw-btn-sm tw-text-white" id="update-btn" data-id="{{$loan->id}}" > <i class="fa fa-sync "></i> Actualizar Estados</button>  
-                 <span class="label label-default text-center ">
-                    @if($countVersion)
+            <div class="box-tools grap-2">
+                <!-- <button class="tw-dw-btn tw-dw-btn-primary tw-dw-btn-sm tw-text-white" id="update-btn" data-id="{{$loan->id}}" > <i class="fa fa-sync "></i> Actualizar Estados</button>   -->
+                 @if($countVersion) 
+                    <span class="label label-default text-center ">
                          Nuevo conograma de pagos versión <span class="label" style="background-color: #fff !important;color: #615ca8 !important;">{{$countVersion}}</span>
-                    @else
-                        Conograma de pagos original
-                    @endif
-                </span> 
-            </div> -->
+                    </span> 
+                  @endif
+            </div> 
             <div class="tab-content mt-5">
                 <div class="table-responsive" id="table_quotes"> 
                     @include('loan.table_quotes')
@@ -145,7 +143,7 @@
             </div>  
         @endcomponent
 
-        <!-- PROXIMA CORRECION Y MEJORA DEL PAGO A CAPITAL -->
+        
         @if($there_is_mora)
             <div class="box box-warning" >
                 <div class="box-body text-center">
@@ -154,37 +152,19 @@
                 </div>
             </div>
         @else
-            
-            <div class="box box-primary" >
-                <div class="box-header">
-                    <span class="box-title mt-5">Pago a capital</span>
-                    <a class="margin-left-10 btn btn btn-success pull-right add_payment_modal" href="{{route('add.capital.loan',['loan_id'=>$loan->id,'type'=>'total']) }}">
-                        <i class="fas fa fa-money-bill-wave-alt"></i> Pagar todo
-                    </a>
-                    <a class="margin-left-10 btn btn btn-success pull-right add_payment_modal" href="{{route('add.capital.loan',['loan_id'=>$loan->id,'type'=>'parcial']) }}">
-                        <i class="fas fa fa-hand-holding-usd"></i> Pagar a capital
-                    </a>
-                </div>
-            </div>
-
-            <div class="box box-warning" >
-                <div class="box-header">
-                    <span class="box-title mt-5">Pago a capital <small>(reduce letras)</small></span>
-                    <a class="margin-left-10 btn btn btn-warning pull-right add_payment_reduce_letras_modal" href="{{route('add.capital.reduce.letras.loan',['loan_id'=>$loan->id,'type'=>'total']) }}">
-                        <i class="fas fa fa-money-bill-wave-alt"></i> Pagar todo (reduce letras)
-                    </a>
-                    <a class="margin-left-10 btn btn btn-warning pull-right add_payment_reduce_letras_modal" href="{{route('add.capital.reduce.letras.loan',['loan_id'=>$loan->id,'type'=>'parcial']) }}">
-                        <i class="fas fa fa-scissors"></i> Pagar a capital (reduce letras)
-                    </a>
-                </div>
-            </div>
-            
+            @component('components.widget', ['class' => 'box-success', 'title' => '']) 
+                <!-- <a class="margin-left-10 btn btn btn-success pull-right add_payment_modal" href="{{route('add.capital.loan',['loan_id'=>$loan->id,'type'=>'total']) }}">
+                    <i class="fas fa fa-money-bill-wave-alt"></i> Pagar todo
+                </a> -->
+                <a class="margin-left-10 tw-dw-btn tw-dw-btn-primary tw-text-white tw-dw-btn-md pull-right add_payment_modal" href="{{route('add.capital.loan',['loan_id'=>$loan->id,'type'=>'parcial']) }}">
+                    <i class="fas fa fa-hand-holding-usd"></i> Pagar a capital
+                </a>
+            @endcomponent
         @endif 
         
 </section>
 <!-- /.content -->
 <div class="modal fade payment_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
-<div class="modal fade payment_reduce_letras_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
 <div class="modal fade delay_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
 
 @stop
@@ -236,38 +216,6 @@
             });
         });
 
-        $(document).on('click', '.add_payment_reduce_letras_modal', function(e) {
-            e.preventDefault();
-            var container = $('.payment_reduce_letras_modal');
-            $.ajax({
-                url: $(this).attr('href'),
-                dataType: 'json',
-                success: function(result) {
-                    if (result.status == 'due') {
-                        container.html(result.view).modal('show');
-                        __currency_convert_recursively(container);
-                        $('#paid_on').datetimepicker({
-                            format: moment_date_format + ' ' + moment_time_format,
-                            ignoreReadonly: true,
-                        });
-                        container.find('form#transaction_payment_add_form').validate();
-                        set_default_payment_account();
-
-                        $('.payment_reduce_letras_modal')
-                            .find('input[type="checkbox"].input-icheck')
-                            .each(function() {
-                                $(this).iCheck({
-                                    checkboxClass: 'icheckbox_square-blue',
-                                    radioClass: 'iradio_square-blue',
-                                });
-                            });
-                    } else {
-                        toastr.error(result.msg);
-                    }
-                },
-            });
-        });
-
         //cambios de Soles a dolares
         $(document).on('change', '.currency_types_dropdown', function(e) {
             console.log('CHANGE');
@@ -275,8 +223,6 @@
             var payment_type = $('#transaction_payment_add_form .currency_types_dropdown').val();
             calculate_dollars = $('#calculate_dollars');
             amount = $('#amount');
-            // var is_pay_regulate = $('input[name="optionPay"]:checked').val();
-            // if(is_pay_regulate == 1 ){
                 if(payment_type == 'Dolar'){
                     calculate_dollars.addClass('hide');
                     amount.prop('readonly', false);
@@ -284,15 +230,6 @@
                     calculate_dollars.removeClass('hide');
                     amount.prop('readonly', true);
                 }
-            // }else{
-            //     amount.prop('readonly', true);
-            //     if(payment_type == 'Dolar'){
-            //         calculate_dollars.addClass('hide');
-            //     }else{
-            //         calculate_dollars.removeClass('hide');
-            //     }
-            // }
-
         });
 
          $(document).on('change', 'input[type=radio][name=optionPay]', function(e) {

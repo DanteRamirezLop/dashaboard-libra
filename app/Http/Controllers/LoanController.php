@@ -1171,64 +1171,6 @@ class LoanController extends Controller {
         }
     }
 
-    public function addCapitalReduceLetras($loan_id, $type)
-    {
-        if (! auth()->user()->can('purchase.payments') && ! auth()->user()->can('sell.payments') && ! auth()->user()->can('all_expense.access') && ! auth()->user()->can('view_own_expense')) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        try {
-            if (request()->ajax()) {
-                $loan = Loan::find($loan_id);
-                $schedule_version = ScheduleVersion::where('loan_id', $loan->id)->where('status', 'active')->first();
-                $schedule_version_id = $schedule_version ? $schedule_version->id : null;
-                $business_id = request()->session()->get('user.business_id');
-                $transaction = Transaction::where('business_id', $business_id)->with(['contact', 'location'])->findOrFail($loan->transaction_id);
-
-                if ($transaction->payment_status != 'paid') {
-                    $payment_types = $this->transactionUtil->payment_types(null, false, $business_id);
-                    $accounts = $this->moduleUtil->accountsDropdown($business_id, true, false, true);
-                    $paid_on = Carbon::now()->toDateTimeString();
-
-                    $rows = PaymentSchedule::query()
-                        ->where('loan_id', $loan->id)
-                        ->where('schedule_version_id', $schedule_version_id)
-                        ->orderBy('id')
-                        ->get();
-
-                    $nextPending = $rows->firstWhere('status', 'pending');
-                    if (!$nextPending) {
-                        return json_encode(['status' => 'paid', 'view' => '', 'msg' => __('purchase.amount_already_paid')]);
-                    }
-
-                    $amount = (float) $nextPending->opening_balance;
-
-                    if ($type == 'total') {
-                        $other_expense = $this->transactionUtil->getOtherExpensesPaid($loan->id);
-                        $amount = round($amount + $other_expense, 4);
-                    }
-
-                    $minCapital           = $this->transactionUtil->calcMinCapitalForReduceLetras($loan->id, $schedule_version_id ?? 0);
-                    $minCapital_formated  = $this->transactionUtil->num_f($minCapital);
-                    $amount_formated      = $this->transactionUtil->num_f($amount);
-
-                    $view = view('loan.payment_capital_reduce_letras')
-                        ->with(compact('transaction', 'loan', 'amount', 'amount_formated', 'minCapital', 'minCapital_formated', 'paid_on', 'payment_types', 'accounts', 'type'))
-                        ->render();
-
-                    $output = ['status' => 'due', 'view' => $view];
-                } else {
-                    $output = ['status' => 'paid', 'view' => '', 'msg' => __('purchase.amount_already_paid')];
-                }
-
-                return json_encode($output);
-            }
-        } catch (\Throwable $th) {
-            Log::emergency('File:'.$th->getFile().'Line:'.$th->getLine().'Message:'.$th->getMessage());
-            $output = ['success' => false, 'msg' => 'Error: '.$th->getLine().' Message:'.$th->getMessage()];
-        }
-    }
-
     public function addPayment($payment_schedules_id){
         if (request()->ajax()) {
             //busco el tipo de cambio del dia

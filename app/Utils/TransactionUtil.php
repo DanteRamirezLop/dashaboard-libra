@@ -46,8 +46,8 @@ class TransactionUtil extends Util
      * @return object
      */
 
-      public function regeneratePaymentSchedule( int $loanId, int $fromVersionId, int $toVersionId, float $capitalPayment, $type_pay)
-    { 
+      public function regeneratePaymentSchedule( int $loanId, int $fromVersionId, int $toVersionId, float $capitalPayment, $type_pay, float $moraAmount = 0.0)
+    {
         $fromVersionId = $fromVersionId ? $fromVersionId : NULL;
         $loan = Loan::findOrFail($loanId);
         $rows = PaymentSchedule::query()
@@ -64,9 +64,9 @@ class TransactionUtil extends Util
         $pendingRows = $rows->filter(fn($r) => in_array($r->status, ['pending']))->values();
         $pendingCount = $pendingRows->count();
         $monthlyRate = round(($loan->annual_interest_rate / 100) / 12, 6);
-        $balanceBefore = (float) $nextPending->opening_balance;
+        $balanceBefore = (float) $nextPending->opening_balance + $moraAmount;
         $oldInstallment = ((float) $nextPending->capital) + ( (float) $nextPending->interests );
-    
+
         $oldTotals = $this->simulateFrenchScheduleTotals($balanceBefore, $monthlyRate, $pendingCount, $oldInstallment);
         $newBalance = max(0, $balanceBefore - $capitalPayment);
         $installment = round($this->calcPMT($newBalance, $monthlyRate, $pendingCount), 2);

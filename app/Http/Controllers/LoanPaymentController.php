@@ -80,9 +80,8 @@ class LoanPaymentController extends Controller
             $note = "";
             $note .= $request->input('note').'. ';
             if($type_pay == 2){
-                $days_in_advance = $request->input('days_in_advance');
-                $interestSaved =   ($amount * 0.00111) * $days_in_advance;
-                $note .= 'Por pago adelantado de '.$days_in_advance.' días está ahorrando '. number_format($interestSaved,2) .'Dolares. ';
+                $interestSaved = $this->transactionUtil->num_uf($request->input('discount_amount', 0));
+                $note .= 'Pago adelantado con descuento de '. number_format($interestSaved, 2) .' Dolares. ';
             }
 
             //El monto a pagar no puede ser superior a la cuota 
@@ -108,15 +107,16 @@ class LoanPaymentController extends Controller
                 //Crear el pagon de la cuota
                 $loan = Loan::find($payment_shedule->loan_id);
                 $transaction = Transaction::find($loan->transaction_id);
+                $actual_payment = ($type_pay == 2) ? $amount - $interestSaved : $amount;
                 $transactionPaymentNew =  $this->transactionUtil->newTransaction(
-                    $transaction, 
-                    $amount, 
-                    $loan->user_id, 
-                    $loan->customer_id, 
-                    $note, 
-                    $paid_on, 
+                    $transaction,
+                    $actual_payment,
+                    $loan->user_id,
+                    $loan->customer_id,
+                    $note,
+                    $paid_on,
                     $request->method,
-                    $payment_shedule->id, 
+                    $payment_shedule->id,
                     $account_id
                 );
                 //----------Add Accouny Transaction---------
@@ -124,7 +124,7 @@ class LoanPaymentController extends Controller
                     $account_transaction_data = [
                         'account_id' => $account_id,
                         'type' =>'credit',
-                        'amount' => $amount,
+                        'amount' => $actual_payment,
                         'operation_date' =>  $paid_on,
                         'created_by' => $loan->user_id,
                         'transaction_id' => $transaction->id,
@@ -148,10 +148,9 @@ class LoanPaymentController extends Controller
                         'transaction_id'=> $transaction->id,
                         'transaction_payment_id' => $transactionPaymentNew->id,
                         'payment_schedule_id' => $payment_shedule->id,
-                        'concept' => 'Pago adelantado de una letra',
-                        'amount' => $amount,
-                        'amount_discounted' => $interestSaved,// El descuento es por pago adelantado
-                        'days_in_advance' =>  $days_in_advance,
+                        'concept' => 'Pago con descuento arbitrario',
+                        'amount' => $actual_payment,
+                        'amount_discounted' => $interestSaved,
                         'applied_at' => Carbon::now(),
                     ]);
                 }
@@ -271,7 +270,8 @@ class LoanPaymentController extends Controller
                         'generated_at' => $tp->paid_on,
                     ]);
 
-                    $interestSaved =  $this->transactionUtil->regeneratePaymentSchedule($request->input('loan_id'),$schedule_version_current_id, $schedule_version_new->id, $inputs['amount'], $type_pay);
+                    $moraAmount = (float) $this->transactionUtil->num_uf($request->input('mora_amount', 0));
+                    $interestSaved =  $this->transactionUtil->regeneratePaymentSchedule($request->input('loan_id'),$schedule_version_current_id, $schedule_version_new->id, $inputs['amount'], $type_pay, $moraAmount);
                     $concept = ($type_pay == 'total') ? 'Pago capital total' : 'Pago capital parcial';
                     
                 //REGISTRAR EL DESCUENTO EN LA TRANSACCION
@@ -304,117 +304,6 @@ class LoanPaymentController extends Controller
                 'msg' => $msg,
             ];
         }
-        return redirect()->back()->with(['status' => $output]);
-    }
-
-    //Pago a capital - reduce letras (mantiene cuota, disminuye plazo)
-    public function payCapitalReduceLetras(Request $request){
-        try {
-            $business_id    = $request->session()->get('user.business_id');
-            $transaction_id = $request->input('transaction_id');
-            $loan_id        = $request->input('loan_id');
-            $transaction    = Transaction::where('business_id', $business_id)->findOrFail($transaction_id);
-            $transaction_before = $transaction->replicate();
-
-            if (! (auth()->user()->can('purchase.payments') || auth()->user()->can('sell.payments') || auth()->user()->can('all_expense.access') || auth()->user()->can('view_own_expense'))) {
-                abort(403, 'Unauthorized action.');
-            }
-
-            if ($transaction->payment_status != 'paid') {
-                $inputs = $request->only(['amount', 'method', 'note', 'card_number', 'card_holder_name',
-                    'card_transaction_number', 'card_type', 'card_month', 'card_year', 'card_security',
-                    'cheque_number', 'bank_account_number']);
-
-                $note = 'Pago a capital (reduce letras). ';
-                $note .= $request->input('currency') != 'Dolar' ? $request->input('amount_var').' '.$request->input('currency').' con tipo de cambio '.$request->input('exchange_rate').'. ' : '';
-                $note .= $request->input('note');
-
-                $inputs['note']           = $note;
-                $inputs['paid_on']        = $this->transactionUtil->uf_date($request->input('paid_on'), true);
-                $inputs['transaction_id'] = $transaction->id;
-                $inputs['amount']         = $this->transactionUtil->num_uf($inputs['amount']);
-                $inputs['created_by']     = auth()->user()->id;
-                $inputs['payment_for']    = $transaction->contact_id;
-
-                if ($inputs['method'] == 'custom_pay_1') {
-                    $inputs['transaction_no'] = $request->input('transaction_no_1');
-                } elseif ($inputs['method'] == 'custom_pay_2') {
-                    $inputs['transaction_no'] = $request->input('transaction_no_2');
-                } elseif ($inputs['method'] == 'custom_pay_3') {
-                    $inputs['transaction_no'] = $request->input('transaction_no_3');
-                }
-
-                if (! empty($request->input('account_id')) && $inputs['method'] != 'advance') {
-                    $inputs['account_id'] = $request->input('account_id');
-                }
-
-                $prefix_type = 'purchase_payment';
-                if (in_array($transaction->type, ['sell', 'sell_return'])) {
-                    $prefix_type = 'sell_payment';
-                } elseif (in_array($transaction->type, ['expense', 'expense_refund'])) {
-                    $prefix_type = 'expense_payment';
-                }
-
-                DB::beginTransaction();
-
-                $ref_count = $this->transactionUtil->setAndGetReferenceCount($prefix_type);
-                $inputs['payment_ref_no'] = $this->transactionUtil->generateReferenceNumber($prefix_type, $ref_count);
-                $inputs['business_id']    = $request->session()->get('business.id');
-                $inputs['document']       = $this->transactionUtil->uploadFile($request, 'document', 'documents');
-                $contact_balance = ! empty($transaction->contact) ? $transaction->contact->balance : 0;
-                if ($inputs['method'] == 'advance' && $inputs['amount'] > $contact_balance) {
-                    throw new AdvanceBalanceNotAvailable(__('lang_v1.required_advance_balance_not_available'));
-                }
-
-                if (! empty($inputs['amount'])) {
-                    $tp = TransactionPayment::create($inputs);
-                    if (! empty($request->input('denominations'))) {
-                        $this->transactionUtil->addCashDenominations($tp, $request->input('denominations'));
-                    }
-                    $inputs['transaction_type'] = $transaction->type;
-                    event(new TransactionPaymentAdded($tp, $inputs));
-                }
-
-                $payment_status = $this->transactionUtil->updatePaymentStatus($transaction_id, $transaction->final_total);
-                $transaction->payment_status = $payment_status;
-                $this->transactionUtil->activityLog($transaction, 'payment_edited', $transaction_before);
-
-                // Marcar la primera cuota pendiente como pagada
-                $activeVersion   = ScheduleVersion::where('loan_id', $loan_id)->where('status', 'active')->first();
-                $activeVersionId = $activeVersion ? $activeVersion->id : null;
-
-                $firstPending = PaymentSchedule::where('loan_id', $loan_id)
-                    ->where('schedule_version_id', $activeVersionId)
-                    ->where('status', 'pending')
-                    ->orderBy('id')
-                    ->first();
-
-                if ($firstPending) {
-                    $firstPending->status = 'paid';
-                    $firstPending->save();
-                }
-
-                PaymentApplication::create([
-                    'loan_id'                => $loan_id,
-                    'transaction_id'         => $transaction_id,
-                    'transaction_payment_id' => $tp->id,
-                    'concept'                => 'Pago capital parcial (reduce letras)',
-                    'amount'                 => $inputs['amount'],
-                    'amount_discounted'      => 0,
-                    'applied_at'             => Carbon::now(),
-                ]);
-
-                DB::commit();
-            }
-
-            $output = ['success' => true, 'msg' => __('purchase.payment_added_success')];
-
-        } catch (\Throwable $th) {
-            DB::rollBack();
-            \Log::emergency('ERROR IN PAY CAPITAL REDUCE LETRAS BECAUSE:'.$th->getMessage().' IN FILE:'.$th->getFile().' LINE:'.$th->getLine());
-            $output = ['success' => false, 'msg' => __('messages.something_went_wrong')];
-        }
-
         return redirect()->back()->with(['status' => $output]);
     }
 

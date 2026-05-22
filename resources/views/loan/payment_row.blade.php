@@ -18,7 +18,7 @@
                   </label>
                   <label class="radio-inline">
                       {!! Form::radio('optionPay', '2', false, [ 'class' => 'input-icheck', 'name'=>"optionPay"]); !!}
-                      Pago adelantado 
+                      Pago total con descuento arbitrario
                   </label>
                 </div>
             </div>
@@ -130,15 +130,15 @@
 
           <div class="col-md-4 hide" id="prepayment">
             <div class="form-group">
-              {!! Form::label('days_in_advance', 'Dias adelantados' . ':*') !!} 
+              {!! Form::label('discount_amount', 'Monto a descontar' . ':*') !!}
               <div class="input-group">
                 <span class="input-group-addon">
-                  <i class="fas fa-calendar-check"></i>
+                  <i class="fas fa-tag"></i>
                 </span>
-                 {!! Form::text("days_in_advance",  1, ['class' => 'form-control']); !!}
+                 {!! Form::text("discount_amount", 0, ['class' => 'form-control', 'min' => '0', 'step' => '0.01']); !!}
               </div>
             </div>
-          </div> 
+          </div>
           
         <div class="col-md-12">
           <div class="form-group">

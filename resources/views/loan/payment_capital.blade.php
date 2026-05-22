@@ -137,7 +137,7 @@
             </div>
         </div>
          <div class="col-md-4">
-          
+
             <div class="form-group">
               {!! Form::label("amount" , 'Monto total en dolares'. ':*') !!}
               <div class="input-group">
@@ -146,6 +146,18 @@
                 </span>
                 {!! Form::text("amount", @num_format($amount), ['class' => 'form-control input_number payment_amount','required', 'placeholder' => 'Amount', 'data-rule-max-value' => @num_format($amount), 'data-msg-max-value' => __('lang_v1.max_amount_to_be_paid_is', ['amount' => $amount_formated])]); !!}
               </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              {!! Form::label("mora_amount", 'Deuda moratoria a incluir' . ':') !!}
+              <div class="input-group">
+                <span class="input-group-addon">
+                  <i class="fas fa-exclamation-triangle"></i>
+                </span>
+                {!! Form::text("mora_amount", '0', ['class' => 'form-control input_number', 'placeholder' => '0.00', 'min' => '0']); !!}
+              </div>
+              <span class="help-block" style="font-size:11px;">Se suma al saldo inicial antes de recalcular el calendario</span>
             </div>
           </div>
         <div class="col-md-12">
