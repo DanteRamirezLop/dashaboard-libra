@@ -137,7 +137,9 @@ class LoanController extends Controller {
                 'loans.number_month',
                 'loans.waiter',
                 'loans.refinanced_at',
+                'loans.interest_saved',
                 'transactions.final_total as final_total',
+                'transactions.discount_amount as discount_amount',
                 DB::raw('(SELECT SUM(IF(TP.is_return = 1,-1*TP.amount,TP.amount))
                         FROM transaction_payments AS TP
                         WHERE TP.transaction_id = transactions.id) as total_paid'),
@@ -250,17 +252,30 @@ class LoanController extends Controller {
                 })
                 ->addColumn('total_to_delay', function ($row) {
                     // Total por vencer
+                
                     if($row->refinanced_at){
                         $total_to_delay =  $row->for_due;
                     }else{
+                        //calculo la mora
                         $mora = round($row->mora);
                         if($mora){
                             $paid_partial = 0;
                         }else{
                             $paid_partial = bcsub($row->delay, $row->total_only_payments, 4);
                         }
-                        $total_to_delay =  $row->for_due + $paid_partial;
+
+                        //Calculo algun descuento 
+                        if($row->interest_saved){
+                            $interest_saved = bcsub($row->discount_amount, $row->interest_saved,2);
+                        }else{
+                            $interest_saved = 0;
+                        }
+
+                       //$total_to_delay = $row->interest_saved;
+
+                       $total_to_delay =  $row->for_due + bcsub($paid_partial,$interest_saved,4);
                     }
+
                     if ($total_to_delay < 0 && $total_to_delay > -0.5) {
                         $total_to_delay = 0;
                     }
