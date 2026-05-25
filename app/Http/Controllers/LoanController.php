@@ -156,7 +156,7 @@ class LoanController extends Controller {
                 return $collection->filter(function ($row) {
                     $mora = round($row->mora);
                     $total_delay = $mora ? bcsub($row->delay, $row->total_only_payments, 4) : 0;
-                    if ($total_delay < 0 && $total_delay > -0.25) {
+                    if ($total_delay < 0 && $total_delay > -0.5) {
                         $total_delay = 0;
                     }
                     return $total_delay != 0;
@@ -242,14 +242,14 @@ class LoanController extends Controller {
                     }else{
                         $total_delay = 0;
                     }
-                    if($total_delay < 0 && $total_delay > -0.25) {
+                    if ($total_delay < 0 && $total_delay > -0.5) {
                         $total_delay = 0;
                     }
                     $total_delay_html = '<span class="payment_due" data-orig-value="'.$total_delay.'">'.$this->transactionUtil->num_f($total_delay, true).'</span>';
                     return $total_delay_html;
                 })
                 ->addColumn('total_to_delay', function ($row) {
-                    // TOTAL POR VENCER   
+                    // Total por vencer
                     if($row->refinanced_at){
                         $total_to_delay =  $row->for_due;
                     }else{
@@ -261,10 +261,11 @@ class LoanController extends Controller {
                         }
                         $total_to_delay =  $row->for_due + $paid_partial;
                     }
+                    if ($total_to_delay < 0 && $total_to_delay > -0.5) {
+                        $total_to_delay = 0;
+                    }
                     $total_to_delay_html = '<span class="payment_due" data-orig-value="'.$total_to_delay.'">'.$this->transactionUtil->num_f($total_to_delay, true).'</span>';
                     return $total_to_delay_html;
-
-                    
                 })
                 ->addColumn('total_remaining', function ($row) {
                     // total vencido
@@ -275,7 +276,7 @@ class LoanController extends Controller {
                         $total_remaining = 0;
                     }
 
-                    if($total_remaining < 0 && $total_remaining > -0.25) {
+                    if ($total_remaining < 0 && $total_remaining > -0.5) {
                         $total_remaining = 0;
                     }
 
@@ -286,6 +287,9 @@ class LoanController extends Controller {
                  ->addColumn('total_mora', function ($row) {
                     //mora
                     $total_mora = $row->mora;
+                    if ($total_mora < 0 && $total_mora > -0.5) {
+                        $total_mora = 0;
+                    }
                     $total_mora_html = '<span class="payment_due" data-orig-value="'.$total_mora.'">'.$this->transactionUtil->num_f($total_mora, true).'</span>';
                     return $total_mora_html;
                 })
@@ -293,6 +297,9 @@ class LoanController extends Controller {
                  ->addColumn('total_remaining_mora', function ($row) {
                     // TOTAL DEBIDO
                     $total_remaining = $row->final_total - $row->total_paid;
+                    if ($total_remaining < 0 && $total_remaining > -0.5) {
+                        $total_remaining = 0;
+                    }
                     $total_remaining_html = '<span class="payment_due" data-orig-value="'.$total_remaining.'">'.$this->transactionUtil->num_f($total_remaining, true).'</span>';
                     return $total_remaining_html;
                 })
@@ -1441,7 +1448,7 @@ class LoanController extends Controller {
                 return $collection->filter(function ($row) {
                     $mora = round($row->mora);
                     $total_delay = $mora ? bcsub($row->delay, $row->total_only_payments, 4) : 0;
-                    if ($total_delay < 0 && $total_delay > -0.25) {
+                    if ($total_delay < 0 && $total_delay > -0.5) {
                         $total_delay = 0;
                     }
                     return $total_delay != 0;
@@ -1518,7 +1525,7 @@ class LoanController extends Controller {
                     }else{
                         $total_delay = 0;
                     }
-                    if($total_delay < 0 && $total_delay > -0.25) {
+                    if ($total_delay < 0 && $total_delay > -0.5) {
                         $total_delay = 0;
                     }
                     $total_delay_html = '<span class="payment_due" data-orig-value="'.$total_delay.'">'.$this->transactionUtil->num_f($total_delay, true).'</span>';
@@ -1532,6 +1539,9 @@ class LoanController extends Controller {
                         $paid_partial = bcsub($row->delay, $row->total_only_payments, 4);
                     }
                     $total_to_delay =  $row->for_due + $paid_partial;
+                    if ($total_to_delay < 0 && $total_to_delay > -0.5) {
+                        $total_to_delay = 0;
+                    }
                     $total_to_delay_html = '<span class="payment_due" data-orig-value="'.$total_to_delay.'">'.$this->transactionUtil->num_f($total_to_delay, true).'</span>';
                     return $total_to_delay_html;
                 })
@@ -1543,7 +1553,7 @@ class LoanController extends Controller {
                         $total_remaining = 0;
                     }
                     
-                    if($total_remaining < 0 && $total_remaining > -0.25) {
+                    if ($total_remaining < 0 && $total_remaining > -0.5) {
                         $total_remaining = 0;
                     }
                     
