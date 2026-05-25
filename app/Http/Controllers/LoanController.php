@@ -187,8 +187,12 @@ class LoanController extends Controller {
                                 $html .= '<li><a href="'.action([\App\Http\Controllers\TransactionPaymentController::class, 'show'], [$row->transaction_id]).'" class="view_payment_modal"><i class="fas fa-money-bill-alt"></i> '.__('purchase.view_payments').'</a></li>';
                                 $html .= '<li><a href="#" data-href="'.action([\App\Http\Controllers\SellController::class, 'show'], [$row->transaction_id]).'" class="btn-modal" data-container=".view_modal"><i class="fas fa-eye" aria-hidden="true"></i> '.__('messages.view').'</a></li>';
                                 $html .= '<li><a href="'.action([\App\Http\Controllers\LoanController::class, 'destroy'], [$row->id]).'" class="delete_loan_button"> <i class="fas fa-trash"></i> '.__('messages.delete').'</a></li>';
+                                if (in_array($row->status, ['in arrears', 'partial'])) {
+                                    $html .= '<li class="divider"></li>';
+                                    $html .= '<li><a href="#" class="clear_arrears_btn" data-id="'.$row->id.'" data-href="'.route('loan.clear-arrears', $row->id).'"><i class="fa fa-check-circle" aria-hidden="true"></i> Actualizar estado</a></li>';
+                                }
                                 if (in_array($row->status, ['in arrears', 'partial', 'approved'])) {
-                                    if(!$row->refinanced_at){ 
+                                    if(!$row->refinanced_at){
                                         $html .= '<li class="divider"></li>';
                                         $html .= '<li><a href="#" class="open_refinance_modal" data-href="'.route('loan.refinance.form', $row->id).'"><i class="fa fa-landmark" aria-hidden="true"></i> Refinanciar</a></li>';
                                     }
@@ -270,8 +274,6 @@ class LoanController extends Controller {
                         }else{
                             $interest_saved = 0;
                         }
-
-                       //$total_to_delay = $row->interest_saved;
 
                        $total_to_delay =  $row->for_due + bcsub($paid_partial,$interest_saved,4);
                     }
@@ -953,7 +955,6 @@ class LoanController extends Controller {
     }
 
     // ─── REFINANCIAMIENTO ────────────────────────────────────────────────────
-
     public function refinanceForm($id)
     {
         if (! request()->ajax()) {
@@ -1700,6 +1701,65 @@ class LoanController extends Controller {
             'state'                  => $data['departamento'] ?? null,
             'address_line_1'         => $data['direccion_completa'] ?? null,
         ]);
+    }
+
+    public function clearArrears($id)
+    {
+        if (! request()->ajax()) {
+            abort(403);
+        }
+
+        try {
+            $business_id = request()->session()->get('user.business_id');
+            $loan = Loan::where('business_id', $business_id)->findOrFail($id);
+
+            if (! in_array($loan->status, ['in arrears', 'partial'])) {
+                return response()->json(['success' => false, 'msg' => 'El préstamo no está en estado Atrasado o Parcial.']);
+            }
+
+            // Detectar versión activa del cronograma (misma lógica que show())
+            $scheduleVersionId = ScheduleVersion::where('loan_id', $id)
+                ->where('status', 'active')
+                ->value('id');
+
+            $scheduleQuery = PaymentSchedule::where('loan_id', $id);
+            if ($scheduleVersionId) {
+                $scheduleQuery->where('schedule_version_id', $scheduleVersionId);
+            } else {
+                $scheduleQuery->whereNull('schedule_version_id');
+            }
+
+            // Prioridad 1: si todas las cuotas están pagadas → marcar como pagado
+            $hasUnpaid = (clone $scheduleQuery)->where('status', '!=', 'paid')->exists();
+
+            if (! $hasUnpaid) {
+                $loan->status = 'paid';
+                $loan->save();
+                return response()->json(['success' => true, 'msg' => 'Préstamo marcado como Pagado correctamente.']);
+            }
+
+            // Prioridad 2: in arrears → partial si no hay moras activas
+            if ($loan->status !== 'in arrears') {
+                return response()->json(['success' => false, 'msg' => 'El préstamo aún tiene cuotas pendientes de pago.']);
+            }
+
+            // El scope global de Delay ya excluye los soft-deleted (condonados)
+            $hasActiveDelays = Delay::where('loan_id', $id)
+                ->where('status', 'late')
+                ->exists();
+
+            if ($hasActiveDelays) {
+                return response()->json(['success' => false, 'msg' => 'El préstamo tiene moras pendientes. Debe pagarlas o condonarlas primero.']);
+            }
+
+            $loan->status = 'partial';
+            $loan->save();
+
+            return response()->json(['success' => true, 'msg' => 'Estado actualizado a Parcial correctamente.']);
+        } catch (\Exception $e) {
+            \Log::emergency('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
+            return response()->json(['success' => false, 'msg' => 'Error al actualizar el estado.']);
+        }
     }
 
     public function revertToPending(Request $request, $id)

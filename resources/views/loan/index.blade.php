@@ -6,14 +6,11 @@
 <section class="content-header no-print">
     <h1  class="tw-text-xl md:tw-text-3xl tw-font-bold tw-text-black">{{__('loans.loans')}}</h1>
 </section>
-
 <!-- Main content -->
     <section class="content no-print">
         <input type="hidden" value="{{$type}}" id="loan_type">
         @component('components.filters', ['title' => __('report.filters')])
-     
             @include('loan.loan_list_filters')
-
         @endcomponent
         <!-- Nueva tabla -->
         @component('components.widget', ['class' => 'box-primary', 'title' => __('loans.all_loans')])
@@ -207,28 +204,41 @@ $(document).ready( function(){
             }
         });
     });
-
-    //Metodo ajax para generear el pdf
-    //  $(document).on('click', '.generate-pdf', function(e) {
-    //         e.preventDefault();
-    //         var href = $(this).attr('href');
-    //         var id = $(this).data('id');
-    //         $.ajax({
-    //             method: 'POST',
-    //             url: href,
-    //             dataType: 'json',
-    //             data: {
-    //                 id:id,
-    //             },
-    //             success: function(result) {
-    //                 console.log('bien');
-    //             }
-    //         });
-    //  });
 });
 </script>
 <script src="{{ asset('js/payment.js')}}"></script>
 <script>
+$(document).on('click', '.clear_arrears_btn', function(e) {
+    e.preventDefault();
+    var href = $(this).data('href');
+    swal({
+        title: '¿Actualizar estado?',
+        text: 'Si todas las cuotas están pagadas, el préstamo pasará a Pagado. De lo contrario, si no tiene moras, pasará de Atrasado a Parcial.',
+        icon: 'warning',
+        buttons: ['Cancelar', 'Confirmar'],
+    }).then(function(confirm) {
+        if (confirm) {
+            $.ajax({
+                method: 'PATCH',
+                url: href,
+                data: { _token: $('meta[name="csrf-token"]').attr('content') },
+                dataType: 'json',
+                success: function(result) {
+                    if (result.success) {
+                        toastr.success(result.msg);
+                        loan_table.ajax.reload();
+                    } else {
+                        toastr.error(result.msg);
+                    }
+                },
+                error: function() {
+                    toastr.error('Error al procesar la solicitud.');
+                }
+            });
+        }
+    });
+});
+
 $(document).on('click', '.open_refinance_modal', function(e) {
     e.preventDefault();
     var href = $(this).data('href');

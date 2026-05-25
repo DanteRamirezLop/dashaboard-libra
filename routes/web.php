@@ -498,6 +498,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::patch('loan/schedule/{id}/revert-pending', [LoanController::class, 'revertToPending'])->name('loan.schedule.revert-pending');
     Route::get('loan/refinance/{id}', [LoanController::class, 'refinanceForm'])->name('loan.refinance.form');
     Route::post('loan/refinance/{id}', [LoanController::class, 'refinanceStore'])->name('loan.refinance.store');
+    Route::patch('loan/{id}/clear-arrears', [LoanController::class, 'clearArrears'])->name('loan.clear-arrears');
 
     Route::resource('types-of-service', TypesOfServiceController::class);
     Route::get('sells/edit-shipping/{id}', [SellController::class, 'editShipping']);
