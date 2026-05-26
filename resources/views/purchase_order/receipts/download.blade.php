@@ -351,9 +351,15 @@
                 <tr>
                     <td style="width: 50%;height: 100px; text-align: left;"> 
                         <strong style="font-size: 13px;margin-left: 2px;">Requerido y aprobado por:</strong><br> 
-                        <span style="text-align: center; font-size: 12px;margin-left: 2px;">{{$purchase->sales_person->user_full_name}}</span><br>
+                        <span style="text-align: center; font-size: 12px;margin-left: 2px;">
+                            <!-- {{$purchase->sales_person->user_full_name}} -->
+                              Maibely Dios      
+                        </span><br>
                         <strong style="font-size: 13px;margin-left: 2px;">Area:</strong>
-                        <span style="text-align: center; font-size: 12px;margin-left: 2px;">{{$purchase->sales_person->custom_field_1}}  </span><br>
+                        <span style="text-align: center; font-size: 12px;margin-left: 2px;">
+                            <!-- {{$purchase->sales_person->custom_field_1}}   -->
+                             Administración de Ventas
+                        </span><br>
                         
                         <strong style="font-size: 13px;margin-left: 2px;">Fecha:</strong>
                         <span style="text-align: center; font-size: 12px;margin-left: 2px;">{{$date_release}}</span> 

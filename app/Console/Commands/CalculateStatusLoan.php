@@ -60,7 +60,7 @@ class CalculateStatusLoan extends Command
                 $letra_pagos = PaymentSchedule::query()
                     ->from('payment_schedules as ps')
                     ->leftJoin('schedule_versions as sv', 'sv.id', '=', 'ps.schedule_version_id')
-                    ->where('ps.loan_id', $prestamo->id)          
+                    ->where('ps.loan_id', $prestamo->id)
                     ->where('ps.status', 'overdue')
                     ->when(
                         $hasActiveVersion,
@@ -103,7 +103,7 @@ class CalculateStatusLoan extends Command
             }
 
             DB::commit();
-            Log::info('MiJob se ejecutó correctamente a las ' . now());
+            Log::info('MiJob de MORA se ejecutó correctamente a las ' . now());
 
         } catch (\Exception $e) {
             DB::rollBack();

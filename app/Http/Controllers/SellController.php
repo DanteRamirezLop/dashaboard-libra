@@ -1090,13 +1090,11 @@ class SellController extends Controller
                             DB::raw('vld.qty_available + transaction_sell_lines.quantity AS qty_available')
                         )
                         ->get();
-
+                        
         if (! empty($sell_details)) {
             foreach ($sell_details as $key => $value) {
-
                 $variation = Variation::with('media')->findOrFail($value->variation_id);
                 $sell_details[$key]->media = $variation->media;
-
                 //If modifier or combo sell line then unset
                 if (! empty($sell_details[$key]->parent_sell_line_id)) {
                     unset($sell_details[$key]);
@@ -1123,11 +1121,13 @@ class SellController extends Controller
                     }
                     $sell_details[$key]->lot_numbers = $lot_numbers;
 
+                    
                     if (! empty($value->sub_unit_id)) {
                         $value = $this->productUtil->changeSellLineUnit($business_id, $value);
                         $sell_details[$key] = $value;
                     }
 
+                    
                     if ($this->transactionUtil->isModuleEnabled('modifiers')) {
                         //Add modifier details to sel line details
                         $sell_line_modifiers = TransactionSellLine::where('parent_sell_line_id', $sell_details[$key]->transaction_sell_lines_id)
@@ -1149,6 +1149,7 @@ class SellController extends Controller
                         }
                     }
 
+                    
                     //Get details of combo items
                     if ($sell_details[$key]->product_type == 'combo') {
                         $sell_line_combos = TransactionSellLine::where('parent_sell_line_id', $sell_details[$key]->transaction_sell_lines_id)
@@ -1175,12 +1176,14 @@ class SellController extends Controller
                             $sell_details[$key]->qty_available = $sell_details[$key]->qty_available + $sell_details[$key]->quantity_ordered;
                         }
 
+                        
                         $sell_details[$key]->formatted_qty_available = $this->productUtil->num_f($sell_details[$key]->qty_available, false, null, true);
                     }
                 }
             }
         }
 
+        
         $commsn_agnt_setting = $business_details->sales_cmsn_agnt;
         $commission_agent = [];
         if ($commsn_agnt_setting == 'user') {
@@ -1188,6 +1191,8 @@ class SellController extends Controller
         } elseif ($commsn_agnt_setting == 'cmsn_agnt') {
             $commission_agent = User::saleCommissionAgentsDropdown($business_id);
         }
+
+
 
         $types = [];
         if (auth()->user()->can('supplier.create')) {
@@ -1210,6 +1215,8 @@ class SellController extends Controller
             $waiters = $this->productUtil->serviceStaffDropdown($business_id);
         }
 
+        
+
         $invoice_schemes = [];
         $default_invoice_schemes = null;
 
@@ -1228,6 +1235,9 @@ class SellController extends Controller
 
         $edit_discount = auth()->user()->can('edit_product_discount_from_sale_screen');
         $edit_price = auth()->user()->can('edit_product_price_from_sale_screen');
+
+
+        
 
         //Accounts
         $accounts = [];
@@ -1295,7 +1305,7 @@ class SellController extends Controller
             $currency_details = $this->transactionUtil->currencyDetails($business_id);
         }
 
-
+       
         return view('sell.edit')->with(compact('currency_details','business_details', 'taxes', 'sell_details', 'transaction', 'commission_agent', 'types', 'customer_groups', 'pos_settings', 'waiters', 'invoice_schemes', 'default_invoice_schemes', 'redeem_details', 'edit_discount', 'edit_price', 'shipping_statuses', 'warranties', 'statuses', 'sales_orders', 'payment_types', 'accounts', 'payment_lines', 'change_return', 'is_order_request_enabled', 'customer_due', 'users'));
     }
 

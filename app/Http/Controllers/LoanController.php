@@ -312,7 +312,7 @@ class LoanController extends Controller {
                 })
 
                  ->addColumn('total_remaining_mora', function ($row) {
-                    // TOTAL DEBIDO
+                    // Total debido
                     $total_remaining = $row->final_total - $row->total_paid;
                     if ($total_remaining < 0 && $total_remaining > -0.5) {
                         $total_remaining = 0;

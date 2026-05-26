@@ -66,7 +66,7 @@ class MsmNotification extends Command
                         ->from('payment_schedules as ps')
                         ->leftJoin('schedule_versions as sv', 'sv.id', '=', 'ps.schedule_version_id')
                         ->where('ps.loan_id', $loan->id)
-                        ->where('ps.status', '!=', 'paid')
+                        ->whereNotIn('ps.status', ['paid', 'refinanced'])
                         ->whereBetween('ps.sheduled_date', [$primerDiaMes, $ultimoDiaMes])
                         ->when(
                             $hasActiveVersion,
