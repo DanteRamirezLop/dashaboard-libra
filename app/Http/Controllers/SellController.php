@@ -102,7 +102,10 @@ class SellController extends Controller
                     $query->where('transactions.sub_type', '!=', 'project_invoice')
                           ->orWhereNull('transactions.sub_type');
                 });
-            }         
+            }
+
+            // Excluir ventas canceladas del listado principal
+            $sells->where('transactions.status', '!=', 'cancelled');         
 
             $permitted_locations = auth()->user()->permitted_locations();
             if ($permitted_locations != 'all') {
@@ -446,6 +449,11 @@ class SellController extends Controller
                             }
                         }
 
+
+                         if ($is_admin || auth()->user()->can('sell.delete')) {
+                            $html .= '<li><a href="'.action([\App\Http\Controllers\SellController::class, 'cancelSell'], [$row->id]).'" class="cancel-sell"><i class="fas fa-ban"></i> '.__('messages.cancel').'</a></li>';
+                        }
+
                         if (auth()->user()->can('sell.view') || auth()->user()->can('direct_sell.access')) {
                             if (! empty($row->document)) {
                                 $document_name = ! empty(explode('_', $row->document, 2)[1]) ? explode('_', $row->document, 2)[1] : $row->document;
@@ -456,9 +464,12 @@ class SellController extends Controller
                             }
                         }
 
+                       
+
                         if ($is_admin || auth()->user()->hasAnyPermission(['access_shipping', 'access_own_shipping', 'access_commission_agent_shipping'])) {
                             $html .= '<li><a href="#" data-href="'.action([\App\Http\Controllers\SellController::class, 'editShipping'], [$row->id]).'" class="btn-modal" data-container=".view_modal"><i class="fas fa-truck" aria-hidden="true"></i>'.__('lang_v1.edit_shipping').'</a></li>';
                         }
+                        
 
                         if ($row->type == 'sell') {
                             if (auth()->user()->can('print_invoice')) {
@@ -499,6 +510,8 @@ class SellController extends Controller
                         } else {
                             $html .= '<li><a href="#" data-href="'.action([\App\Http\Controllers\SellController::class, 'viewMedia'], ['model_id' => $row->id, 'model_type' => \App\Transaction::class, 'model_media_type' => 'shipping_document']).'" class="btn-modal" data-container=".view_modal"><i class="fas fa-paperclip" aria-hidden="true"></i>'.__('lang_v1.shipping_documents').'</a></li>';
                         }
+
+                        
 
                         $html .= '</ul></div>';
 
@@ -1321,7 +1334,6 @@ class SellController extends Controller
         }
 
         $business_id = request()->session()->get('user.business_id');
-
         $business_locations = BusinessLocation::forDropdown($business_id, false);
         $customers = Contact::customersDropdown($business_id, false);
 
@@ -1830,5 +1842,165 @@ class SellController extends Controller
             echo 'false';
             exit;
         }
+    }
+
+    public function getCancelledSells()
+    {
+        if (! $this->businessUtil->is_admin(auth()->user()) && ! auth()->user()->hasAnyPermission(['sell.view', 'direct_sell.view', 'view_own_sell_only'])) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $business_id = request()->session()->get('user.business_id');
+        $business_locations = BusinessLocation::forDropdown($business_id, false);
+        $customers = Contact::customersDropdown($business_id, false);
+        $sales_representative = User::forDropdown($business_id, false, false, true);
+
+        return view('sell.cancelled')
+            ->with(compact('business_locations', 'customers', 'sales_representative'));
+    }
+
+    public function getCancelledDatatable()
+    {
+        if (! request()->ajax()) {
+            abort(403);
+        }
+
+        $business_id = request()->session()->get('user.business_id');
+
+        $sells = Transaction::leftJoin('contacts', 'transactions.contact_id', '=', 'contacts.id')
+            ->leftJoin('users as u', 'transactions.created_by', '=', 'u.id')
+            ->join('business_locations AS bl', 'transactions.location_id', '=', 'bl.id')
+            ->leftJoin('transaction_sell_lines as tsl', function ($join) {
+                $join->on('transactions.id', '=', 'tsl.transaction_id')
+                    ->whereNull('tsl.parent_sell_line_id');
+            })
+            ->where('transactions.business_id', $business_id)
+            ->where('transactions.type', 'sell')
+            ->where('transactions.status', 'cancelled')
+            ->select(
+                'transactions.id',
+                'transactions.transaction_date',
+                'transactions.invoice_no',
+                'contacts.name',
+                'contacts.mobile',
+                'contacts.supplier_business_name',
+                'bl.name as business_location',
+                'transactions.final_total',
+                'transactions.payment_status',
+                'transactions.is_direct_sale',
+                DB::raw('COUNT(DISTINCT tsl.id) as total_items'),
+                DB::raw("CONCAT(COALESCE(u.surname, ''), ' ', COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, '')) as added_by")
+            );
+
+        $permitted_locations = auth()->user()->permitted_locations();
+        if ($permitted_locations != 'all') {
+            $sells->whereIn('transactions.location_id', $permitted_locations);
+        }
+
+        if (! $this->businessUtil->is_admin(auth()->user()) && ! auth()->user()->can('direct_sell.view')) {
+            $sells->where('transactions.created_by', request()->session()->get('user.id'));
+        }
+
+        if (! empty(request()->start_date) && ! empty(request()->end_date)) {
+            $sells->whereDate('transactions.transaction_date', '>=', request()->start_date)
+                  ->whereDate('transactions.transaction_date', '<=', request()->end_date);
+        }
+
+        if (! empty(request()->location_id)) {
+            $sells->where('transactions.location_id', request()->location_id);
+        }
+
+        if (! empty(request()->customer_id)) {
+            $sells->where('contacts.id', request()->customer_id);
+        }
+
+        if (! empty(request()->created_by)) {
+            $sells->where('transactions.created_by', request()->created_by);
+        }
+
+        $sells->groupBy('transactions.id');
+
+        return Datatables::of($sells)
+            ->editColumn('transaction_date', '{{@format_datetime($transaction_date)}}')
+            ->editColumn('final_total', function ($row) {
+                return '<span class="final-total" data-orig-value="' . $row->final_total . '">' . $this->transactionUtil->num_f($row->final_total, true) . '</span>';
+            })
+            ->editColumn('payment_status', function ($row) {
+                $payment_status = Transaction::getPaymentStatus($row);
+                return (string) view('sell.partials.payment_status', ['payment_status' => $payment_status, 'id' => $row->id]);
+            })
+            ->editColumn('name', function ($row) {
+                return ! empty($row->supplier_business_name) ? $row->supplier_business_name . ' <br> ' . $row->name : $row->name;
+            })
+            ->addColumn('action', function ($row) {
+                $html = '<div class="btn-group">
+                    <button type="button" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline tw-dw-btn-info tw-w-max dropdown-toggle"
+                        data-toggle="dropdown" aria-expanded="false">' .
+                    __('messages.actions') .
+                    '<span class="caret"></span><span class="sr-only">Toggle Dropdown</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-left" role="menu">';
+
+                $html .= '<li><a href="#" data-href="' . action([\App\Http\Controllers\SellController::class, 'show'], [$row->id]) . '" class="btn-modal" data-container=".view_modal"><i class="fas fa-eye" aria-hidden="true"></i> ' . __('messages.view') . '</a></li>';
+
+                if ($this->businessUtil->is_admin(auth()->user()) || auth()->user()->can('sell.delete')) {
+                    $html .= '<li class="divider"></li>';
+                    $html .= '<li><a href="' . action([\App\Http\Controllers\SellController::class, 'restoreSell'], [$row->id]) . '" class="restore-sell"><i class="fas fa-undo"></i> Restaurar</a></li>';
+                }
+
+                $html .= '</ul></div>';
+                return $html;
+            })
+            ->rawColumns(['action', 'final_total', 'payment_status', 'name'])
+            ->make(true);
+    }
+
+    public function cancelSell($id)
+    {
+        if (! auth()->user()->can('sell.delete') && ! $this->businessUtil->is_admin(auth()->user())) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $business_id = request()->session()->get('user.business_id');
+
+        $transaction = Transaction::where('id', $id)
+            ->where('business_id', $business_id)
+            ->where('type', 'sell')
+            ->firstOrFail();
+
+        $transaction->status = 'cancelled';
+        $transaction->save();
+
+        $output = [
+            'success' => true,
+            'msg' => __('lang_v1.success'),
+        ];
+
+        return response()->json($output);
+    }
+
+    public function restoreSell($id)
+    {
+        if (! auth()->user()->can('sell.delete') && ! $this->businessUtil->is_admin(auth()->user())) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $business_id = request()->session()->get('user.business_id');
+
+        $transaction = Transaction::where('id', $id)
+            ->where('business_id', $business_id)
+            ->where('type', 'sell')
+            ->where('status', 'cancelled')
+            ->firstOrFail();
+
+        $transaction->status = 'final';
+        $transaction->save();
+
+        $output = [
+            'success' => true,
+            'msg' => __('lang_v1.success'),
+        ];
+
+        return response()->json($output);
     }
 }

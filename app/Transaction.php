@@ -8,7 +8,7 @@ class Transaction extends Model
 {
     //Transaction types = ['purchase','sell','expense','stock_adjustment','sell_transfer','purchase_transfer','opening_stock','sell_return','opening_balance','purchase_return', 'payroll', 'expense_refund', 'sales_order', 'purchase_order']
 
-    //Transaction status = ['received','pending','ordered','draft','final', 'in_transit', 'completed']
+    //Transaction status = ['received','pending','ordered','draft','final', 'in_transit', 'completed'] - 'cancelled'
 
     /**
      * The attributes that aren't mass assignable.

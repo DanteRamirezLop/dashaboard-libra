@@ -377,6 +377,31 @@
                 sell_table.ajax.reload();
             });
 
+            $(document).on('click', '.cancel-sell', function(e) {
+                e.preventDefault();
+                var href = $(this).attr('href');
+                swal({
+                    title: LANG.sure,
+                    icon: 'warning',
+                    buttons: true,
+                    dangerMode: true,
+                }).then(function(willCancel) {
+                    if (willCancel) {
+                        $.ajax({
+                            method: 'GET',
+                            url: href,
+                            dataType: 'json',
+                            success: function(result) {
+                                if (result.success) {
+                                    toastr.success(result.msg);
+                                    sell_table.ajax.reload();
+                                }
+                            },
+                        });
+                    }
+                });
+            });
+
             // Aplicar símbolo de moneda correcto al abrir el modal de detalle de venta
             // $(document).on('shown.bs.modal', '.view_modal', function() {
             //     var modal_dialog = $(this).find('div.modal-xl');
