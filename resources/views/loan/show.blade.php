@@ -129,7 +129,6 @@
        
         @component('components.widget', ['class' => 'box-primary', 'title' => __('loans.all_lletters_payments')]) 
             <div class="box-tools grap-2">
-                <!-- <button class="tw-dw-btn tw-dw-btn-primary tw-dw-btn-sm tw-text-white" id="update-btn" data-id="{{$loan->id}}" > <i class="fa fa-sync "></i> Actualizar Estados</button>   -->
                  @if($countVersion) 
                     <span class="label label-default text-center ">
                          Nuevo conograma de pagos versión <span class="label" style="background-color: #fff !important;color: #615ca8 !important;">{{$countVersion}}</span>
@@ -143,7 +142,6 @@
             </div>  
         @endcomponent
 
-        
         @if($there_is_mora)
             <div class="box box-warning" >
                 <div class="box-body text-center">
@@ -152,16 +150,17 @@
                 </div>
             </div>
         @else
-            @component('components.widget', ['class' => 'box-success', 'title' => '']) 
-                <!-- <a class="margin-left-10 btn btn btn-success pull-right add_payment_modal" href="{{route('add.capital.loan',['loan_id'=>$loan->id,'type'=>'total']) }}">
-                    <i class="fas fa fa-money-bill-wave-alt"></i> Pagar todo
-                </a> -->
-                <a class="margin-left-10 tw-dw-btn tw-dw-btn-primary tw-text-white tw-dw-btn-md pull-right add_payment_modal" href="{{route('add.capital.loan',['loan_id'=>$loan->id,'type'=>'parcial']) }}">
-                    <i class="fas fa fa-hand-holding-usd"></i> Pagar a capital
-                </a>
-            @endcomponent
-        @endif 
-        
+            @if($loan->status <> 'paid')
+                @component('components.widget', ['class' => 'box-success', 'title' => '']) 
+                    <!-- <a class="margin-left-10 btn btn btn-success pull-right add_payment_modal" href="{{route('add.capital.loan',['loan_id'=>$loan->id,'type'=>'total']) }}">
+                        <i class="fas fa fa-money-bill-wave-alt"></i> Pagar todo
+                    </a> -->
+                    <a class="margin-left-10 tw-dw-btn tw-dw-btn-primary tw-text-white tw-dw-btn-md pull-right add_payment_modal" href="{{route('add.capital.loan',['loan_id'=>$loan->id,'type'=>'parcial']) }}">
+                        <i class="fas fa fa-hand-holding-usd"></i> Pagar a capital
+                    </a>
+                @endcomponent
+            @endif
+        @endif
 </section>
 <!-- /.content -->
 <div class="modal fade payment_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
