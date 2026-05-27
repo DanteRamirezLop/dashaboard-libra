@@ -2476,20 +2476,20 @@ class ReportController extends Controller
             // remove above line from select and below join becouse customer search not work
             
                 ->leftJoin(DB::raw("(
-                    SELECT 
-                        tp.id as payment_id, 
-                        IF(tp.transaction_id IS NULL, 
-                            (SELECT c.name 
+                    SELECT
+                        tp.id as payment_id,
+                        IF(tp.transaction_id IS NULL,
+                            (SELECT CONCAT(COALESCE(CONCAT(c.supplier_business_name, '<br>'), ''), COALESCE(c.name, ''))
                              FROM transactions as ts
-                             JOIN contacts as c ON ts.contact_id = c.id 
+                             LEFT JOIN contacts as c ON ts.contact_id = c.id
                              WHERE ts.id = (
-                                SELECT tps.transaction_id 
-                                FROM transaction_payments as tps 
-                                WHERE tps.parent_id = tp.id 
+                                SELECT tps.transaction_id
+                                FROM transaction_payments as tps
+                                WHERE tps.parent_id = tp.id
                                 LIMIT 1
                              )
-                            ), 
-                            CONCAT(COALESCE(CONCAT(c.supplier_business_name, '<br>'), ''), c.name)
+                            ),
+                            CONCAT(COALESCE(CONCAT(c.supplier_business_name, '<br>'), ''), COALESCE(c.name, ''))
                         ) as customer_name
                     FROM transaction_payments tp
                     LEFT JOIN transactions t ON tp.transaction_id = t.id
