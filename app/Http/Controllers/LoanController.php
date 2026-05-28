@@ -124,6 +124,13 @@ class LoanController extends Controller {
             ->when(! empty(request()->input('service_staffs')), function ($q) {
                 $q->where('loans.waiter', request()->input('service_staffs'));
             })
+            ->when(! empty(request()->input('loan_list_filter_status')), function ($q) {
+                $q->where('loans.status', request()->input('loan_list_filter_status'));
+            })
+            ->when(request()->input('only_repossessed'),
+                fn ($q) => $q->whereNotNull('loans.repossessed_at'),
+                fn ($q) => $q->whereNull('loans.repossessed_at')
+            )
             ->select(
                 'loans.id',
                 'loans.balance_to_financed',
@@ -143,8 +150,8 @@ class LoanController extends Controller {
                 DB::raw('(SELECT SUM(IF(TP.is_return = 1,-1*TP.amount,TP.amount))
                         FROM transaction_payments AS TP
                         WHERE TP.transaction_id = transactions.id) as total_paid'),
-       
-                DB::raw('(SELECT 
+
+                DB::raw('(SELECT
                             SUM(IF(TP.is_return = 1,-1*TP.amount,TP.amount))
                             FROM transaction_payments AS TP
                             WHERE TP.transaction_id = transactions.id AND TP.payment_schedule_id IS NOT NULL
@@ -153,17 +160,7 @@ class LoanController extends Controller {
                 DB::raw('COALESCE(psa.delay,0) as delay'),
                 DB::raw('COALESCE(da.mora,0) as mora'),
                 DB::raw('COALESCE(psa.for_due,0) as for_due'),
-            )->get()
-            ->when(request()->input('only_delay'), function ($collection) {
-                return $collection->filter(function ($row) {
-                    $mora = round($row->mora);
-                    $total_delay = $mora ? bcsub($row->delay, $row->total_only_payments, 4) : 0;
-                    if ($total_delay < 0 && $total_delay > -0.5) {
-                        $total_delay = 0;
-                    }
-                    return $total_delay != 0;
-                });
-            });
+            )->get();
 
             return Datatables::of($loans)->addColumn(
                     'action',
@@ -199,7 +196,7 @@ class LoanController extends Controller {
                                 }
                                 if (!in_array($row->status, ['repossessed', 'paid', 'cancelled'])) {
                                     $html .= '<li class="divider"></li>';
-                                    $html .= '<li><a href="#" class="open_repossess_modal" data-id="'.$row->id.'" data-href="'.route('loan.repossess', $row->id).'"><i class="fa fa-truck-pickup" aria-hidden="true"></i> Reposición</a></li>';
+                                    $html .= '<li><a href="#" class="open_repossess_modal" data-id="'.$row->id.'" data-href="'.route('loan.repossess', $row->id).'"><i class="fa fa-retweet" aria-hidden="true"></i> Reposición</a></li>';
                                 }
                         }else{
                           $html = '<div class="btn-group">
@@ -1818,8 +1815,7 @@ class LoanController extends Controller {
     public function repossessStore(Request $request, $id)
     {
         $request->validate([
-            'repossession_date'   => 'required|date',
-            'repossession_reason' => 'required|string|max:1000',
+            'repossession_date' => 'required|date',
         ]);
 
         try {
@@ -1836,9 +1832,8 @@ class LoanController extends Controller {
                 ->where('status', 'late')
                 ->delete();
 
-            $loan->status             = 'repossessed';
-            $loan->repossessed_at     = Carbon::parse($request->repossession_date);
-            $loan->repossession_reason = $request->repossession_reason;
+            $loan->status         = 'repossessed';
+            $loan->repossessed_at = Carbon::parse($request->repossession_date);
             $loan->save();
 
             DB::commit();

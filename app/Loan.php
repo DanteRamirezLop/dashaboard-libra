@@ -55,7 +55,6 @@ class Loan extends Model
         'type',
         'refinanced_at',
         'repossessed_at',
-        'repossession_reason',
     ];
     
     public function contact()

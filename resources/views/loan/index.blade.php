@@ -75,11 +75,11 @@
 <div class="modal fade" id="repossess_modal" tabindex="-1" role="dialog" aria-labelledby="repossessModalLabel">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
-            <div class="modal-header" style="background:#c0392b; color:#fff;">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar" style="color:#fff;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
                     <span aria-hidden="true">&times;</span>
                 </button>
-                <h4 class="modal-title" id="repossessModalLabel"><i class="fa fa-truck-pickup"></i> Registrar Reposición</h4>
+                <h4 class="modal-title" id="repossessModalLabel"> Registrar Reposición</h4>
             </div>
             <form id="repossess_form">
                 <div class="modal-body">
@@ -88,19 +88,14 @@
                         <label for="repossession_date">Fecha de reposición <span class="text-danger">*</span></label>
                         <input type="date" class="form-control" id="repossession_date" name="repossession_date" required>
                     </div>
-                    <div class="form-group">
-                        <label for="repossession_reason">Motivo de reposición <span class="text-danger">*</span></label>
-                        <textarea class="form-control" id="repossession_reason" name="repossession_reason" rows="4"
-                            placeholder="Describe el motivo de la reposición..." required maxlength="1000"></textarea>
-                    </div>
                     <div class="alert alert-warning" style="margin-bottom:0;">
                         <i class="fa fa-exclamation-triangle"></i>
                         Esta acción cambiará el estado del préstamo a <strong>Reposeído</strong> y <strong>pausará la mora</strong> acumulada.
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-danger"><i class="fa fa-check"></i> Confirmar reposición</button>
+                    <button type="button" class="tw-dw-btn tw-dw-btn-neutral tw-text-white" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="tw-dw-btn tw-dw-btn-primary tw-text-white"><i class="fa fa-check"></i> Confirmar reposición</button>
                 </div>
             </form>
         </div>
@@ -130,8 +125,9 @@ $(document).ready( function(){
                         waiter = '';
                     }
                 d.service_staffs = waiter;
-                if ($('#only_delay').is(':checked')) {
-                    d.only_delay = 1;
+                d.loan_list_filter_status = $('#loan_list_filter_status').val();
+                if ($('#only_repossessed').is(':checked')) {
+                    d.only_repossessed = 1;
                 }
             }
         },
@@ -207,7 +203,11 @@ $(document).ready( function(){
         loan_table.ajax.reload();
     });
 
-     $('#only_delay').on('ifChanged', function(event) {
+    $(document).on('change', '#loan_list_filter_status', function() {
+        loan_table.ajax.reload();
+    });
+
+    $('#only_repossessed').on('ifChanged', function(event) {
         loan_table.ajax.reload();
     });
 
@@ -278,7 +278,6 @@ $(document).on('click', '.open_repossess_modal', function(e) {
     var href = $(this).data('href');
     $('#repossess_loan_url').val(href);
     $('#repossession_date').val('');
-    $('#repossession_reason').val('');
     $('#repossess_modal').modal('show');
 });
 
@@ -286,10 +285,9 @@ $('#repossess_form').on('submit', function(e) {
     e.preventDefault();
     var url = $('#repossess_loan_url').val();
     var date = $('#repossession_date').val();
-    var reason = $('#repossession_reason').val();
 
-    if (!date || !reason.trim()) {
-        toastr.error('Completa la fecha y el motivo.');
+    if (!date) {
+        toastr.error('Ingresa la fecha de reposición.');
         return;
     }
 
@@ -299,7 +297,6 @@ $('#repossess_form').on('submit', function(e) {
         data: {
             _token: $('meta[name="csrf-token"]').attr('content'),
             repossession_date: date,
-            repossession_reason: reason,
         },
         dataType: 'json',
         success: function(result) {

@@ -10,14 +10,13 @@ return new class extends Migration
     {
         Schema::table('loans', function (Blueprint $table) {
             $table->timestamp('repossessed_at')->nullable()->after('refinanced_at');
-            $table->text('repossession_reason')->nullable()->after('repossessed_at');
         });
     }
 
     public function down(): void
     {
         Schema::table('loans', function (Blueprint $table) {
-            $table->dropColumn(['repossessed_at', 'repossession_reason']);
+            $table->dropColumn('repossessed_at');
         });
     }
 };

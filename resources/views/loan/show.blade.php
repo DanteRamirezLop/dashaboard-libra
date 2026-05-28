@@ -150,7 +150,7 @@
                 </div>
             </div>
         @else
-            @if($loan->status <> 'paid')
+            @if($loan->status == 'partial')
                 @component('components.widget', ['class' => 'box-success', 'title' => '']) 
                     <!-- <a class="margin-left-10 btn btn btn-success pull-right add_payment_modal" href="{{route('add.capital.loan',['loan_id'=>$loan->id,'type'=>'total']) }}">
                         <i class="fas fa fa-money-bill-wave-alt"></i> Pagar todo
@@ -158,6 +158,7 @@
                     <a class="margin-left-10 tw-dw-btn tw-dw-btn-primary tw-text-white tw-dw-btn-md pull-right add_payment_modal" href="{{route('add.capital.loan',['loan_id'=>$loan->id,'type'=>'parcial']) }}">
                         <i class="fas fa fa-hand-holding-usd"></i> Pagar a capital
                     </a>
+                    
                 @endcomponent
             @endif
         @endif

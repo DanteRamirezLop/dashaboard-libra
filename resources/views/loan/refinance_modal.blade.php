@@ -212,7 +212,7 @@
         </div>{{-- /modal-body --}}
 
         <div class="modal-footer">
-            <button type="button" class="tw-dw-btn tw-dw-btn-neutral tw-text-white " data-dismiss="modal">
+            <button type="button" class="tw-dw-btn tw-dw-btn-neutral tw-text-white" data-dismiss="modal">
                 Cancelar
             </button>
 
