@@ -13,7 +13,7 @@ use Carbon\Carbon;
 
 class Loan extends Model
 {
-    //Loands status = ['quotation','approved','partial','in arrears','cancelled','paid']
+    //Loands status = ['quotation','approved','partial','in arrears','cancelled','paid','repossessed']
     use HasFactory;
     protected $table = 'loans';
     protected $fillable = [
@@ -54,6 +54,8 @@ class Loan extends Model
         'interest_saved',
         'type',
         'refinanced_at',
+        'repossessed_at',
+        'repossession_reason',
     ];
     
     public function contact()

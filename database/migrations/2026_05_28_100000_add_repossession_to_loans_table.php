@@ -1,0 +1,23 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('loans', function (Blueprint $table) {
+            $table->timestamp('repossessed_at')->nullable()->after('refinanced_at');
+            $table->text('repossession_reason')->nullable()->after('repossessed_at');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('loans', function (Blueprint $table) {
+            $table->dropColumn(['repossessed_at', 'repossession_reason']);
+        });
+    }
+};

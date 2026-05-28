@@ -72,6 +72,40 @@
 <div class="modal fade refinance_modal" tabindex="-1" role="dialog"
     aria-labelledby="refinanceModalLabel">
 </div>
+<div class="modal fade" id="repossess_modal" tabindex="-1" role="dialog" aria-labelledby="repossessModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#c0392b; color:#fff;">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar" style="color:#fff;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="repossessModalLabel"><i class="fa fa-truck-pickup"></i> Registrar Reposición</h4>
+            </div>
+            <form id="repossess_form">
+                <div class="modal-body">
+                    <input type="hidden" id="repossess_loan_url" value="">
+                    <div class="form-group">
+                        <label for="repossession_date">Fecha de reposición <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="repossession_date" name="repossession_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="repossession_reason">Motivo de reposición <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="repossession_reason" name="repossession_reason" rows="4"
+                            placeholder="Describe el motivo de la reposición..." required maxlength="1000"></textarea>
+                    </div>
+                    <div class="alert alert-warning" style="margin-bottom:0;">
+                        <i class="fa fa-exclamation-triangle"></i>
+                        Esta acción cambiará el estado del préstamo a <strong>Reposeído</strong> y <strong>pausará la mora</strong> acumulada.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger"><i class="fa fa-check"></i> Confirmar reposición</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 <div class="modal fade payment_modal" tabindex="-1" role="dialog"
     aria-labelledby="gridSystemModalLabel">
 </div>
@@ -235,6 +269,50 @@ $(document).on('click', '.clear_arrears_btn', function(e) {
                     toastr.error('Error al procesar la solicitud.');
                 }
             });
+        }
+    });
+});
+
+$(document).on('click', '.open_repossess_modal', function(e) {
+    e.preventDefault();
+    var href = $(this).data('href');
+    $('#repossess_loan_url').val(href);
+    $('#repossession_date').val('');
+    $('#repossession_reason').val('');
+    $('#repossess_modal').modal('show');
+});
+
+$('#repossess_form').on('submit', function(e) {
+    e.preventDefault();
+    var url = $('#repossess_loan_url').val();
+    var date = $('#repossession_date').val();
+    var reason = $('#repossession_reason').val();
+
+    if (!date || !reason.trim()) {
+        toastr.error('Completa la fecha y el motivo.');
+        return;
+    }
+
+    $.ajax({
+        method: 'POST',
+        url: url,
+        data: {
+            _token: $('meta[name="csrf-token"]').attr('content'),
+            repossession_date: date,
+            repossession_reason: reason,
+        },
+        dataType: 'json',
+        success: function(result) {
+            if (result.success) {
+                $('#repossess_modal').modal('hide');
+                toastr.success(result.msg);
+                loan_table.ajax.reload();
+            } else {
+                toastr.error(result.msg);
+            }
+        },
+        error: function() {
+            toastr.error('Error al procesar la reposición.');
         }
     });
 });

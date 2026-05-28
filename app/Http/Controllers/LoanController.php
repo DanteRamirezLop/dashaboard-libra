@@ -197,6 +197,10 @@ class LoanController extends Controller {
                                         $html .= '<li><a href="#" class="open_refinance_modal" data-href="'.route('loan.refinance.form', $row->id).'"><i class="fa fa-landmark" aria-hidden="true"></i> Refinanciar</a></li>';
                                     }
                                 }
+                                if (!in_array($row->status, ['repossessed', 'paid', 'cancelled'])) {
+                                    $html .= '<li class="divider"></li>';
+                                    $html .= '<li><a href="#" class="open_repossess_modal" data-id="'.$row->id.'" data-href="'.route('loan.repossess', $row->id).'"><i class="fa fa-truck-pickup" aria-hidden="true"></i> Reposición</a></li>';
+                                }
                         }else{
                           $html = '<div class="btn-group">
                                     <button type="button" class="btn btn-info dropdown-toggle btn-xs"
@@ -233,9 +237,13 @@ class LoanController extends Controller {
                             case"paid":
                                 $label = '<span class="label label-success">pagado</span>';
                                 break;
-                            case"refinanced":
-                                $label = '<span class="label label-warning">Refinanciado</span>';
+                            case"repossessed":
+                                $label = '<span class="label label-warning">Reposeido</span>';
                                 break;
+                            default:
+                                $label = '<span class="label label-warning"> - </span>';
+                            break;
+
                         }
                         return $label;
                      }
@@ -1804,6 +1812,41 @@ class LoanController extends Controller {
             return response()->json(['success' => true, 'msg' => 'Fecha actualizada correctamente.']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'msg' => 'Error al actualizar la fecha.']);
+        }
+    }
+
+    public function repossessStore(Request $request, $id)
+    {
+        $request->validate([
+            'repossession_date'   => 'required|date',
+            'repossession_reason' => 'required|string|max:1000',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $loan = Loan::findOrFail($id);
+
+            if ($loan->status === 'repossessed') {
+                return response()->json(['success' => false, 'msg' => 'El préstamo ya está marcado como Reposeído.']);
+            }
+
+            // Pausar mora: soft-delete de todos los registros de mora activos
+            \App\Delay::where('loan_id', $loan->id)
+                ->where('status', 'late')
+                ->delete();
+
+            $loan->status             = 'repossessed';
+            $loan->repossessed_at     = Carbon::parse($request->repossession_date);
+            $loan->repossession_reason = $request->repossession_reason;
+            $loan->save();
+
+            DB::commit();
+
+            return response()->json(['success' => true, 'msg' => 'Préstamo marcado como Reposeído y mora pausada.']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'msg' => 'Error al procesar la reposición.']);
         }
     }
 }

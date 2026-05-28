@@ -503,6 +503,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('loan/refinance/{id}', [LoanController::class, 'refinanceForm'])->name('loan.refinance.form');
     Route::post('loan/refinance/{id}', [LoanController::class, 'refinanceStore'])->name('loan.refinance.store');
     Route::patch('loan/{id}/clear-arrears', [LoanController::class, 'clearArrears'])->name('loan.clear-arrears');
+    Route::post('loan/{id}/repossess', [LoanController::class, 'repossessStore'])->name('loan.repossess');
 
     Route::resource('types-of-service', TypesOfServiceController::class);
     Route::get('sells/edit-shipping/{id}', [SellController::class, 'editShipping']);

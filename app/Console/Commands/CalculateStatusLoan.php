@@ -48,7 +48,9 @@ class CalculateStatusLoan extends Command
             $numeros = [];
 
             DB::beginTransaction();
-            $prestamos = Loan::whereIn('status', ['approved', 'in arrears', 'partial'])->get();
+            $prestamos = Loan::whereIn('status', ['approved', 'in arrears', 'partial'])
+                ->whereNull('repossessed_at')
+                ->get();
             foreach ($prestamos as $prestamo) {
                 // ¿Existe una versión activa para este préstamo?
                 $hasActiveVersion = DB::table('payment_schedules as psx')
