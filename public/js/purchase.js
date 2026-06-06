@@ -861,7 +861,7 @@ function update_purchase_entry_row_values(row) {
   
         //REDONDEAR EN VENTA
         row_subtotal_after_tax = quantity_unit_cost_price_after_tax;
-        multiple = 0.05; // REDONDEO PARA EVITAR  EL 99.99
+        multiple = 0.01; // REDONDEO PARA EVITAR  EL 99.99 USAR 0.05 
         if(multiple > 0) { 
             x = new Decimal(quantity_unit_cost_price_after_tax);
             row_subtotal_after_tax = x.toNearest(multiple); 
