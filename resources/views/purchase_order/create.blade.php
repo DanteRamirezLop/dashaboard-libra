@@ -128,6 +128,20 @@
 				</div>
 			</div> 
 
+			<div class="col-sm-2 hide" id="detraccion_row">
+				<div class="form-group">
+					{!! Form::label('service_custom_field_1', 'Afecto a detracción:') !!}
+					{!! Form::select('service_custom_field_1', ['no' => 'No', 'si' => 'Sí'], 'no', ['class' => 'form-control', 'id' => 'service_custom_field_1']); !!}
+				</div>
+			</div>
+
+			<div class="col-sm-2 hide" id="service_custom_field_2_row">
+				<div class="form-group">
+					{!! Form::label('service_custom_field_2', 'Porcentaje detracción (%):') !!}
+					{!! Form::number('service_custom_field_2', null, ['class' => 'form-control', 'id' => 'service_custom_field_2', 'min' => 1, 'max' => 100, 'placeholder' => 'Ej: 12']); !!}
+				</div>
+			</div>
+
 			<!-- <div class="col-md-3">
 		          <div class="form-group">
 		            <div class="multi-input">
@@ -550,6 +564,29 @@
 			if($('#location_id').length){
 				$('#location_id').change();
 			}
+
+			// Detracción logic
+			$('#custom_field_1').on('change', function() {
+				if ($(this).val() === 'Servicios') {
+					$('#detraccion_row').removeClass('hide');
+				} else {
+					$('#detraccion_row').addClass('hide');
+					$('#service_custom_field_2_row').addClass('hide');
+					$('#service_custom_field_1').val('no');
+					$('#service_custom_field_2').val('').removeAttr('required');
+				}
+			});
+
+			$('#service_custom_field_1').on('change', function() {
+				if ($(this).val() === 'si') {
+					$('#service_custom_field_2_row').removeClass('hide');
+					$('#service_custom_field_2').attr('required', true);
+				} else {
+					$('#service_custom_field_2_row').addClass('hide');
+					$('#service_custom_field_2').val('').removeAttr('required');
+				}
+			});
+
 
 			$('#currency_id').on('change', function() {
 				window.onbeforeunload = null; 

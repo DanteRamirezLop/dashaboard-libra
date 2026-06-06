@@ -165,8 +165,23 @@
                 </div>
             </div>
 
-            
+            <div class="col-sm-2 @if($purchase->custom_field_1 != 'Servicios') hide @endif" id="detraccion_row">
+                <div class="form-group">
+                    {!! Form::label('service_custom_field_1', 'Afecto a detracción:') !!}
+                    <select name="service_custom_field_1" id="service_custom_field_1" class="form-control">
+                        <option value="no" @if($purchase->service_custom_field_1 != 'si') selected @endif>No</option>
+                        <option value="si" @if($purchase->service_custom_field_1 == 'si') selected @endif>Sí</option>
+                    </select>
+                </div>
+            </div>
 
+            <div class="col-sm-2 @if($purchase->service_custom_field_1 != 'si') hide @endif" id="detraccion_porcentaje_row">
+                <div class="form-group">
+                    {!! Form::label('service_custom_field_2', 'Porcentaje detracción (%):') !!}
+                    {!! Form::number('service_custom_field_2', $purchase->service_custom_field_2, ['class' => 'form-control', 'id' => 'service_custom_field_2', 'min' => 1, 'max' => 100, 'placeholder' => 'Ej: 12', ($purchase->service_custom_field_1 == 'si' ? 'required' : '')]); !!}
+                </div>
+            </div>
+            
         </div>
         @if(!empty($common_settings['enable_purchase_requisition']))
         <div class="row">
