@@ -523,7 +523,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
 
     Route::get('view-media/{model_id}', [SellController::class, 'viewMedia']);
 
-    //common controller for document & note
+    //common controller for document & note 
     Route::get('get-document-note-page', [DocumentAndNoteController::class, 'getDocAndNoteIndexPage']);
     Route::post('post-document-upload', [DocumentAndNoteController::class, 'postMedia']);
     Route::resource('note-documents', DocumentAndNoteController::class);

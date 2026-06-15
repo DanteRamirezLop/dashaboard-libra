@@ -310,7 +310,7 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 {!! Form::label('option_gps', 'GPS (meses): ', ['style' => 'margin-left:20px;']) !!}
-                                {!! Form::select('option_gps', ['0' => 'Sin GPS', '12' => '12 meses', '24' => '24 meses','36' => '36 meses'], '0', ['id' => 'option_gps', 'class' => 'form-control', 'style' => 'margin-left:20px; width:calc(100% - 20px);']) !!}
+                                {!! Form::select('option_gps', ['0' => 'Sin GPS', '4' => '4 meses', '5' => '5 meses', '6' => '6 meses', '7' => '7 meses', '8' => '8 meses', '9' => '9 meses', '10' => '10 meses', '12' => '12 meses', '14' => '14 meses', '16' => '16 meses', '18' => '18 meses', '20' => '20 meses', '22' => '22 meses', '24' => '24 meses', '28' => '28 meses', '30' => '30 meses', '32' => '32 meses', '36' => '36 meses'], '0', ['id' => 'option_gps', 'class' => 'form-control', 'style' => 'margin-left:20px; width:calc(100% - 20px);']) !!}
                             </div>
                             <div class="form-group">
                                 <div style="margin-left:20px; font-size: small;">
@@ -324,7 +324,7 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 {!! Form::label('option_seguro', 'Seguro (meses): ', ['style' => 'margin-left:20px;']) !!}
-                                {!! Form::select('option_seguro', ['0' => 'Sin Seguro', '12' => '12 meses', '24' => '24 meses','36' => '36 meses'], '0', ['id' => 'option_seguro', 'class' => 'form-control', 'style' => 'margin-left:20px; width:calc(100% - 20px);']) !!}
+                                {!! Form::select('option_seguro', ['0' => 'Sin Seguro', '4' => '4 meses', '5' => '5 meses', '6' => '6 meses', '7' => '7 meses', '8' => '8 meses', '9' => '9 meses', '10' => '10 meses', '12' => '12 meses', '14' => '14 meses', '16' => '16 meses', '18' => '18 meses', '20' => '20 meses', '22' => '22 meses', '24' => '24 meses', '28' => '28 meses', '30' => '30 meses', '32' => '32 meses', '36' => '36 meses'], '0', ['id' => 'option_seguro', 'class' => 'form-control', 'style' => 'margin-left:20px; width:calc(100% - 20px);']) !!}
                             </div>
                             <div class="form-group">
                                 <div style="margin-left:20px; font-size: small;">
@@ -473,15 +473,22 @@
             });
 
             $('input[type=radio][name=tipo_calculo]').on('ifChecked', function(){
-                if ($(this).val() === 'fijo') {
+                var val = $(this).val();
+             
+                // Sincronizar visual de iCheck sin pasar por su API (evita cascada de eventos)
+                $('input[name="tipo_calculo"]').closest('.iradio_square-blue').removeClass('checked');
+                $(this).closest('.iradio_square-blue').addClass('checked');
+
+                if (val === 'fijo') {
                     $('#info_valores_fijos').show();
+
                 } else {
                     $('#info_valores_fijos').hide();
+                    calcularGPS();
+                    calcularSeguro();
                 }
-                calcularGPS();
-                calcularSeguro();
             });
-            
+
              //Calculate % initial en porcentage
              $('#pay_initial').on('input', function() {
                 let precio = parseFloat($('#prices').val());
@@ -626,10 +633,12 @@
                     return;
                 }
 
+                var años = meses <= 12 ? 1 : (meses <= 24 ? 2 : 3);
+
                 var inicial, financiar;
                 if (getMetodoCalculo() === 'fijo') {
-                    inicial   = GPS_FIJO_INICIAL;
-                    financiar = GPS_FIJO_FINANCIAR;
+                    inicial   = GPS_FIJO_INICIAL   * años;
+                    financiar = GPS_FIJO_FINANCIAR * años;
                 } else {
                     var gpsPorMes = parseFloat($('#product option:selected').data('gps')) || 0;
                     if (gpsPorMes <= 0) {
@@ -639,7 +648,7 @@
                         $('#gps_finance_input').val(0);
                         return;
                     }
-                    var total = gpsPorMes * meses;
+                    var total = gpsPorMes * 12 * años;
                     inicial   = total / 2;
                     financiar = total / 2;
                 }
