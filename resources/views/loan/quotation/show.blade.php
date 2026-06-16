@@ -152,7 +152,7 @@
 @stop
 @section('javascript')
     <script type="text/javascript">
-        //Date range as a button
+        //Date range as a button - Extra
         $('#purchase_list_filter_date_range').daterangepicker(
             dateRangeSettings,
             function (start, end) {
