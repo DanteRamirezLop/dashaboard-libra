@@ -224,6 +224,8 @@
                         {!! Form::label('allow_decimal', 'Cuotas' . ':*') !!} 
                         <select name="number_month" id="number_month" class="form-control" required>
                             <option value="0" selected disabled>@lang('messages.please_select' )</option>
+                            <option value="2">2 meses</option>
+                            <option value="3">3 meses</option>
                             <option value="4">4 meses</option>
                             <option value="5">5 meses</option>
                             <option value="6">6 meses</option>
@@ -310,7 +312,7 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 {!! Form::label('option_gps', 'GPS (meses): ', ['style' => 'margin-left:20px;']) !!}
-                                {!! Form::select('option_gps', ['0' => 'Sin GPS', '4' => '4 meses', '5' => '5 meses', '6' => '6 meses', '7' => '7 meses', '8' => '8 meses', '9' => '9 meses', '10' => '10 meses', '12' => '12 meses', '14' => '14 meses', '16' => '16 meses', '18' => '18 meses', '20' => '20 meses', '22' => '22 meses', '24' => '24 meses', '28' => '28 meses', '30' => '30 meses', '32' => '32 meses', '36' => '36 meses'], '0', ['id' => 'option_gps', 'class' => 'form-control', 'style' => 'margin-left:20px; width:calc(100% - 20px);']) !!}
+                                {!! Form::select('option_gps', ['0' => 'Sin GPS','2' => '2 meses','3' => '3 meses', '4' => '4 meses', '5' => '5 meses', '6' => '6 meses', '7' => '7 meses', '8' => '8 meses', '9' => '9 meses', '10' => '10 meses', '12' => '12 meses', '14' => '14 meses', '16' => '16 meses', '18' => '18 meses', '20' => '20 meses', '22' => '22 meses', '24' => '24 meses', '28' => '28 meses', '30' => '30 meses', '32' => '32 meses', '36' => '36 meses'], '0', ['id' => 'option_gps', 'class' => 'form-control', 'style' => 'margin-left:20px; width:calc(100% - 20px);']) !!}
                             </div>
                             <div class="form-group">
                                 <div style="margin-left:20px; font-size: small;">
@@ -324,7 +326,7 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 {!! Form::label('option_seguro', 'Seguro (meses): ', ['style' => 'margin-left:20px;']) !!}
-                                {!! Form::select('option_seguro', ['0' => 'Sin Seguro', '4' => '4 meses', '5' => '5 meses', '6' => '6 meses', '7' => '7 meses', '8' => '8 meses', '9' => '9 meses', '10' => '10 meses', '12' => '12 meses', '14' => '14 meses', '16' => '16 meses', '18' => '18 meses', '20' => '20 meses', '22' => '22 meses', '24' => '24 meses', '28' => '28 meses', '30' => '30 meses', '32' => '32 meses', '36' => '36 meses'], '0', ['id' => 'option_seguro', 'class' => 'form-control', 'style' => 'margin-left:20px; width:calc(100% - 20px);']) !!}
+                                {!! Form::select('option_seguro', ['0' => 'Sin Seguro','2' => '2 meses','3' => '3 meses', '4' => '4 meses', '5' => '5 meses', '6' => '6 meses', '7' => '7 meses', '8' => '8 meses', '9' => '9 meses', '10' => '10 meses', '12' => '12 meses', '14' => '14 meses', '16' => '16 meses', '18' => '18 meses', '20' => '20 meses', '22' => '22 meses', '24' => '24 meses', '28' => '28 meses', '30' => '30 meses', '32' => '32 meses', '36' => '36 meses'], '0', ['id' => 'option_seguro', 'class' => 'form-control', 'style' => 'margin-left:20px; width:calc(100% - 20px);']) !!}
                             </div>
                             <div class="form-group">
                                 <div style="margin-left:20px; font-size: small;">
