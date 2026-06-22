@@ -99,7 +99,7 @@ class LoanController extends Controller {
             ->groupBy('ps.loan_id');
 
              $dAgg = DB::table('delays as d')
-->selectRaw("
+            ->selectRaw("
                 d.loan_id,
                 COALESCE(SUM(
                     CASE WHEN d.status = 'late'
@@ -251,6 +251,7 @@ class LoanController extends Controller {
                     if($mora){
                         //CALCULO CORRECTO CON PAGOS PARCIALES
                         $total_delay = bcsub($row->delay, $row->total_only_payments, 4);
+             
                     }else{
                         $total_delay = 0;
                     }

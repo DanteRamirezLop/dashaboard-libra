@@ -387,18 +387,11 @@ class LoanPaymentController extends Controller
             }
 
             $default_interest = 0;
-            $amount_condonate = 0;
             $delays =  Delay::where('loan_id',$loan->id)->get(); //TODAS LAS MORAS
             foreach($delays as $delay){
 
                 if($delay->status == 'late'){
                     $default_interest += $delay->late_amount;
-                }
-
-                if($delay->status == 'partial'){
-                    $transaction_delay =  TransactionPayment::where('delay_id',$delay->id)->first();
-                    if($transaction_delay)
-                    $amount_condonate +=  ($delay->late_amount - $transaction_delay->amount);
                 }
 
             }
@@ -421,14 +414,16 @@ class LoanPaymentController extends Controller
             ->get()
             ->sum(fn ($tp) => $tp->is_return ? -$tp->amount : $tp->amount);
 
-        $amount_months_late = bcsub($total_month_now, $total_only_payments, 4); //Deuda de letras hasta hoy menos lo realmente pagado en cuotas
+            
+       $amount_months_late = bcsub($total_month_now, $total_only_payments, 4); //Deuda de letras hasta hoy menos lo realmente pagado en cuotas
 
         if( $amount_months_late < 0)
             $amount_months_late = 0;
 
-        $months_behind = bcsub($amount_months_late, $amount_to_pay, 4);
-        //RESTAR la cantidad condonada 
-        $months_behind = bcsub($months_behind, $amount_condonate, 4);
+      
+
+         $months_behind = bcsub($amount_months_late, $amount_to_pay, 4);
+
         //HAY ACARREO DE LOS DECIMALES DE LOS PAGOS QUE SE COBRANE EN 2 DIGITOS PERO LOS REALES SON DE 4 DIGITOS
         if($months_behind < 0.15){
             $months_behind = 0;
