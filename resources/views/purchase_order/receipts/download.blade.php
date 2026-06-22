@@ -207,8 +207,10 @@
                     $total_before_tax = 0.00;
                     $total_tax = 0.00;
                     $credit = (int)  $purchase->custom_field_3;
-                    $total_neto = $purchase->final_total - $three_percent_withholding - $percent_withholding;
-                    $amount_pay = ($total_neto * $credit) /100;
+                    $total_neto = $purchase->final_total - $three_percent_withholding  - $percent_withholding;
+                    $total_neto_aux = $purchase->final_total  - $percent_withholding;
+                    
+                    $amount_pay = (($total_neto_aux * $credit) /100) - $three_percent_withholding;
                 @endphp
 
                                
@@ -310,15 +312,12 @@
                         @endif
                     @endif
                 @endif
-
-
                 <tr>
                     <td colspan="2"></td>
                     <td style="text-align: center; font-size: 13px;"colspan="2">
                         <b>Importe neto a cancelar</b> 
                     </td> 
                     <td style="width: 10% !important; text-align: center; font-size: 12px;" colspan="2">
-                      
                        @format_currency(($total_neto * $purchase->exchange_rate), $currency_details)
                     </td>
                 </tr>
@@ -328,11 +327,16 @@
                         @if($purchase->custom_field_3 == '0' || is_null($purchase->custom_field_3))
                             Contado
                         @else
-                            Credito con inicial al {{$purchase->custom_field_3}}% 
-                            <b style="margin-left:3px"> @format_currency(($amount_pay * $purchase->exchange_rate), $currency_details) </b>
+                            Credito con inicial al {{$purchase->custom_field_3}}% - Retención 3%
+
+                            
+                            <b style="margin-left:3px"> @format_currency(($amount_pay * $purchase->exchange_rate), $currency_details) </b
+
+                           
                         @endif
                     </td> 
                 </tr>
+                
                
             </table>
 

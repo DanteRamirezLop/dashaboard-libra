@@ -924,6 +924,9 @@ class PurchaseOrderController extends Controller
             }else{
                 $three_percent_withholding =  10;
             }
+
+
+            
         }
 
 
