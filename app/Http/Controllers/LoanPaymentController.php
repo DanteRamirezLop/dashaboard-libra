@@ -381,48 +381,47 @@ class LoanPaymentController extends Controller
 
         $amount_to_pay = 0;
         $default_interest = 0;
-        $interest_paid = 0;
 
-            if($payment_schedule){ 
+            if($payment_schedule){
                 $amount_to_pay = $this->transactionUtil->amountToPay($payment_schedule); //Cantidad a pagar
             }
 
             $default_interest = 0;
             $amount_condonate = 0;
-            $delays =  Delay::where('loan_id',$loan->id)->get(); //TODAS LAS MORAS 
+            $delays =  Delay::where('loan_id',$loan->id)->get(); //TODAS LAS MORAS
             foreach($delays as $delay){
 
                 if($delay->status == 'late'){
                     $default_interest += $delay->late_amount;
-                }else{
-                     if( $delay->status != 'condone')
-                     $interest_paid += $delay->late_amount;
                 }
-                
+
                 if($delay->status == 'partial'){
                     $transaction_delay =  TransactionPayment::where('delay_id',$delay->id)->first();
                     if($transaction_delay)
                     $amount_condonate +=  ($delay->late_amount - $transaction_delay->amount);
                 }
-                
+
             }
-        
-        // Calcula la deuda de las letras hasta el momento 
+
+        // Calcula la deuda de las letras hasta el momento
         $paymentSchedules = (clone $psBase)
             ->whereBetween('ps.sheduled_date', [$startFechaLoan, $dateNow])
             ->where('ps.status', '!=', 'refinanced')
             ->orderBy('ps.sheduled_date', 'asc')
             ->get();
-                
-        $amount_months_late = 0;
+
         $total_month_now = 0;
         foreach ($paymentSchedules as $paymentSchedule) {
-             $total_month_now += $paymentSchedule->getQuote();        
+             $total_month_now += $paymentSchedule->getQuote();
         }
 
-        $initial =  bcsub($loan->initial_amount, $loan->initial_fraction,4); //Calcular la inicial pagada
-        $total_bills_payable = $total_paid - ($initial + $interest_paid + $loan->initial_admin_fee + $loan->initial_gps + $loan->initial_insurance ); //Todos los pagos menos la Inicial y menos los intereses pagados
-        $amount_months_late =  bcsub($total_month_now, $total_bills_payable, 4);  //Es el pago total de lo que debe incluido el mes actual (No esta incluido los intereses moratorio)
+        // Pagos aplicados directamente a una cuota (igual criterio que LoanController::index)
+        $total_only_payments = TransactionPayment::where('transaction_id', $sell->id)
+            ->whereNotNull('payment_schedule_id')
+            ->get()
+            ->sum(fn ($tp) => $tp->is_return ? -$tp->amount : $tp->amount);
+
+        $amount_months_late = bcsub($total_month_now, $total_only_payments, 4); //Deuda de letras hasta hoy menos lo realmente pagado en cuotas
 
         if( $amount_months_late < 0)
             $amount_months_late = 0;
@@ -430,7 +429,6 @@ class LoanPaymentController extends Controller
         $months_behind = bcsub($amount_months_late, $amount_to_pay, 4);
         //RESTAR la cantidad condonada 
         $months_behind = bcsub($months_behind, $amount_condonate, 4);
-
         //HAY ACARREO DE LOS DECIMALES DE LOS PAGOS QUE SE COBRANE EN 2 DIGITOS PERO LOS REALES SON DE 4 DIGITOS
         if($months_behind < 0.15){
             $months_behind = 0;

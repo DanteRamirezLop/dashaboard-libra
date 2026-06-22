@@ -169,7 +169,6 @@ class PurchaseOrderController extends Controller
                             <ul class="dropdown-menu dropdown-menu-left" role="menu">';
                     if (auth()->user()->can('purchase_order.view_all') || auth()->user()->can('purchase_order.view_own')) {
                         $html .= '<li><a href="#" data-href="'.action([\App\Http\Controllers\PurchaseOrderController::class, 'show'], [$row->id]).'" class="btn-modal" data-container=".view_modal"><i class="fas fa-eye" aria-hidden="true"></i>'.__('messages.view').'</a></li>';
-
                         // $html .= '<li><a href="#" class="print-invoice" data-href="'.action([\App\Http\Controllers\PurchaseController::class, 'printInvoice'], [$row->id]).'"><i class="fas fa-print" aria-hidden="true"></i>'.__('messages.print').'</a></li>';
                     }
                     if ((auth()->user()->can('purchase_order.view_all') || auth()->user()->can('purchase_order.view_own'))) {
@@ -196,7 +195,6 @@ class PurchaseOrderController extends Controller
                     }
 
                     $html .= '<li><a href="#" data-href="'.action([\App\Http\Controllers\NotificationController::class, 'getTemplate'], ['transaction_id' => $row->id, 'template_for' => 'purchase_order']).'" class="btn-modal" data-container=".view_modal"><i class="fas fa-envelope" aria-hidden="true"></i> '.__('lang_v1.send_notification').'</a></li>';
-
                     $html .= '</ul></div>';
 
                     return $html;

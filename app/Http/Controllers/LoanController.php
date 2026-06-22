@@ -99,7 +99,7 @@ class LoanController extends Controller {
             ->groupBy('ps.loan_id');
 
              $dAgg = DB::table('delays as d')
-            ->selectRaw("
+->selectRaw("
                 d.loan_id,
                 COALESCE(SUM(
                     CASE WHEN d.status = 'late'
@@ -249,6 +249,7 @@ class LoanController extends Controller {
                     //Total Vencido
                     $mora = round($row->mora);
                     if($mora){
+                        //CALCULO CORRECTO CON PAGOS PARCIALES
                         $total_delay = bcsub($row->delay, $row->total_only_payments, 4);
                     }else{
                         $total_delay = 0;
@@ -256,8 +257,10 @@ class LoanController extends Controller {
                     if ($total_delay < 0 && $total_delay > -0.5) {
                         $total_delay = 0;
                     }
+                    
                     $total_delay_html = '<span class="payment_due" data-orig-value="'.$total_delay.'">'.$this->transactionUtil->num_f($total_delay, true).'</span>';
                     return $total_delay_html;
+
                 })
                 ->addColumn('total_to_delay', function ($row) {
                     // Total por vencer
@@ -290,7 +293,7 @@ class LoanController extends Controller {
                     return $total_to_delay_html;
                 })
                 ->addColumn('total_remaining', function ($row) {
-                    // total vencido
+                    // total vencido + MORA
                      $mora = round($row->mora);
                     if($mora){
                          $total_remaining = bcsub($row->delay, $row->total_only_payments, 4) + $row->mora;
