@@ -118,7 +118,7 @@
 			<div class="col-sm-3">
 				<div class="form-group">
 					{!! Form::label('custom_field_3', 'Forma de pago:*') !!}
-					{!! Form::select('custom_field_3',['0'=>'Contado','10'=>'Credito 10%','15'=>'Credito 15%','20'=>'Credito 20%','30'=>'Credito 30%','40'=>'Credito 40%','50'=>'Credito 50%'], null, ['class' => 'form-control','placeholder' => __('messages.please_select'), 'required']); !!}
+					{!! Form::select('custom_field_3',['0'=>'Contado','10'=>'Credito 10%','15'=>'Credito 15%','20'=>'Credito 20%','30'=>'Credito 30%','40'=>'Credito 40%','50'=>'Credito 50%','60'=>'Credito 60%'], null, ['class' => 'form-control','placeholder' => __('messages.please_select'), 'required']); !!}
 				</div>
 			</div>
 			<div class="col-sm-3">

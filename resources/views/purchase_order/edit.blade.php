@@ -118,6 +118,9 @@
                     <option value="50" @if($purchase->custom_field_3 == '50') selected @endif>
                         Credito 50%
                     </option>
+                     <option value="60" @if($purchase->custom_field_3 == '60') selected @endif>
+                        Credito 60%
+                    </option>
                   </select>
               </div>
             </div>
