@@ -294,9 +294,9 @@
                             </div>
                             <div class="form-group">
                                 <div style="margin-left:20px; font-size: small;">
-                                    <strong>Inicial:</strong> @format_currency($filing_fee_initial) <br>
-                                    <strong>Financiar:</strong> @format_currency($filing_fee - $filing_fee_initial)
-                                </div>    
+                                    <strong>Inicial:</strong> <span id="tramite_inicial_display">@format_currency($filing_fee_initial)</span> <br>
+                                    <strong>Financiar:</strong> <span id="tramite_financiar_display">@format_currency($filing_fee - $filing_fee_initial)</span>
+                                </div>
                             </div>
                         </div>
 
@@ -635,6 +635,8 @@
             var GPS_FIJO_FINANCIAR = {{ $gps - $gps_initial }};
             var SEG_FIJO_INICIAL   = {{ $insurance_initial }};
             var SEG_FIJO_FINANCIAR = {{ $insurance - $insurance_initial }};
+            var FEE_FIJO_INICIAL   = {{ $filing_fee_initial }};
+            var FEE_FIJO_FINANCIAR = {{ $filing_fee - $filing_fee_initial }};
 
             function getMetodoCalculo() {
                 return $('input[name="tipo_calculo"]:checked').val();
@@ -642,6 +644,13 @@
 
             function getQuantity() {
                 return parseInt($('#quantity').val()) || 1;
+            }
+
+            function calcularTramite() {
+                var fmt = new Intl.NumberFormat('es-PE', { style: 'currency', currency: '{{ $currency->code }}', minimumFractionDigits: 2 });
+                var qty = getQuantity();
+                $('#tramite_inicial_display').text(fmt.format(FEE_FIJO_INICIAL * qty));
+                $('#tramite_financiar_display').text(fmt.format(FEE_FIJO_FINANCIAR * qty));
             }
 
             function calcularGPS() {
@@ -757,6 +766,7 @@
             $('#quantity').on('change', function(){
                 calcularGPS();
                 calcularSeguro();
+                calcularTramite();
                 $('#pay_initial').trigger('input');
             });
 
