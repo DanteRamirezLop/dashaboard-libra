@@ -350,12 +350,16 @@ Tumbes</p>
                 <th style='font-size: 0.8rem;'>Cantidad</th>
                 <th style='font-size: 0.8rem;'>Total</th>
             </tr>
+            @php
+                $quantity = $loan->quantity ?? 1;
+                $unit_total = $quantity > 0 ? $total / $quantity : $total;
+            @endphp
             <tr style="background-color: #F2F2F2;">
                 <td align='center' style='font-size: 0.8rem;'> {{$loan->product_name}} </td>
-                <td align='center' style='font-size: 0.8rem;'> ${{ number_format(($total/1.18),2)}} </td>
-                <td align='center' style='font-size: 0.8rem;'> ${{ number_format((($total/1.18)*0.18),2)}}</td>
-                <td align='center' style='font-size: 0.8rem;'> ${{ number_format($total,2)}}</td>
-                <td align='center' style='font-size: 0.8rem;'> 1 </td>
+                <td align='center' style='font-size: 0.8rem;'> ${{ number_format(($unit_total/1.18),2)}} </td>
+                <td align='center' style='font-size: 0.8rem;'> ${{ number_format((($unit_total/1.18)*0.18),2)}}</td>
+                <td align='center' style='font-size: 0.8rem;'> ${{ number_format($unit_total,2)}}</td>
+                <td align='center' style='font-size: 0.8rem;'> {{ $quantity }} </td>
                 <td align='center' style='font-size: 0.8rem;'> ${{number_format($total,2)}}</td>
             </tr>
         </table>

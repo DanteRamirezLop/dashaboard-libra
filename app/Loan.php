@@ -40,6 +40,7 @@ class Loan extends Model
         'insurance_quotes',
         'admin_fee_quotes',
         'product_price',
+        'quantity',
         'initial_percentage',
         'initial_amount',
         'contact_source',

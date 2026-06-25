@@ -357,6 +357,7 @@ class LoanQuotationController extends Controller
 
                 $business_id = $request->session()->get('user.business_id');
                 $product_id  = (int) $request->input('product_id');
+                $quantity    = max(1, (int) $request->input('quantity', 1));
                 $customer_id = (int) $request->input('contact_id');
                 $initial_amount   = (float) $request->input('pay_initial', 0);
                 $type_initial     = (int) $request->input('type_initial', 1);
@@ -379,12 +380,13 @@ class LoanQuotationController extends Controller
                 // Producto
                 $product = Product::select('id', 'name')->findOrFail($product_id);
 
-                // Precio de maquinaria
-                $product_mount = $request->filled('prices')
+                // Precio de maquinaria (precio unitario x cantidad)
+                $unit_price = $request->filled('prices')
                     ? (float) $request->input('prices')
                     : (float) optional(
                         Variation::where('product_id', $product_id)->select('sell_price_inc_tax')->first()
                     )->sell_price_inc_tax;
+                $product_mount = $unit_price * $quantity;
 
                 // Mozo / asesor
                 $waiter = $request->input('waiter')
@@ -551,6 +553,7 @@ class LoanQuotationController extends Controller
                     'gps_quotes'             => $gps_quotes,
                     'insurance_quotes'       => $insurance_quotes,
                     'product_price'          => $product_mount,
+                    'quantity'               => $quantity,
                     'initial_percentage'     => $initial_percentage,
                     'initial_amount'         => $initial_amount,
                     'contact_source'         => $request->input('contact_source'),

@@ -25,6 +25,10 @@
                                 <td>{{$loan->product_name}}</td>
                             </tr>
                             <tr>
+                                <th scope="row">Cantidad</th>
+                                <td>{{$loan->quantity ?? 1}}</td>
+                            </tr>
+                            <tr>
                                 <th scope="row">Fecha de cotización</th>
                                 <td>
                                     @php

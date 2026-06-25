@@ -5,7 +5,7 @@
 
 <section class="content-header no-print">
     <h1 class="tw-text-xl md:tw-text-3xl tw-font-bold tw-text-black tw-flex tw-gap-2">
-         Agregar cotización
+         Agregar cotización 
     </h1>
 </section>
 
@@ -85,7 +85,7 @@
             <div class="row">
                 <div class="col-md-3">
                     <div class="form-group col-sm-12">
-                        {!! Form::label('allow_decimal', 'Fuente de contacto' . ':*') !!} 
+                        {!! Form::label('allow_decimal', 'Fuente de contacto' . ':*') !!}
                         <select class="form-control" required name="contact_source">
                             <option value="0" selected disabled>@lang('messages.please_select' )</option>
                             <option value="Facebook">Facebook</option>
@@ -99,7 +99,7 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group col-sm-12">
-                        {!! Form::label('allow_decimal', 'Maquinaria' . ':*') !!} 
+                        {!! Form::label('allow_decimal', 'Maquinaria' . ':*') !!}
                         <select class="form-control" required name="product_id" id="product">
                             <option value="0" selected disabled>@lang('messages.please_select' )</option>
                             @foreach($products as $key=>$item)
@@ -108,24 +108,36 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="form-group col-sm-12">
-                        {!! Form::label('allow_decimal', 'Precio en ' . $currency->code . ':*') !!} 
-                        <select class="form-control" aria-label="prices" id="prices" name="prices" required>
-							<option selected disabled >--- Precios ---</option>
-						</select>
+                <div class="col-md-6">
+                    <div class="form-group col-sm-3">
+                      
+                            {!! Form::label('quantity', 'Cantidad' . ':*') !!}
+                            <select name="quantity" id="quantity" class="form-control" required>
+                                @for ($i = 1; $i <= 10; $i++)
+                                <option value="{{ $i }}" {{ $i == 1 ? 'selected' : '' }}>{{ $i }}</option>
+                                @endfor
+                            </select>
+                       
                     </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group col-sm-12">
-                        {!! Form::label('allow_decimal', 'Derivado a vendedor' . ':*') !!} 
-                        <select class="form-control" required name="waiter" id="waiter">
-                            <option value="0" selected disabled>@lang('messages.please_select' )</option>
-                            <option value="Dante Bulnes">Dante Bulnes</option>
-                            @foreach($waiters as $key=>$waiter)
-                            <option value="{{$waiter}}">{{$waiter}}</option>
-                            @endforeach
-                        </select> 
+                    <div class="form-group col-sm-4">
+                       
+                            {!! Form::label('allow_decimal', 'Precio en ' . $currency->code . ':*') !!}
+                            <select class="form-control" aria-label="prices" id="prices" name="prices" required>
+                                <option selected disabled >--- Precios ---</option>
+                            </select>
+                       
+                    </div>
+                    <div class="form-group col-sm-5">
+                        
+                            {!! Form::label('allow_decimal', 'Derivado a vendedor' . ':*') !!}
+                            <select class="form-control" required name="waiter" id="waiter">
+                                <option value="0" selected disabled>@lang('messages.please_select' )</option>
+                                <option value="Dante Bulnes">Dante Bulnes</option>
+                                @foreach($waiters as $key=>$waiter)
+                                <option value="{{$waiter}}">{{$waiter}}</option>
+                                @endforeach
+                            </select>
+                      
                     </div>
                 </div>
             </div>
@@ -394,6 +406,11 @@
                 product_id: {
                     tieneGPS: true,
                 },
+                quantity: {
+                    required: true,
+                    min: 1,
+                    digits: true
+                },
                 number_month: {
                     menorOIgualQue: "#mounth_fracction"
                 },
@@ -493,7 +510,7 @@
 
              //Calculate % initial en porcentage
              $('#pay_initial').on('input', function() {
-                let precio = parseFloat($('#prices').val());
+                let precio = (parseFloat($('#prices').val()) || 0) * (parseInt($('#quantity').val()) || 1);
                 let inicial = parseFloat($(this).val());
                 if (!isNaN(precio) && precio > 0 && !isNaN(inicial)) {
                     let porcentaje = (inicial / precio) * 100;
@@ -623,6 +640,10 @@
                 return $('input[name="tipo_calculo"]:checked').val();
             }
 
+            function getQuantity() {
+                return parseInt($('#quantity').val()) || 1;
+            }
+
             function calcularGPS() {
                 var meses = parseInt($('#option_gps').val()) || 0;
                 var fmt = new Intl.NumberFormat('es-PE', { style: 'currency', currency: '{{ $currency->code }}', minimumFractionDigits: 2 });
@@ -654,6 +675,9 @@
                     inicial   = total / 2;
                     financiar = total / 2;
                 }
+
+                inicial   *= getQuantity();
+                financiar *= getQuantity();
 
                 $('#gps_inicial_display').text(fmt.format(inicial));
                 $('#gps_financiar_display').text(fmt.format(financiar));
@@ -692,6 +716,9 @@
                     financiar = costoTotal / 2;
                 }
 
+                inicial   *= getQuantity();
+                financiar *= getQuantity();
+
                 $('#seguro_inicial_display').text(fmt.format(inicial));
                 $('#seguro_financiar_display').text(fmt.format(financiar));
                 $('#insurance_initial_input').val(inicial.toFixed(2));
@@ -725,6 +752,12 @@
 
             $('#option_seguro').on('change', function(){
                 calcularSeguro();
+            });
+
+            $('#quantity').on('change', function(){
+                calcularGPS();
+                calcularSeguro();
+                $('#pay_initial').trigger('input');
             });
 
             $('#prices').on('change', function(){
