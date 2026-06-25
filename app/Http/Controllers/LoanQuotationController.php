@@ -431,7 +431,7 @@ class LoanQuotationController extends Controller
 
                     // Trámite
                     if ($option_tramite === 1) {
-                        $initial_admin_fee = (float) optional($goals->get('coste-tramite'))->amount_total;
+                        $initial_admin_fee = (float) optional($goals->get('coste-tramite'))->amount_total * $quantity;
                     }
 
                     // GPS
