@@ -69,7 +69,7 @@ class DelayController extends Controller
                 $start_date_var =  Carbon::parse($payment_schedules->sheduled_date);
                 $start_date = $start_date_var->addDays(1);
                 $late_date =  $sheduled_date->addDays($days_late);
-                $late_amount = (($payment_schedules->mount_quota + $payment_schedules->initial) * 0.00111) * $days_late;
+                $late_amount = ($payment_schedules->getQuote() * 0.00111) * $days_late;
                 #------------------
                 Delay::create([
                 'start_date'=> $start_date,
@@ -88,7 +88,6 @@ class DelayController extends Controller
                 #------------------
                 $msg = ['success' => true,'msg' => __('Registrado')];
             #------------------
-            
             DB::commit();
             $output = $msg;
         } catch (\Exception $e) {

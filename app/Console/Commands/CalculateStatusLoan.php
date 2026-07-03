@@ -80,7 +80,7 @@ class CalculateStatusLoan extends Command
 
                     if ($registro_moratorio && $registro_moratorio->status === 'late') {
 
-                        $late_amount_late = ($letra_pago->mount_quota + $letra_pago->initial) * 0.00111;
+                        $late_amount_late = $letra_pago->getQuote() * 0.00111;
 
                         // Aumentar en la mora un día más de atraso
                         $registro_moratorio->days_late = $registro_moratorio->days_late + 1;
