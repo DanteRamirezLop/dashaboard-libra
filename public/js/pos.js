@@ -481,23 +481,7 @@ $(document).ready(function() {
         'select.row_discount_type, input.row_discount_amount',
         function() {
             var tr = $(this).parents('tr');
-
-            //calculate discounted unit price
-            var discounted_unit_price = calculate_discounted_unit_price(tr);
-
-            var tax_rate = tr
-                .find('select.tax_id')
-                .find(':selected')
-                .data('rate');
-            var quantity = __read_number(tr.find('input.pos_quantity'));
-
-            var unit_price_inc_tax = __add_percent(discounted_unit_price, tax_rate);
-            var line_total = quantity * unit_price_inc_tax;
-
-            __write_number(tr.find('input.pos_unit_price_inc_tax'), unit_price_inc_tax);
-            __write_number(tr.find('input.pos_line_total'), line_total, false);
-            tr.find('span.pos_line_total_text').text(__currency_trans_from_en(line_total, true));
-            pos_each_row(tr);
+            recompute_row_discounted_price(tr);
             pos_total_row();
             round_row_to_iraqi_dinnar(tr);
         }
@@ -1930,7 +1914,53 @@ function pos_each_row(row_obj) {
     __write_number(row_obj.find('input.item_tax'), unit_price_inc_tax - discounted_unit_price);
 }
 
+//Recalculates a row's tax-inclusive price and line total from its current row discount fields
+function recompute_row_discounted_price(tr) {
+    var discounted_unit_price = calculate_discounted_unit_price(tr);
+
+    var tax_rate = tr
+        .find('select.tax_id')
+        .find(':selected')
+        .data('rate');
+    var quantity = __read_number(tr.find('input.pos_quantity'));
+
+    var unit_price_inc_tax = __add_percent(discounted_unit_price, tax_rate);
+    var line_total = quantity * unit_price_inc_tax;
+
+    __write_number(tr.find('input.pos_unit_price_inc_tax'), unit_price_inc_tax);
+    __write_number(tr.find('input.pos_line_total'), line_total, false);
+    tr.find('span.pos_line_total_text').text(__currency_trans_from_en(line_total, true));
+    pos_each_row(tr);
+}
+
+//Lubricantes (category 1) + Filtros (category 12) combo discount for the "CYBER" price group:
+//5% each when both categories are present in the cart at once, 3% each otherwise.
+function apply_cyber_combo_discount() {
+    var rows = $('table#pos_table tbody tr[data-cyber_combo="1"]');
+    if (rows.length === 0) {
+        return;
+    }
+
+    var hasLubricante = rows.filter('[data-category_id="1"]').length > 0;
+    var hasFiltro = rows.filter('[data-category_id="12"]').length > 0;
+    var percent = (hasLubricante && hasFiltro) ? 5 : 3;
+
+    rows.each(function() {
+        var row = $(this);
+        var current_amount = __read_number(row.find('input.row_discount_amount'));
+        var current_type = row.find('select.row_discount_type').val();
+
+        if (current_amount !== percent || current_type !== 'percentage') {
+            __write_number(row.find('input.row_discount_amount'), percent);
+            row.find('select.row_discount_type').val('percentage');
+            recompute_row_discounted_price(row);
+        }
+    });
+}
+
 function pos_total_row() {
+    apply_cyber_combo_discount();
+
     var total_quantity = 0;
     var price_total = get_subtotal();
     $('table#pos_table tbody tr').each(function() {

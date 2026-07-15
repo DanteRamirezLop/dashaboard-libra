@@ -13,7 +13,7 @@
 	@endif
 @endforeach
 
-<tr class="product_row" data-row_index="{{$row_count}}" @if(!empty($so_line)) data-so_id="{{$so_line->transaction_id}}" @endif>
+<tr class="product_row" data-row_index="{{$row_count}}" data-category_id="{{ $product->category_id ?? '' }}" @if(!empty($is_cyber_combo)) data-cyber_combo="1" @endif @if(!empty($so_line)) data-so_id="{{$so_line->transaction_id}}" @endif>
 	@if(!empty($is_serial_no))
 		<td class="serial_no" ></td>
 	@endif
@@ -379,8 +379,10 @@
 		<td @if(!$edit_discount) class="hide" @endif>
 			{!! Form::text("products[$row_count][line_discount_amount]", @num_format($discount_amount), ['class' => 'form-control input_number row_discount_amount']); !!}<br>
 			{!! Form::select("products[$row_count][line_discount_type]", ['fixed' => __('lang_v1.fixed'), 'percentage' => __('lang_v1.percentage')], $discount_type , ['class' => 'form-control row_discount_type']); !!}
-			@if(!empty($discount))
+			@if(!empty($discount) && !empty($discount->id))
 				<p class="help-block">{!! __('lang_v1.applied_discount_text', ['discount_name' => $discount->name, 'starts_at' => $discount->formated_starts_at, 'ends_at' => $discount->formated_ends_at]) !!}</p>
+			@elseif(!empty($discount) && !empty($discount->name))
+				<p class="help-block">{{ $discount->name }}</p>
 			@endif
 
 			@if(!empty($last_sell_line))

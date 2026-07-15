@@ -53,6 +53,7 @@ use App\Utils\NotificationUtil;
 use App\Utils\ProductUtil;
 use App\Utils\TransactionUtil;
 use App\Variation;
+use App\VariationGroupPrice;
 use App\Warranty;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -907,6 +908,8 @@ class SellPosController extends Controller
                 'p.image as product_image',
                 'p.name as product_actual_name',
                 'p.type as product_type',
+                'p.category_id',
+                'p.brand_id',
                 'pv.name as product_variation_name',
                 'pv.is_dummy as is_dummy',
                 'variations.name as variation_name',
@@ -943,6 +946,10 @@ class SellPosController extends Controller
             foreach ($sell_details as $key => $value) {
                 $variation = Variation::with('media')->findOrFail($value->variation_id);
                 $sell_details[$key]->media = $variation->media;
+                $sell_details[$key]->is_cyber_combo = $transaction->selling_price_group_id == 2 && (
+                    $value->category_id == 12 ||
+                    ($value->category_id == 1 && in_array($value->brand_id, [22, 57]))
+                );
 
                 //If modifier or combo sell line then unset
                 if (!empty($sell_details[$key]->parent_sell_line_id)) {
@@ -1715,7 +1722,22 @@ class SellPosController extends Controller
         $purchase_line_id = request()->get('purchase_line_id');
 
         $price_group = request()->input('price_group');
-        if (!empty($price_group)) {
+        $is_cyber_combo = $price_group == 2 && (
+            $product->category_id == 12 ||
+            ($product->category_id == 1 && in_array($product->brand_id, [22, 57]))
+        );
+
+        $is_cyber_repuesto = false;
+        if ($price_group == 2 && $product->category_id == 2) {
+            $is_cyber_repuesto = VariationGroupPrice::where('variation_id', $variation_id)
+                ->where('price_group_id', 2)
+                ->where('price_type', 'percentage')
+                ->exists();
+        }
+
+        $is_cyber_discount = $is_cyber_combo || $is_cyber_repuesto;
+
+        if (!empty($price_group) && !$is_cyber_discount) {
             $variation_group_prices = $this->productUtil->getVariationGroupPrice($variation_id, $price_group, $product->tax_id);
 
             if (!empty($variation_group_prices['price_inc_tax'])) {
@@ -1749,6 +1771,16 @@ class SellPosController extends Controller
 
             $discount = $this->productUtil->getProductDiscount($product, $business_id, $location_id, $is_cg, $price_group, $variation_id);
 
+            if ($is_cyber_discount) {
+                $discount = new \stdClass();
+                $discount->id = null;
+                $discount->discount_type = 'percentage';
+                $discount->discount_amount = $is_cyber_repuesto ? 10 : 3;
+                $discount->name = $is_cyber_repuesto ? 'Descuento CYBER Repuestos' : 'Descuento CYBER Lubricantes/Filtros';
+                $discount->formated_starts_at = '';
+                $discount->formated_ends_at = '';
+            }
+
             if ($is_direct_sell) {
                 $edit_discount = auth()->user()->can('edit_product_discount_from_sale_screen');
                 $edit_price = auth()->user()->can('edit_product_price_from_sale_screen');
@@ -1758,7 +1790,7 @@ class SellPosController extends Controller
             }
 
             $output['html_content'] = view('sale_pos.product_row')
-                ->with(compact('product', 'row_count', 'tax_dropdown', 'enabled_modules', 'pos_settings', 'sub_units', 'discount', 'waiters', 'edit_discount', 'edit_price', 'purchase_line_id', 'warranties', 'quantity', 'is_direct_sell', 'so_line', 'is_sales_order', 'last_sell_line', 'is_serial_no'))
+                ->with(compact('product', 'row_count', 'tax_dropdown', 'enabled_modules', 'pos_settings', 'sub_units', 'discount', 'waiters', 'edit_discount', 'edit_price', 'purchase_line_id', 'warranties', 'quantity', 'is_direct_sell', 'so_line', 'is_sales_order', 'last_sell_line', 'is_serial_no', 'is_cyber_combo'))
                 ->render();
         }
 

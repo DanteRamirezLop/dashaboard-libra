@@ -1072,6 +1072,8 @@ class SellController extends Controller
                             'p.enable_stock',
                             'p.name as product_actual_name',
                             'p.type as product_type',
+                            'p.category_id',
+                            'p.brand_id',
                             'pv.name as product_variation_name',
                             'pv.is_dummy as is_dummy',
                             'variations.name as variation_name',
@@ -1108,6 +1110,10 @@ class SellController extends Controller
             foreach ($sell_details as $key => $value) {
                 $variation = Variation::with('media')->findOrFail($value->variation_id);
                 $sell_details[$key]->media = $variation->media;
+                $sell_details[$key]->is_cyber_combo = $transaction->selling_price_group_id == 2 && (
+                    $value->category_id == 12 ||
+                    ($value->category_id == 1 && in_array($value->brand_id, [22, 57]))
+                );
                 //If modifier or combo sell line then unset
                 if (! empty($sell_details[$key]->parent_sell_line_id)) {
                     unset($sell_details[$key]);
