@@ -40,7 +40,10 @@
                                 <th>Total debido <small style="color:#60687d">(Vencido+Mora+Por&nbsp;vencer)</small></th>
                                 <th>Vendedor</th>
                                 <th>Cuotas</th>
-                                <th>Importe prestamo</th> 
+                                <th>Importe prestamo</th>
+                                <th><small style="color:#60687d">Fecha de vencimiento de la cuota</small></th>
+                                <th><small style="color:#60687d">Monto a pagar en el mes</small></th>
+                                <th><small style="color:#60687d">Fecha fin del plazo total del prestamo</small></th>
                                 <th>Estado prestamo</th>
                             </tr>
                         </thead>
@@ -55,7 +58,7 @@
                                 <td class="footer_total_remaining"></td>
                                 <td class="footer_total_to_delay"></td>
                                 <td class="footer_total_remaining_mora"></td>
-                                <td colspan="4"></td>
+                                <td colspan="7"></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -157,6 +160,9 @@ $(document).ready( function(){
             { data: 'waiter', name: 'waiter' },
             { data: 'number_month', name: 'number_month' },
             { data: 'balance_to_financed', name: 'balance_to_financed' },
+            { data: 'next_due_date', name: 'next_due_date' },
+            { data: 'next_due_amount', name: 'next_due_amount' },
+            { data: 'loan_end_date', name: 'loan_end_date' },
             { data: 'label',name:'label'},
         ],
          "fnDrawCallback": function (oSettings) {

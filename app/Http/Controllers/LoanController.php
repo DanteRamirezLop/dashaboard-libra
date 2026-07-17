@@ -72,7 +72,15 @@ class LoanController extends Controller {
                     CASE WHEN ps.status = 'pending'
                     THEN ps.mount_quota + ps.gps_quota + ps.sure_quota + ps.admin_fee_quota + ps.initial
                     ELSE 0 END
-                ),0) as for_due
+                ),0) as for_due,
+
+                MIN(CASE WHEN ps.status = 'pending' THEN ps.sheduled_date END) as next_due_date,
+                MAX(ps.sheduled_date) as loan_end_date,
+                SUBSTRING_INDEX(GROUP_CONCAT(
+                    CASE WHEN ps.status = 'pending'
+                    THEN ps.mount_quota + ps.gps_quota + ps.sure_quota + ps.admin_fee_quota + ps.initial
+                    END ORDER BY ps.sheduled_date ASC
+                ), ',', 1) as next_due_amount
             ")
             ->where(function ($q) {
                 // Subquery correlacionado: ¿este loan_id tiene alguna versión activa?
@@ -160,6 +168,9 @@ class LoanController extends Controller {
                 DB::raw('COALESCE(psa.delay,0) as delay'),
                 DB::raw('COALESCE(da.mora,0) as mora'),
                 DB::raw('COALESCE(psa.for_due,0) as for_due'),
+                DB::raw('psa.next_due_date as next_due_date'),
+                DB::raw('psa.loan_end_date as loan_end_date'),
+                DB::raw('psa.next_due_amount as next_due_amount'),
             )->get();
 
             return Datatables::of($loans)->addColumn(
@@ -277,12 +288,8 @@ class LoanController extends Controller {
                             $paid_partial = bcsub($row->delay, $row->total_only_payments, 4);
                         }
 
-                        //Calculo algun descuento 
-                        if($row->interest_saved){
-                            $interest_saved = bcsub($row->discount_amount, $row->interest_saved,2);
-                        }else{
-                            $interest_saved = 0;
-                        }
+                        //Calculo algun descuento (Descuento por capitalización / Regularización)
+                        $interest_saved = bcsub($row->discount_amount ?? 0, $row->interest_saved ?? 0, 2);
 
                        $total_to_delay =  $row->for_due + bcsub($paid_partial,$interest_saved,4);
                     }
@@ -330,6 +337,21 @@ class LoanController extends Controller {
                     return $total_remaining_html;
                 })
 
+                ->editColumn('next_due_amount', function ($row) {
+                    // Monto a pagar en el mes (próxima cuota pendiente)
+                    if (is_null($row->next_due_amount)) {
+                        return '-';
+                    }
+                    return '<span class="payment_due" data-orig-value="'.$row->next_due_amount.'">'.$this->transactionUtil->num_f($row->next_due_amount, true).'</span>';
+                })
+                ->editColumn('next_due_date', function ($row) {
+                    // Fecha de vencimiento de la cuota
+                    return $row->next_due_date ? date('Y/m/d', strtotime($row->next_due_date)) : '-';
+                })
+                ->editColumn('loan_end_date', function ($row) {
+                    // Fecha del fin del plazo total del préstamo
+                    return $row->loan_end_date ? date('Y/m/d', strtotime($row->loan_end_date)) : '-';
+                })
                 ->editColumn(
                     'final_total',
                     '<span class="final-total" data-orig-value="{{$final_total}}"> @format_currency($final_total)  </span>'
@@ -342,7 +364,7 @@ class LoanController extends Controller {
                 ->editColumn('balance_to_financed','@format_currency($balance_to_financed)')
                 ->editColumn('total_cost_loan','@format_currency($total_cost_loan)')
                 ->editColumn('created_at','{{date("Y/m/d",strtotime($created_at))}}')
-                ->rawColumns(['action','label','seller','total','final_total','total_paid','total_remaining','total_delay','total_to_delay','total_mora','total_remaining_mora'])
+                ->rawColumns(['action','label','seller','total','final_total','total_paid','total_remaining','total_delay','total_to_delay','total_mora','total_remaining_mora','next_due_amount'])
                 ->make(true);
         }
          //Service staff filter
@@ -1390,7 +1412,15 @@ class LoanController extends Controller {
                     CASE WHEN ps.status = 'pending'
                     THEN ps.mount_quota + ps.gps_quota + ps.sure_quota + ps.admin_fee_quota + ps.initial
                     ELSE 0 END
-                ),0) as for_due
+                ),0) as for_due,
+
+                MIN(CASE WHEN ps.status = 'pending' THEN ps.sheduled_date END) as next_due_date,
+                MAX(ps.sheduled_date) as loan_end_date,
+                SUBSTRING_INDEX(GROUP_CONCAT(
+                    CASE WHEN ps.status = 'pending'
+                    THEN ps.mount_quota + ps.gps_quota + ps.sure_quota + ps.admin_fee_quota + ps.initial
+                    END ORDER BY ps.sheduled_date ASC
+                ), ',', 1) as next_due_amount
             ")
             ->where(function ($q) {
                 // Subquery correlacionado: ¿este loan_id tiene alguna versión activa?
@@ -1468,6 +1498,9 @@ class LoanController extends Controller {
                 DB::raw('COALESCE(psa.delay,0) as delay'),
                 DB::raw('COALESCE(da.mora,0) as mora'),
                 DB::raw('COALESCE(psa.for_due,0) as for_due'),
+                DB::raw('psa.next_due_date as next_due_date'),
+                DB::raw('psa.loan_end_date as loan_end_date'),
+                DB::raw('psa.next_due_amount as next_due_amount'),
             )->get()
             ->when(request()->input('only_delay'), function ($collection) {
                 return $collection->filter(function ($row) {
@@ -1602,6 +1635,21 @@ class LoanController extends Controller {
                     return $total_remaining_html;
                 })
 
+                ->editColumn('next_due_amount', function ($row) {
+                    // Monto a pagar en el mes (próxima cuota pendiente)
+                    if (is_null($row->next_due_amount)) {
+                        return '-';
+                    }
+                    return '<span class="payment_due" data-orig-value="'.$row->next_due_amount.'">'.$this->transactionUtil->num_f($row->next_due_amount, true).'</span>';
+                })
+                ->editColumn('next_due_date', function ($row) {
+                    // Fecha de vencimiento de la cuota
+                    return $row->next_due_date ? date('Y/m/d', strtotime($row->next_due_date)) : '-';
+                })
+                ->editColumn('loan_end_date', function ($row) {
+                    // Fecha del fin del plazo total del préstamo
+                    return $row->loan_end_date ? date('Y/m/d', strtotime($row->loan_end_date)) : '-';
+                })
                 ->editColumn(
                     'final_total',
                     '<span class="final-total" data-orig-value="{{$final_total}}"> @format_currency($final_total)  </span>'
@@ -1614,7 +1662,7 @@ class LoanController extends Controller {
                 ->editColumn('balance_to_financed','@format_currency($balance_to_financed)')
                 ->editColumn('total_cost_loan','@format_currency($total_cost_loan)')
                 ->editColumn('created_at','{{date("Y/m/d",strtotime($created_at))}}')
-                ->rawColumns(['action','label','seller','total','final_total','total_paid','total_remaining','total_delay','total_to_delay','total_mora','total_remaining_mora'])
+                ->rawColumns(['action','label','seller','total','final_total','total_paid','total_remaining','total_delay','total_to_delay','total_mora','total_remaining_mora','next_due_amount'])
                 ->make(true);
         }
          //Service staff filter
