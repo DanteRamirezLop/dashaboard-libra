@@ -70,5 +70,7 @@ class Kernel extends HttpKernel
         'AdminSidebarMenu' => \App\Http\Middleware\AdminSidebarMenu::class,
         'superadmin' => \App\Http\Middleware\Superadmin::class,
         'CheckUserLogin' => \App\Http\Middleware\CheckUserLogin::class,
+        'api.token' => \App\Http\Middleware\EnsureApiToken::class,
+
     ];
 }

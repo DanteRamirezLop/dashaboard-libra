@@ -29,6 +29,7 @@ use App\InvoiceScheme;
 use App\ScheduleVersion;
 use App\PaymentApplication;
 use App\ExchangeRates;
+use App\Utils\LoanUtil;
 
 class LoanController extends Controller {
     /**
@@ -39,139 +40,28 @@ class LoanController extends Controller {
     protected $productUtil;
     protected $businessUtil;
     protected $contactUtil;
+    protected $loanUtil;
     /**
      * Create a new controller instance.
      *
      * @param  ProductUtils  $product
      * @return void
      */
-    public function __construct(TransactionUtil $transactionUtil,ModuleUtil $moduleUtil, BusinessUtil $businessUtil, ProductUtil $productUtil, ContactUtil $contactUtil)
+    public function __construct(TransactionUtil $transactionUtil,ModuleUtil $moduleUtil, BusinessUtil $businessUtil, ProductUtil $productUtil, ContactUtil $contactUtil, LoanUtil $loanUtil)
     {
         $this->productUtil = $productUtil;
         $this->moduleUtil = $moduleUtil;
         $this->businessUtil = $businessUtil;
         $this->contactUtil = $contactUtil;
         $this->transactionUtil = $transactionUtil;
+        $this->loanUtil = $loanUtil;
     }
 
     public function index()
-    {   
+    {
         $business_id = request()->session()->get('user.business_id');
         if (request()->ajax()) {
-           $psAgg = DB::table('payment_schedules as ps')
-            ->leftJoin('schedule_versions as sv', 'sv.id', '=', 'ps.schedule_version_id')
-            ->selectRaw("
-                ps.loan_id,
-                COALESCE(SUM(
-                    CASE WHEN ps.status <> 'pending'
-                    THEN ps.mount_quota + ps.gps_quota + ps.sure_quota + ps.admin_fee_quota + ps.initial
-                    ELSE 0 END
-                ),0) as delay,
-
-                COALESCE(SUM(
-                    CASE WHEN ps.status = 'pending'
-                    THEN ps.mount_quota + ps.gps_quota + ps.sure_quota + ps.admin_fee_quota + ps.initial
-                    ELSE 0 END
-                ),0) as for_due,
-
-                MIN(CASE WHEN ps.status = 'pending' THEN ps.sheduled_date END) as next_due_date,
-                MAX(ps.sheduled_date) as loan_end_date,
-                SUBSTRING_INDEX(GROUP_CONCAT(
-                    CASE WHEN ps.status = 'pending'
-                    THEN ps.mount_quota + ps.gps_quota + ps.sure_quota + ps.admin_fee_quota + ps.initial
-                    END ORDER BY ps.sheduled_date ASC
-                ), ',', 1) as next_due_amount
-            ")
-            ->where(function ($q) {
-                // Subquery correlacionado: ¿este loan_id tiene alguna versión activa?
-                $activeVersionExists = function ($sq) {
-                    $sq->selectRaw('1')
-                    ->from('payment_schedules as psx')
-                    ->join('schedule_versions as svx', 'svx.id', '=', 'psx.schedule_version_id')
-                    ->whereColumn('psx.loan_id', 'ps.loan_id')
-                    ->where('svx.status', 'active')
-                    ->limit(1);
-                };
-                $q
-                // CASO A: Si NO existe versión activa => usa SOLO originales (NULL)
-                ->where(function ($q1) use ($activeVersionExists) {
-                    $q1->whereNotExists($activeVersionExists)
-                    ->whereNull('ps.schedule_version_id');
-                })
-                // CASO B: Si SÍ existe versión activa => usa SOLO filas de esa(s) versión(es) activa(s)
-                ->orWhere(function ($q2) use ($activeVersionExists) {
-                    $q2->whereExists($activeVersionExists)
-                    ->where('sv.status', 'active');
-                });
-            })
-            ->groupBy('ps.loan_id');
-
-             $dAgg = DB::table('delays as d')
-            ->selectRaw("
-                d.loan_id,
-                COALESCE(SUM(
-                    CASE WHEN d.status = 'late'
-                    THEN d.late_amount
-                    ELSE 0 END
-                ),0) as mora
-            ")
-            ->whereNull('d.deleted_at')
-            ->groupBy('d.loan_id');
-
-            $loans = Loan::query()
-            ->leftJoin('transactions', 'loans.transaction_id', '=', 'transactions.id')
-            ->leftJoinSub($psAgg, 'psa', function ($join) {
-                $join->on('psa.loan_id', '=', 'loans.id');
-            })
-            ->leftJoinSub($dAgg, 'da', function ($join) {
-                $join->on('da.loan_id', '=', 'loans.id');
-            })
-            ->where('loans.business_id', $business_id)
-            ->where('loans.status', '!=', 'quotation')
-            ->where('loans.type', '!=', 'rent-sale')
-            ->when(! empty(request()->input('service_staffs')), function ($q) {
-                $q->where('loans.waiter', request()->input('service_staffs'));
-            })
-            ->when(! empty(request()->input('loan_list_filter_status')), function ($q) {
-                $q->where('loans.status', request()->input('loan_list_filter_status'));
-            })
-            ->when(request()->input('only_repossessed'),
-                fn ($q) => $q->whereNotNull('loans.repossessed_at'),
-                fn ($q) => $q->whereNull('loans.repossessed_at')
-            )
-            ->select(
-                'loans.id',
-                'loans.balance_to_financed',
-                'loans.total_cost_loan',
-                'loans.created_at',
-                'loans.transaction_id',
-                'loans.status',
-                'loans.vin',
-                'loans.customer_name',
-                'loans.product_name',
-                'loans.number_month',
-                'loans.waiter',
-                'loans.refinanced_at',
-                'loans.interest_saved',
-                'transactions.final_total as final_total',
-                'transactions.discount_amount as discount_amount',
-                DB::raw('(SELECT SUM(IF(TP.is_return = 1,-1*TP.amount,TP.amount))
-                        FROM transaction_payments AS TP
-                        WHERE TP.transaction_id = transactions.id) as total_paid'),
-
-                DB::raw('(SELECT
-                            SUM(IF(TP.is_return = 1,-1*TP.amount,TP.amount))
-                            FROM transaction_payments AS TP
-                            WHERE TP.transaction_id = transactions.id AND TP.payment_schedule_id IS NOT NULL
-                        ) as total_only_payments'),
-
-                DB::raw('COALESCE(psa.delay,0) as delay'),
-                DB::raw('COALESCE(da.mora,0) as mora'),
-                DB::raw('COALESCE(psa.for_due,0) as for_due'),
-                DB::raw('psa.next_due_date as next_due_date'),
-                DB::raw('psa.loan_end_date as loan_end_date'),
-                DB::raw('psa.next_due_amount as next_due_amount'),
-            )->get();
+            $loans = $this->loanUtil->loanListQuery($business_id, request()->all())->get();
 
             return Datatables::of($loans)->addColumn(
                     'action',

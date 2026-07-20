@@ -1,7 +1,8 @@
 <?php
 
 use Illuminate\Http\Request;
-
+use App\Http\Controllers\Api\LoanController as ApiLoanController;
+use App\Http\Controllers\PingController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -12,7 +13,13 @@ use Illuminate\Http\Request;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
+Route::middleware('api.token')->get('/ping', [PingController::class,'index']);
 
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+Route::middleware('auth:api')->prefix('dashboard')->group(function () {
+    Route::get('loans', [ApiLoanController::class, 'index']);
+});
+

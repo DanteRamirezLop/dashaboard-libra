@@ -45,4 +45,9 @@ return [
         'token'=> env('APIPERU_TIPOCAMBIO_TOKEN'),
     ],
 
+    'dashboard' => [
+        'token' => env('DASHBOARD_API_TOKEN'),
+        'business_id' => env('DASHBOARD_BUSINESS_ID', 4),
+    ],
+
 ];
