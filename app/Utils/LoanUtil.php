@@ -138,7 +138,8 @@ class LoanUtil
     {
         $mora = round($row->mora);
 
-        $total_delay = $mora ? bcsub($row->delay, $row->total_only_payments, 4) : 0;
+        $interest_saved = bcsub($row->discount_amount ?? 0, $row->interest_saved ?? 0, 2);
+        $total_delay = $mora ? bcsub(bcsub($row->delay, $row->total_only_payments, 4), $interest_saved, 4) : 0;
         if ($total_delay < 0 && $total_delay > -0.5) {
             $total_delay = 0;
         }
@@ -147,14 +148,13 @@ class LoanUtil
             $total_to_delay = $row->for_due;
         } else {
             $paid_partial = $mora ? 0 : bcsub($row->delay, $row->total_only_payments, 4);
-            $interest_saved = bcsub($row->discount_amount ?? 0, $row->interest_saved ?? 0, 2);
             $total_to_delay = $row->for_due + bcsub($paid_partial, $interest_saved, 4);
         }
         if ($total_to_delay < 0 && $total_to_delay > -0.5) {
             $total_to_delay = 0;
         }
 
-        $total_remaining = $mora ? bcsub($row->delay, $row->total_only_payments, 4) + $row->mora : 0;
+        $total_remaining = $mora ? $total_delay + $row->mora : 0;
         if ($total_remaining < 0 && $total_remaining > -0.5) {
             $total_remaining = 0;
         }

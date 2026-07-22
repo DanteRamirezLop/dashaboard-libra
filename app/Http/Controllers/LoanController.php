@@ -147,19 +147,21 @@ class LoanController extends Controller {
                      }
                 )
                  ->addColumn('total_delay', function ($row) {
-                    //Total Vencido
+                    //total vencido
                     $mora = round($row->mora);
                     if($mora){
                         //CALCULO CORRECTO CON PAGOS PARCIALES
-                        $total_delay = bcsub($row->delay, $row->total_only_payments, 4);
-             
+                        //Descontar el "pago a capital / regularización" ya aplicado, para no contarlo como deuda
+                        $interest_saved = bcsub($row->discount_amount ?? 0, $row->interest_saved ?? 0, 2);
+                       $total_delay = bcsub(bcsub($row->delay, $row->total_only_payments, 4), $interest_saved, 4);
+
                     }else{
                         $total_delay = 0;
                     }
                     if ($total_delay < 0 && $total_delay > -0.5) {
                         $total_delay = 0;
                     }
-                    
+
                     $total_delay_html = '<span class="payment_due" data-orig-value="'.$total_delay.'">'.$this->transactionUtil->num_f($total_delay, true).'</span>';
                     return $total_delay_html;
 
@@ -194,7 +196,8 @@ class LoanController extends Controller {
                     // total vencido + MORA
                      $mora = round($row->mora);
                     if($mora){
-                         $total_remaining = bcsub($row->delay, $row->total_only_payments, 4) + $row->mora;
+                        $interest_saved = bcsub($row->discount_amount ?? 0, $row->interest_saved ?? 0, 2);
+                        $total_remaining = bcsub(bcsub($row->delay, $row->total_only_payments, 4), $interest_saved, 4) + $row->mora;
                     }else{
                         $total_remaining = 0;
                     }
