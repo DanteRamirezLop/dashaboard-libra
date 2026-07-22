@@ -160,6 +160,21 @@
               <span class="help-block" style="font-size:11px;">Se suma al saldo inicial antes de recalcular el calendario</span>
             </div>
           </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              {!! Form::label("target_cuotas", 'Cuotas restantes tras el pago' . ':*') !!}
+              <div class="input-group">
+                <span class="input-group-addon">
+                  <i class="fas fa-list-ol"></i>
+                </span>
+                {!! Form::number("target_cuotas", $pending_count, ['class' => 'form-control', 'required', 'min' => 1, 'max' => $pending_count]); !!}
+              </div>
+              <span class="help-block" style="font-size:11px;">
+                Actualmente quedan {{ $pending_count }} cuotas de @num_format($current_installment) c/u.
+                Ingresa cuántas cuotas quedarán después de este pago (mín. 1, máx. {{ $pending_count }}); la cuota mensual se recalculará para ese nuevo plazo.
+              </span>
+            </div>
+          </div>
         <div class="col-md-12">
           <div class="form-group">
             {!! Form::label("note", __('lang_v1.payment_note') . ':') !!}

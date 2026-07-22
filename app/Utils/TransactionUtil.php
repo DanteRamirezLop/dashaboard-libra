@@ -46,7 +46,7 @@ class TransactionUtil extends Util
      * @return object
      */
 
-      public function regeneratePaymentSchedule( int $loanId, int $fromVersionId, int $toVersionId, float $capitalPayment, $type_pay, float $moraAmount = 0.0)
+      public function regeneratePaymentSchedule( int $loanId, int $fromVersionId, int $toVersionId, float $capitalPayment, $type_pay, float $moraAmount = 0.0, ?int $targetCuotas = null)
     {
         $fromVersionId = $fromVersionId ? $fromVersionId : NULL;
         $loan = Loan::findOrFail($loanId);
@@ -63,24 +63,31 @@ class TransactionUtil extends Util
 
         $pendingRows = $rows->filter(fn($r) => in_array($r->status, ['pending']))->values();
         $pendingCount = $pendingRows->count();
+        // Número de cuotas que quedarán tras el pago a capital. Por defecto se conserva
+        // el plazo actual (se recalcula solo el monto de la cuota); si se indica un valor
+        // menor, el plazo se acorta (se reduce el número de cuotas) y la cuota se recalcula
+        // para ese nuevo plazo.
+        $n = $targetCuotas ?: $pendingCount;
+        $n = max(1, min($n, $pendingCount));
         $monthlyRate = round(($loan->annual_interest_rate / 100) / 12, 6);
         $balanceBefore = (float) $nextPending->opening_balance + $moraAmount;
         $oldInstallment = ((float) $nextPending->capital) + ( (float) $nextPending->interests );
 
         $oldTotals = $this->simulateFrenchScheduleTotals($balanceBefore, $monthlyRate, $pendingCount, $oldInstallment);
         $newBalance = max(0, $balanceBefore - $capitalPayment);
-        $installment = round($this->calcPMT($newBalance, $monthlyRate, $pendingCount), 2);
-        $newTotals = $this->simulateFrenchScheduleTotals($newBalance, $monthlyRate, $pendingCount, $installment);
-       
+        $installment = round($this->calcPMT($newBalance, $monthlyRate, $n), 2);
+        $newTotals = $this->simulateFrenchScheduleTotals($newBalance, $monthlyRate, $n, $installment);
+
         Log::info('Renato:',[
             'oldTotals'=>$oldTotals,
             'newBalance'=>$newBalance,
             'installment'=>$installment,
             'newTotals'=>$newTotals,
             'monthlyRate'=>$monthlyRate,
-            'pendingCount'=>$pendingCount
+            'pendingCount'=>$pendingCount,
+            'n'=>$n,
         ]);
-        
+
         // 1) Replicar las cuotas pagadas tal cual, el unico cambio es el schedule_version_id y ref_payment_schedule_id
         foreach ($rows->where('status', '=', 'paid') as $oldRow) {
             $newRow = $oldRow->replicate();
@@ -88,11 +95,13 @@ class TransactionUtil extends Util
             $newRow->ref_payment_schedule_id = $oldRow->ref_payment_schedule_id ? $oldRow->ref_payment_schedule_id : $oldRow->id;
             $newRow->save();
         }
-        // 2) Recalcular solo las pendientes
-        if($type_pay == 'parcial'){ 
+        // 2) Recalcular las primeras $n cuotas pendientes (conservan su fecha, GPS y seguro originales).
+        //    Las cuotas pendientes restantes (si el plazo se acorta) no se replican en la nueva
+        //    versión: el préstamo termina antes.
+        if($type_pay == 'parcial' && $newBalance > 0.01){
             $balance = $newBalance;
-            foreach ($pendingRows as $index => $oldRow) {
-                $isLastPending = ($index === $pendingCount - 1);
+            foreach ($pendingRows->take($n) as $index => $oldRow) {
+                $isLastPending = ($index === $n - 1);
                 $interests  = round($balance * $monthlyRate, 2);
                 $principal  = round($installment - $interests, 2);
                 if ($isLastPending) {
@@ -113,7 +122,7 @@ class TransactionUtil extends Util
                 $balance = $balanceAfter;
             }
          }else{
-            $loan->status = 'paid'; // Si es pago total, marcar el prestamo como pagado
+            $loan->status = 'paid'; // Si es pago total (o el pago a capital liquida el saldo), marcar el prestamo como pagado
         }
 
         $interestSaved = round($oldTotals['total_interests'] - $newTotals['total_interests'], 4);

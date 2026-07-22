@@ -189,6 +189,7 @@ class LoanController extends Controller {
                     if ($total_to_delay < 0 && $total_to_delay > -0.5) {
                         $total_to_delay = 0;
                     }
+                    
                     $total_to_delay_html = '<span class="payment_due" data-orig-value="'.$total_to_delay.'">'.$this->transactionUtil->num_f($total_to_delay, true).'</span>';
                     return $total_to_delay_html;
                 })
@@ -1100,7 +1101,9 @@ class LoanController extends Controller {
                         $view = view('loan.payment_total')->with(compact('transaction','loan','amount','amount_formated','paid_on','payment_types','accounts','type'))->render();
                     }else{
                         $amount_formated = $this->transactionUtil->num_f($amount);
-                        $view = view('loan.payment_capital')->with(compact('transaction','loan','amount','amount_formated','paid_on','payment_types','accounts','type'))->render();
+                        $pending_count = $rows->where('status', 'pending')->count();
+                        $current_installment = round((float) $nextPending->capital + (float) $nextPending->interests, 2);
+                        $view = view('loan.payment_capital')->with(compact('transaction','loan','amount','amount_formated','paid_on','payment_types','accounts','type','pending_count','current_installment'))->render();
                     }
 
                     $output = ['status' => 'due','view' => $view];
