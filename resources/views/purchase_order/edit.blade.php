@@ -462,6 +462,9 @@
                     <option value="Ricardo Guillermo Li Bravo" @if($purchase->custom_field_2 == 'Ricardo Guillermo Li Bravo') selected @endif>
                         Ricardo Guillermo Li Bravo
                     </option>
+                    <option value="Mirtha Li" @if($purchase->custom_field_2 == 'Mirtha Li') selected @endif>
+                        Mirtha Li
+                    </option>
                 </select>
             </div>
           </div>
