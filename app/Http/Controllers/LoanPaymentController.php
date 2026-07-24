@@ -271,7 +271,8 @@ class LoanPaymentController extends Controller
                     ]);
 
                     $moraAmount = (float) $this->transactionUtil->num_uf($request->input('mora_amount', 0));
-                    $interestSaved =  $this->transactionUtil->regeneratePaymentSchedule($request->input('loan_id'),$schedule_version_current_id, $schedule_version_new->id, $inputs['amount'], $type_pay, $moraAmount);
+                    $targetCuotas = $request->filled('target_cuotas') ? (int) $request->input('target_cuotas') : null;
+                    $interestSaved =  $this->transactionUtil->regeneratePaymentSchedule($request->input('loan_id'),$schedule_version_current_id, $schedule_version_new->id, $inputs['amount'], $type_pay, $moraAmount, $targetCuotas);
                     $concept = ($type_pay == 'total') ? 'Pago capital total' : 'Pago capital parcial';
                     
                 //REGISTRAR EL DESCUENTO EN LA TRANSACCION
