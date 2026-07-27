@@ -280,15 +280,21 @@ class LoanController extends Controller {
         $products = Product::where('category_id',$category->id)->where('is_inactive',0)->get();
         $walk_in_customer = $this->contactUtil->getWalkInCustomer($business_id);
         //variables en Credito
-        $filing_fee = LoanSetting::where('name','coste-tramite')->first();
-        $gps = LoanSetting::where('name','gps')->first();
-        $insurance = LoanSetting::where('name','seguro')->first();
+        $goals = LoanSetting::whereIn('name', ['coste-tramite', 'gps', 'seguro'])->get()->keyBy('name');
+
+        $filing_fee         = (float) optional($goals->get('coste-tramite'))->amount_total ?? 0;
+        $filing_fee_initial = (float) optional($goals->get('coste-tramite'))->amount_inicial ?? 0;
+        $gps                = (float) optional($goals->get('gps'))->amount_total ?? 0;
+        $gps_initial        = (float) optional($goals->get('gps'))->amount_inicial ?? 0;
+        $insurance          = (float) optional($goals->get('seguro'))->amount_total ?? 0;
+        $insurance_initial  = (float) optional($goals->get('seguro'))->amount_inicial ?? 0;
+
         $waiters = $this->transactionUtil->getModuleStaff($business_id,'customer.view_own',true);
         $rightNow = Carbon::now();
         $currency = $this->transactionUtil->currentCurrency($business_id);
 
-        $type = request()->get('type','');   
-        return view('loan.create',compact('type','currency','customer','products','walk_in_customer','filing_fee','gps','insurance','waiters','rightNow'));
+        $type = request()->get('type','');
+        return view('loan.create',compact('type','currency','customer','products','walk_in_customer','filing_fee','filing_fee_initial','gps','gps_initial','insurance','insurance_initial','waiters','rightNow'));
     }
 
 
@@ -304,17 +310,18 @@ class LoanController extends Controller {
                 $annual_interest_rate     = (float) $request->input('multiplayer'); // antes: multiplier
                 $number_month             = (int) $request->input('number_month');
                 $type_initial             = (int) $request->input('type_initial'); // 1 completo, 2 fraccionado
-                $meses_gps_seguro         = (int) $request->input('mounth_expenses_financed');
                 $mounth_fracction_initial = (int) $request->input('mounth_fracction');
 
                 $option_tramite = (int) $request->input('option_tramite');
-                $option_gps     = (int) $request->input('option_gps');
-                $option_seguro  = (int) $request->input('option_seguro');
+                $option_gps     = (int) $request->input('option_gps');    // meses de GPS (0 = sin GPS)
+                $option_seguro  = (int) $request->input('option_seguro'); // meses de seguro (0 = sin seguro)
+                $tipo_calculo   = $request->input('tipo_calculo', 'producto'); // 'producto' | 'fijo'
 
                 // -------------------- Tipo de prestamo --------------------
                 $type = $request->input('type') ? $request->input('type') : 'sale';
                 // -------------------- Validaciones de meses --------------------
-                if ($number_month < $meses_gps_seguro || $number_month < $mounth_fracction_initial) {
+                if ($number_month < $mounth_fracction_initial
+                    || $number_month < $option_gps || $number_month < $option_seguro) {
                     return [
                         'redirect' => redirect('loans')->with('status', [
                             'success' => false,
@@ -365,33 +372,54 @@ class LoanController extends Controller {
                 $gps_quotes          = 0.0;
                 $insurance_quotes    = 0.0;
                 // Cuotas mensuales de esos saldos financiados
-                $admin_fee_cuote = 0.0;
                 $gps_cuote       = 0.0;
                 $insurance_cuote = 0.0;
-                $months_expenses = max($meses_gps_seguro, 1); // evita división 0
 
+                // El trámite, si se incluye, se cobra completo en la inicial (no se financia en cuotas).
                 if ($option_tramite === 1) {
                     $tbl = $loan_setting->get('coste-tramite');
-                    $initial_admin_fee = (float) optional($tbl)->amount_inicial;
-                    $admin_fee_total   = (float) optional($tbl)->amount_total;
-                    $admin_fee_quotes  = round($admin_fee_total - $initial_admin_fee, 2);
-                    $admin_fee_cuote   = $admin_fee_quotes / $months_expenses;
+                    $initial_admin_fee = (float) optional($tbl)->amount_total;
                 }
 
-                if ($option_gps === 1) {
-                    $tbl = $loan_setting->get('gps');
-                    $initial_gps     = (float) optional($tbl)->amount_inicial;
-                    $gps_total       = (float) optional($tbl)->amount_total;
-                    $gps_quotes      = round($gps_total - $initial_gps, 2);
-                    $gps_cuote       = $gps_quotes / $months_expenses;
+                // GPS y seguro se recalculan en el servidor (no se confía en montos enviados por el
+                // formulario) replicando la misma fórmula que muestra el JS de la vista para el preview.
+                if ($option_gps > 0) {
+                    $anios_gps = $option_gps <= 12 ? 1 : ($option_gps <= 24 ? 2 : 3);
+
+                    if ($tipo_calculo === 'fijo') {
+                        $tbl = $loan_setting->get('gps');
+                        $gps_initial_setting = (float) optional($tbl)->amount_inicial;
+                        $gps_total_setting   = (float) optional($tbl)->amount_total;
+                        $initial_gps = $gps_initial_setting * $anios_gps;
+                        $gps_quotes  = ($gps_total_setting - $gps_initial_setting) * $anios_gps;
+                    } else {
+                        $gps_por_mes = (float) ($product->product_custom_field11 ?? 150);
+                        $gps_total_calc = $gps_por_mes * 12 * $anios_gps;
+                        $initial_gps = $gps_total_calc / 2;
+                        $gps_quotes  = $gps_total_calc / 2;
+                    }
+
+                    $gps_cuote = round($gps_quotes, 2) / $option_gps;
+                    $initial_gps = round($initial_gps, 2);
+                    $gps_quotes  = round($gps_quotes, 2);
                 }
 
-                if ($option_seguro === 1) {
-                    $tbl = $loan_setting->get('seguro');
-                    $initial_insurance = (float) optional($tbl)->amount_inicial;
-                    $insurance_total   = (float) optional($tbl)->amount_total;
-                    $insurance_quotes  = round($insurance_total - $initial_insurance, 2);
-                    $insurance_cuote   = $insurance_quotes / $months_expenses;
+                if ($option_seguro > 0) {
+                    if ($tipo_calculo === 'fijo') {
+                        $tbl = $loan_setting->get('seguro');
+                        $initial_insurance = (float) optional($tbl)->amount_inicial;
+                        $insurance_quotes  = (float) optional($tbl)->amount_total - $initial_insurance;
+                    } else {
+                        $anios_seguro = $option_seguro >= 36 ? 3 : ($option_seguro > 12 ? 2 : 1);
+                        $reposicion = $product_mount;
+                        $costo_total_seguro = $reposicion * 6.79 / 1000 * 1.2154 * $anios_seguro * 1.5;
+                        $initial_insurance = $costo_total_seguro / 2;
+                        $insurance_quotes  = $costo_total_seguro / 2;
+                    }
+
+                    $insurance_cuote   = round($insurance_quotes, 2) / $option_seguro;
+                    $initial_insurance = round($initial_insurance, 2);
+                    $insurance_quotes  = round($insurance_quotes, 2);
                 }
 
                 // -------------------- Porcentaje inicial --------------------
@@ -450,9 +478,9 @@ class LoanController extends Controller {
 
                     $initial_fraccion_pay = ($i <= $mounth_fracction) ? $initial_cuotes : 0;
 
-                    $gps_pay     = ($i <= $meses_gps_seguro) ? $gps_cuote : 0;
-                    $seguro_pay  = ($i <= $meses_gps_seguro) ? $insurance_cuote : 0;
-                    $admin_pay   = ($i <= $meses_gps_seguro) ? $admin_fee_cuote : 0;
+                    $gps_pay     = ($i <= $option_gps) ? $gps_cuote : 0;
+                    $seguro_pay  = ($i <= $option_seguro) ? $insurance_cuote : 0;
+                    $admin_pay   = 0; // el trámite se cobra íntegro en la inicial, no se financia en cuotas
 
                     $quotes[] = [
                         'id'            => $i,

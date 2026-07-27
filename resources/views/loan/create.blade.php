@@ -91,9 +91,9 @@
                             <select class="form-control" required name="product_id" id="product">
                                 <option value="0" selected disabled>@lang('messages.please_select' )</option>
                                 @foreach($products as $key=>$item)
-                                <option value="{{$item->id}}">{{$item->name}}</option>
+                                <option value="{{$item->id}}" data-gps="{{ $item->product_custom_field11 ?? 150 }}">{{$item->name}}</option>
                                 @endforeach
-                            </select> 
+                            </select>
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -114,73 +114,6 @@
                                 <option value="{{$waiter}}">{{$waiter}}</option>
                                 @endforeach
                             </select> 
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group col-sm-12">
-                            {!! Form::label('allow_decimal', 'Cuotas' . ':*') !!} 
-                            <select name="number_month" id="number_month" class="form-control" required>
-                                <option value="0" selected disabled>@lang('messages.please_select' )</option>
-                                <option value="6">6 meses</option>
-                                <option value="10">10 meses</option>
-                                <option value="12">12 meses</option>
-                                <option value="14">14 meses</option>
-                                <option value="16">16 meses</option>
-                                <option value="18">18 meses</option>
-                                <option value="20">20 meses</option>
-                                <option value="22">22 meses</option>
-                                <option value="24">24 meses</option>
-                                <option value="30">30 meses</option>
-                                <option value="32">32 meses</option>
-                                <option value="36">36 meses</option>
-                                <option value="38">38 meses</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group col-sm-12">
-                            {!! Form::label('allow_decimal', 'Tasa de interés anual' . ':*') !!} 
-                            <select name="multiplayer" id="multiplayer" class="form-control" required>
-                                <option value="0" selected disabled>@lang('messages.please_select' )</option>
-                                <option value="20">20%</option>
-                                <option value="19">19%</option>
-                                <option value="18">18%</option>
-                                <option value="17">17%</option>
-                                <option value="16">16%</option>
-                                <option value="15">15%</option>
-                                <option value="14">14%</option>
-                                <option value="13">13%</option>
-                                <option value="12">12%</option>
-                                <option value="11">11%</option>
-                                <option value="10">10%</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-3">  
-                        <div class="form-group col-sm-12">
-                            <div class="form-group">
-                                {!! Form::label("created_on",' Fecha del prestamo:*') !!}
-                                <div class="input-group">
-                                    <span class="input-group-addon">
-                                    <i class="fa fa-calendar"></i>
-                                    </span>
-                                    {!! Form::text('created_on',  @format_datetime($rightNow), ['class' => 'form-control', 'required']); !!}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group col-sm-12">
-                            {!! Form::label('allow_decimal', 'Fuente de contacto' . ':*') !!} 
-                            <select class="form-control" required name="contact_source">
-                                <option value="0" selected disabled>@lang('messages.please_select' )</option>
-                                <option value="Facebook">Facebook</option>
-                                <option value="Instagram">Instagram</option>
-                                <option value="Whatsapp">Whatsapp</option>
-                                <option value="TikTok">TikTok</option>
-                                <option value="Web de Libra International">Web de Libra International</option>
-                                <option value="Contacto directo del vendedor">Contacto directo del vendedor</option>
-                            </select>
                         </div>
                     </div>
                 </div>
@@ -255,6 +188,77 @@
                     </div>
                 </div>
 
+
+                 <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group col-sm-12">
+                            {!! Form::label('allow_decimal', 'Cuotas' . ':*') !!} 
+                            <select name="number_month" id="number_month" class="form-control" required>
+                                <option value="0" selected disabled>@lang('messages.please_select' )</option>
+                                <option value="6">6 meses</option>
+                                <option value="10">10 meses</option>
+                                <option value="12">12 meses</option>
+                                <option value="14">14 meses</option>
+                                <option value="16">16 meses</option>
+                                <option value="18">18 meses</option>
+                                <option value="20">20 meses</option>
+                                <option value="22">22 meses</option>
+                                <option value="24">24 meses</option>
+                                <option value="30">30 meses</option>
+                                <option value="32">32 meses</option>
+                                <option value="36">36 meses</option>
+                                <option value="38">38 meses</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group col-sm-12">
+                            {!! Form::label('allow_decimal', 'Tasa de interés anual' . ':*') !!} 
+                            <select name="multiplayer" id="multiplayer" class="form-control" required>
+                                <option value="0" selected disabled>@lang('messages.please_select' )</option>
+                                <option value="20">20%</option>
+                                <option value="19">19%</option>
+                                <option value="18">18%</option>
+                                <option value="17">17%</option>
+                                <option value="16">16%</option>
+                                <option value="15">15%</option>
+                                <option value="14">14%</option>
+                                <option value="13">13%</option>
+                                <option value="12">12%</option>
+                                <option value="11">11%</option>
+                                <option value="10">10%</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">  
+                        <div class="form-group col-sm-12">
+                            <div class="form-group">
+                                {!! Form::label("created_on",' Fecha del prestamo:*') !!}
+                                <div class="input-group">
+                                    <span class="input-group-addon">
+                                    <i class="fa fa-calendar"></i>
+                                    </span>
+                                    {!! Form::text('created_on',  @format_datetime($rightNow), ['class' => 'form-control', 'required']); !!}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group col-sm-12">
+                            {!! Form::label('allow_decimal', 'Fuente de contacto' . ':*') !!} 
+                            <select class="form-control" required name="contact_source">
+                                <option value="0" selected disabled>@lang('messages.please_select' )</option>
+                                <option value="Facebook">Facebook</option>
+                                <option value="Instagram">Instagram</option>
+                                <option value="Whatsapp">Whatsapp</option>
+                                <option value="TikTok">TikTok</option>
+                                <option value="Web de Libra International">Web de Libra International</option>
+                                <option value="Contacto directo del vendedor">Contacto directo del vendedor</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="row">
                     <div class="col-md-3">
                         <div class="form-group ">
@@ -262,7 +266,7 @@
                             <br>
                             <label class="radio-inline">
                                 {!! Form::radio('option_tramite', '1', false, [ 'class' => 'input-icheck', 'name'=>"option_tramite", 'checked']); !!}
-                                Si  
+                                Si
                             </label>
                             <label class="radio-inline">
                                 {!! Form::radio('option_tramite', '2', false, [ 'class' => 'input-icheck', 'name'=>"option_tramite"]); !!}
@@ -271,76 +275,57 @@
                         </div>
                         <div class="form-group" id="tramite">
                             <div style="margin-left:20px;">
-                                <strong>Inicial:</strong> $ {{ number_format($filing_fee->amount_inicial,0)}} /
-                                <strong>Financiar:</strong> $ {{ number_format($filing_fee->amount_total - $filing_fee->amount_inicial,0)}}
-                            </div>    
+                                <strong>Se cobra en la inicial:</strong> $ {{ number_format($filing_fee,0)}}
+                            </div>
                         </div>
                     </div>
+
+                    <div class="col-md-12"></div>
+
                     <div class="col-md-3">
-                        <div class="form-group">
-                                {!! Form::label('option_gps',  'Incluir coste GPS:', ['style' => 'margin-left:20px;'])!!}
+                        <div class="form-group ">
+                            {!! Form::label('tipo_calculo', 'Método GPS / Seguro:', ['style' => 'margin-left:20px;']) !!}
                             <br>
                             <label class="radio-inline">
-                                {!! Form::radio('option_gps', '1', false, [ 'class' => 'input-icheck', 'name'=>"option_gps", 'checked']); !!}
-                                Si  
+                                {!! Form::radio('tipo_calculo', 'producto', true, ['class' => 'input-icheck', 'id' => 'calculo_producto']) !!}
+                                Por producto
                             </label>
                             <label class="radio-inline">
-                                {!! Form::radio('option_gps', '2', false, [ 'class' => 'input-icheck', 'name'=>"option_gps"]); !!}
-                                No
+                                {!! Form::radio('tipo_calculo', 'fijo', false, ['class' => 'input-icheck', 'id' => 'calculo_fijo']) !!}
+                                Fijo
                             </label>
                         </div>
-                        <div class="form-group" id="gps">
-                            <div style="margin-left:20px;">
-                                <strong>Inicial:</strong> $ {{ number_format($gps->amount_inicial,0)}} /
-                                <strong>Financiar:</strong> $ {{number_format($gps->amount_total - $gps->amount_inicial,0)}}
-                            </div>    
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            {!! Form::label('option_seguro',  'Incluir coste Seguro:', ['style' => 'margin-left:20px;'])!!}
-                            <br>
-                            <label class="radio-inline">
-                                {!! Form::radio('option_seguro', '1', false, [ 'class' => 'input-icheck', 'name'=>"option_seguro", 'checked']); !!}
-                                Si 
-                            </label>
-                            <label class="radio-inline">
-                                {!! Form::radio('option_seguro', '2', false, [ 'class' => 'input-icheck', 'name'=>"option_seguro"]); !!}
-                                No
-                            </label>
-                        </div>
-                        <div class="form-group" id="insurance">
-                            <div style="margin-left:20px;">
-                                <strong>Inicial:</strong> $ {{ number_format($insurance->amount_inicial,0)}} /
-                                <strong>Financiar:</strong> $ {{ number_format($insurance->amount_total - $insurance->amount_inicial,0)}}
-                            </div>    
+                        
+                        <div id="info_valores_fijos" style="margin-left:20px;font-size: small; display:none;">
+                            <strong>GPS:</strong> Ini. $ {{ number_format($gps_initial,0) }} / Fin. $ {{ number_format($gps - $gps_initial,0) }} <br>
+                            <strong>Seguro:</strong> Ini. $ {{ number_format($insurance_initial,0) }} / Fin. $ {{ number_format($insurance - $insurance_initial,0) }}
                         </div>
                     </div>
 
                     <div class="col-md-3">
-                        <div class="form-group col-sm-12">
-                            {!! Form::label('mounth_expenses_financed', 'Financiar tramite, GPS y Seguro en cuotas de' . ':') !!} 
-                            <select name="mounth_expenses_financed" id="mounth_expenses_financed" class="form-control" required>
-                                <option value="0" selected disabled>@lang('messages.please_select' )</option>
-                                <option value="1">1 meses</option>
-                                <option value="2">2 meses</option>
-                                <option value="3">3 meses</option>
-                                <option value="4">4 meses</option>
-                                <option value="5">5 meses</option>
-                                <option value="6">6 meses</option>
-                                <option value="7">7 meses</option>
-                                <option value="8">8 meses</option>
-                                <option value="9">9 meses</option>
-                                <option value="10">10 meses</option>
-                                <option value="11">11 meses</option>
-                                <option value="12">12 meses</option>
-                                <option value="18">18 meses</option>
-                                <option value="24">24 meses</option>
-                                <option value="30">30 meses</option>
-                                <option value="32">32 meses</option>
-                            </select>
+                        <div class="form-group">
+                            {!! Form::label('option_gps', 'GPS (meses): ', ['style' => 'margin-left:20px;']) !!}
+                            {!! Form::select('option_gps', ['0' => 'Sin GPS','2' => '2 meses','3' => '3 meses', '4' => '4 meses', '5' => '5 meses', '6' => '6 meses', '7' => '7 meses', '8' => '8 meses', '9' => '9 meses', '10' => '10 meses', '12' => '12 meses', '14' => '14 meses', '16' => '16 meses', '18' => '18 meses', '20' => '20 meses', '22' => '22 meses', '24' => '24 meses', '28' => '28 meses', '30' => '30 meses', '32' => '32 meses', '36' => '36 meses'], '0', ['id' => 'option_gps', 'class' => 'form-control', 'style' => 'margin-left:20px; width:calc(100% - 20px);']) !!}
                         </div>
-                    </div> 
+                        <div class="form-group">
+                            <div style="margin-left:20px; font-size: small;">
+                                <strong>Inicial:</strong> <span id="gps_inicial_display">—</span> <br>
+                                <strong>Financiar:</strong> <span id="gps_financiar_display">—</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            {!! Form::label('option_seguro', 'Seguro (meses): ', ['style' => 'margin-left:20px;']) !!}
+                            {!! Form::select('option_seguro', ['0' => 'Sin Seguro','2' => '2 meses','3' => '3 meses', '4' => '4 meses', '5' => '5 meses', '6' => '6 meses', '7' => '7 meses', '8' => '8 meses', '9' => '9 meses', '10' => '10 meses', '12' => '12 meses', '14' => '14 meses', '16' => '16 meses', '18' => '18 meses', '20' => '20 meses', '22' => '22 meses', '24' => '24 meses', '28' => '28 meses', '30' => '30 meses', '32' => '32 meses', '36' => '36 meses'], '0', ['id' => 'option_seguro', 'class' => 'form-control', 'style' => 'margin-left:20px; width:calc(100% - 20px);']) !!}
+                        </div>
+                        <div class="form-group">
+                            <div style="margin-left:20px; font-size: small;">
+                                <strong>Inicial:</strong> <span id="seguro_inicial_display">—</span> <br>
+                                <strong>Financiar:</strong> <span id="seguro_financiar_display">—</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <hr>
@@ -407,18 +392,37 @@
             return primero <= segundo;
         }, "Los meses seleccionados no pueden ser mayor a las cuotas del Prestamo");
 
+        $.validator.addMethod("tieneGPS", function(value, element) {
+            if (!value || value == '0') return true;
+            var gps = parseFloat($('#product option:selected').data('gps')) || 0;
+            return gps > 0;
+        }, "El producto seleccionado no tiene valor de GPS configurado.");
+
+        $.validator.addMethod("noMayorQueNumberMonth", function(value, element) {
+            var val = parseInt(value) || 0;
+            if (val === 0) return true;
+            var meses = parseInt($('#number_month').val()) || 0;
+            return val <= meses;
+        }, "No puede ser mayor al número de cuotas del préstamo.");
+
         $('form#cotizar_add_form').validate({
 
             rules: {
+                product_id: {
+                    tieneGPS: true,
+                },
                 mounth_fracction: {
                     menorOIgualQue:  "mounth_fracction"
                 },
 
-                mounth_expenses_financed: {
-                    menorOIgualQue:  "mounth_expenses_financed"
+                option_gps: {
+                    noMayorQueNumberMonth: true
+                },
+                option_seguro: {
+                    noMayorQueNumberMonth: true
                 }
             },
-           
+
             errorPlacement: function(error, element) {
                 if (element.parent('.iradio_square-blue').length) {
                     error.insertAfter($(".radio_btns"));
@@ -442,20 +446,20 @@
                 }
             });
             
-            $('input[type=radio][name=option_seguro]').on('ifChecked', function(){
-                if ($(this).val() == 1) {
-                    $("#insurance").show();
-                } else {
-                    $("#insurance").hide();
-                }
-            });
+            $('input[type=radio][name=tipo_calculo]').on('ifChecked', function(){
+                var val = $(this).val();
 
-            $('input[type=radio][name=option_gps]').on('ifChecked', function(){
-                if ($(this).val() == 1) {
-                    $("#gps").show();
+                // Sincronizar visual de iCheck sin pasar por su API (evita cascada de eventos)
+                $('input[name="tipo_calculo"]').closest('.iradio_square-blue').removeClass('checked');
+                $(this).closest('.iradio_square-blue').addClass('checked');
+
+                if (val === 'fijo') {
+                    $('#info_valores_fijos').show();
                 } else {
-                    $("#gps").hide();
+                    $('#info_valores_fijos').hide();
                 }
+                calcularGPS();
+                calcularSeguro();
             });
 
             $('input[type=radio][name=option_tramite]').on('ifChecked', function(){
@@ -492,6 +496,110 @@
 
         $(function() {
             let token_location = $('meta[name="csrf-token"]').attr('content');
+
+            var GPS_FIJO_INICIAL   = {{ $gps_initial }};
+            var GPS_FIJO_FINANCIAR = {{ $gps - $gps_initial }};
+            var SEG_FIJO_INICIAL   = {{ $insurance_initial }};
+            var SEG_FIJO_FINANCIAR = {{ $insurance - $insurance_initial }};
+
+            function getMetodoCalculo() {
+                return $('input[name="tipo_calculo"]:checked').val();
+            }
+
+            function calcularGPS() {
+                var meses = parseInt($('#option_gps').val()) || 0;
+                var fmt = new Intl.NumberFormat('es-PE', { style: 'currency', currency: '{{ $currency->code }}', minimumFractionDigits: 2 });
+
+                if (meses <= 0) {
+                    $('#gps_inicial_display').text('—');
+                    $('#gps_financiar_display').text('—');
+                    return;
+                }
+
+                var años = meses <= 12 ? 1 : (meses <= 24 ? 2 : 3);
+
+                var inicial, financiar;
+                if (getMetodoCalculo() === 'fijo') {
+                    inicial   = GPS_FIJO_INICIAL   * años;
+                    financiar = GPS_FIJO_FINANCIAR * años;
+                } else {
+                    var gpsPorMes = parseFloat($('#product option:selected').data('gps')) || 0;
+                    if (gpsPorMes <= 0) {
+                        $('#gps_inicial_display').text('—');
+                        $('#gps_financiar_display').text('—');
+                        return;
+                    }
+                    var total = gpsPorMes * 12 * años;
+                    inicial   = total / 2;
+                    financiar = total / 2;
+                }
+
+                $('#gps_inicial_display').text(fmt.format(inicial));
+                $('#gps_financiar_display').text(fmt.format(financiar));
+            }
+
+            function calcularSeguro() {
+                var meses = parseInt($('#option_seguro').val()) || 0;
+                var fmt = new Intl.NumberFormat('es-PE', { style: 'currency', currency: '{{ $currency->code }}', minimumFractionDigits: 2 });
+
+                if (meses <= 0) {
+                    $('#seguro_inicial_display').text('—');
+                    $('#seguro_financiar_display').text('—');
+                    return;
+                }
+
+                var inicial, financiar;
+                if (getMetodoCalculo() === 'fijo') {
+                    inicial   = SEG_FIJO_INICIAL;
+                    financiar = SEG_FIJO_FINANCIAR;
+                } else {
+                    var reposicion = parseFloat($('#variation option:selected').data('price')) || 0;
+                    if (reposicion <= 0) {
+                        $('#seguro_inicial_display').text('—');
+                        $('#seguro_financiar_display').text('—');
+                        return;
+                    }
+                    var años = meses >= 36 ? 3 : (meses > 12 ? 2 : 1);
+                    var costoTotal = reposicion * 6.79 / 1000 * 1.2154 * años * 1.5;
+                    inicial   = costoTotal / 2;
+                    financiar = costoTotal / 2;
+                }
+
+                $('#seguro_inicial_display').text(fmt.format(inicial));
+                $('#seguro_financiar_display').text(fmt.format(financiar));
+            }
+
+            function filtrarOpcionesGpsSeguro() {
+                var meses = parseInt($('#number_month').val()) || 0;
+                ['#option_gps', '#option_seguro'].forEach(function(id) {
+                    var $select = $(id);
+                    var valorActual = parseInt($select.val()) || 0;
+                    $select.find('option').each(function() {
+                        var val = parseInt($(this).val()) || 0;
+                        $(this).prop('disabled', val > 0 && val > meses);
+                    });
+                    if (valorActual > meses) {
+                        $select.val('0').trigger('change');
+                    }
+                });
+            }
+
+            $('#option_gps').on('change', function(){
+                calcularGPS();
+            });
+
+            $('#option_seguro').on('change', function(){
+                calcularSeguro();
+            });
+
+            $('#variation').on('change', function(){
+                calcularSeguro();
+            });
+
+            $('#number_month').on('change', function() {
+                filtrarOpcionesGpsSeguro();
+            });
+
             $("#search_dni").on('click',function () {
                 var dni = $("#dni").val();
                 if(dni == ''){
@@ -608,8 +716,10 @@
                         if (response.status) {
                            $('#variation').html(response.options);
                         }
+                        calcularSeguro();
                     }
                 });
+                calcularGPS();
             });
         });
     </script>
