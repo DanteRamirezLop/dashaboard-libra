@@ -2893,6 +2893,14 @@ function update_shipping_address(data) {
         $('#billing_address_div').html(billing_address);
     }
 
+    if ($('#contact_id_div').length) {
+        $('#contact_id_div').html(data.contact_id ? data.contact_id : '');
+    }
+
+    if ($('#custom_field2_div').length) {
+        $('#custom_field2_div').html(data.custom_field2 ? data.custom_field2 : '-');
+    }
+
     if ($('#shipping_custom_field_1').length) {
         let shipping_custom_field_1 = data.shipping_custom_field_details != null ? data.shipping_custom_field_details.shipping_custom_field_1 : '';
         $('#shipping_custom_field_1').val(shipping_custom_field_1);

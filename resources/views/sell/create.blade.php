@@ -104,7 +104,6 @@
 						{!! Form::hidden('price_group', key($price_groups), ['id' => 'price_group']) !!}
 					@endif
 				@endif
-
 				<!-- Selección de moneda -->
 				<div class="col-sm-4">
 					<div class="form-group">
@@ -112,7 +111,6 @@
 						{!! Form::select('currency_id',['2'=>'Dolar (USD)','94'=>'Sol (PE)'], $currency_details->currency_id, ['class' => 'form-control', 'required']); !!}
 					</div>
 				</div>
-
 				<!-- Currency Exchange Rate -->
 				<div id="section_exchange_rate" class="col-sm-4 @if(!$currency_details->purchase_in_diff_currency) hide @endif">
 					<div class="form-group">
@@ -203,7 +201,21 @@
 						{{$walk_in_customer['supplier_business_name'] ?? ''}},<br>
 						{{$walk_in_customer['name'] ?? ''}},<br>
 						{{$walk_in_customer['shipping_address'] ?? ''}}
-					</div>					
+					</div>	
+					
+					<strong>
+						{{ __('lang_v1.contact_id') }}:
+					</strong>
+					<div id="contact_id_div">
+						{{ !empty($walk_in_customer['contact_id']) ? $walk_in_customer['contact_id'] : 'Walk-In Customer' }}
+					</div>
+					<strong>
+						RUC:
+					</strong>
+					<div id="custom_field2_div">
+						{{ !empty($walk_in_customer['custom_field2']) ? $walk_in_customer['custom_field2'] : 'Walk-In Customer' }}
+					</div>
+
 					</small>
 				</div>
 

@@ -31,6 +31,8 @@
 			<div class="text-sm"><strong>Local 2: </strong>Exhibición y Ventas, Carretera Panamericana Norte Km 1267 
 				Pueblo Nuevo, Tumbes 
 			</div>
+			<div class="text-sm"><strong>Sede Piura: </strong>Carretera Panamericana Piura - Sullana, km 8 (pasando Backus), Piura.
+			</div>
 
 			<p>
 			@if(!empty($receipt_details->sub_heading_line1))
@@ -129,6 +131,12 @@
 				@if(!empty($receipt_details->customer_info))
 					<b>{{ $receipt_details->customer_label }}</b> <br> {!! $receipt_details->customer_info !!} <br>
 				@endif
+				@if(!empty($receipt_details->customer_code))
+					<br/>
+					<b>{{ __('lang_v1.contact_id') }}:</b> {{ $receipt_details->customer_code }}
+				@endif
+					<br/>
+					<b>RUC:</b> {{ $receipt_details->customer_custom_field2 ? $receipt_details->customer_custom_field2 : '--'  }}
 				@if(!empty($receipt_details->client_id_label))
 					<br/>
 					<b>{{ $receipt_details->client_id_label }}</b> {{ $receipt_details->client_id }}
@@ -152,7 +160,11 @@
 					<br/>
 					<strong>{{ $receipt_details->customer_rp_label }}</strong> {{ $receipt_details->customer_total_rp }}
 				@endif
+
+				<!-- customer info - end -->
 			</span>
+
+
 
 			<span class="pull-right text-left">
 			    <b>Cotización #: </b>

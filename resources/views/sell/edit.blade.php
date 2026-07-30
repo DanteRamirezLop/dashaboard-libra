@@ -18,11 +18,10 @@
 <input type="hidden" id="p_symbol" value="{{$currency_details->symbol}}">
 <input type="hidden" id="p_thousand" value="{{$currency_details->thousand_separator}}">
 <input type="hidden" id="p_decimal" value="{{$currency_details->decimal_separator}}">
-
 <input type="hidden" id="p_currency_id" value="{{$currency_details->currency_id}}">
 <input type="hidden" id="diff_currency" value="{{$currency_details->purchase_in_diff_currency}}">
-
 <input type="hidden" id="amount_rounding_method" value="{{$pos_settings['amount_rounding_method'] ?? ''}}">
+
 @if(!empty($pos_settings['allow_overselling']))
 	<input type="hidden" id="is_overselling_allowed">
 @endif
@@ -35,7 +34,6 @@
 @endphp
 <input type="hidden" id="item_addition_method" value="{{$business_details->item_addition_method}}">
 	{!! Form::open(['url' => action([\App\Http\Controllers\SellPosController::class, 'update'], ['po' => $transaction->id ]), 'method' => 'put', 'id' => 'edit_sell_form', 'files' => true, 'data-transaction-id' => $transaction->id ]) !!}
-
 	{!! Form::hidden('location_id', $transaction->location_id, ['id' => 'location_id', 'data-receipt_printer_type' => !empty($location_printer_type) ? $location_printer_type : 'browser', 'data-default_payment_accounts' => $transaction->location->default_payment_accounts]); !!}
 
 	@if($transaction->type == 'sales_order')
@@ -130,7 +128,14 @@
 							{!! $transaction->contact->supplier_business_name ?? '' !!}, <br>
 							{!! $transaction->contact->name ?? '' !!}, <br>
 							{!!$transaction->contact->shipping_address ?? '' !!}
-						</div>						
+						</div>
+
+						<strong>{{ __('lang_v1.contact_id') }}:</strong>
+						<div>{{ $transaction->contact->contact_id ?? '' }}</div>
+						<strong>RUC</strong>
+						<div>{{ $transaction->contact->custom_field2 ?? '-' }}</div>
+
+
 					</small>
 				</div>
 

@@ -1473,6 +1473,9 @@ class TransactionUtil extends Util
                 $output['customer_custom_fields'] .= implode('<br>', $temp);
             }
 
+            $output['customer_code'] = ! empty($customer->contact_id) ? $customer->contact_id : '';
+            $output['customer_custom_field2'] = ! empty($customer->custom_field2) ? $customer->custom_field2 : '';
+
             //To be used in pdfs
             $customer_address = [];
             if (! empty($customer->supplier_business_name)) {

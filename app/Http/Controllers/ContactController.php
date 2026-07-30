@@ -686,9 +686,7 @@ class ContactController extends Controller
         }
 
         $reward_enabled = (request()->session()->get('business.enable_rp') == 1 && in_array($contact->type, ['customer', 'both'])) ? true : false;
-
         $contact_dropdown = Contact::contactDropdown($business_id, false, false);
-
         $business_locations = BusinessLocation::forDropdown($business_id, true);
 
         //get contact view type : ledger, notes etc.
@@ -704,8 +702,7 @@ class ContactController extends Controller
            ->latest()
            ->get();
 
-        return view('contact.show')
-             ->with(compact('contact', 'reward_enabled', 'contact_dropdown', 'business_locations', 'view_type', 'contact_view_tabs', 'activities'));
+        return view('contact.show')->with(compact('contact', 'reward_enabled', 'contact_dropdown', 'business_locations', 'view_type', 'contact_view_tabs', 'activities'));
     }
 
     /**
@@ -932,6 +929,8 @@ class ContactController extends Controller
             $contacts->select(
                 'contacts.id',
                 DB::raw("IF(contacts.contact_id IS NULL OR contacts.contact_id='', contacts.name, CONCAT(contacts.name, ' (', contacts.contact_id, ')')) AS text"),
+                'contacts.contact_id',
+                'custom_field2',
                 'mobile',
                 'address_line_1',
                 'address_line_2',

@@ -51,7 +51,7 @@
         @if(!empty($custom_labels['sell']['custom_field_4']))
           <br><strong>{{$custom_labels['sell']['custom_field_4'] ?? ''}}: </strong> {{$sell->custom_field_4}}
         @endif
-
+        
         @if(!empty($sales_orders))
               <br><br><strong>@lang('lang_v1.sales_orders'):</strong>
              <table class="table table-slim no-border">
@@ -67,6 +67,8 @@
                @endforeach
              </table>
           @endif
+
+          
         @if($sell->document_path)
           <br>
           <br>
@@ -77,6 +79,8 @@
           </a>
         @endif
       </div>
+
+
       <div class="@if(!empty($export_custom_fields)) col-sm-3 @else col-sm-4 @endif">
         @if(!empty($sell->contact->supplier_business_name))
           {{ $sell->contact->supplier_business_name }}<br>
@@ -104,6 +108,10 @@
               {{__('business.email')}}: {{ $sell->contact->email }}
           @endif
         @endif
+        <br>
+        <b>ID de contacto:</b> {{ $sell->contact->contact_id }}<br>
+        <b>RUC:</b> {{ $sell->contact->custom_field2?$sell->contact->custom_field2 : '--' }}
+
         
       </div>
       <div class="@if(!empty($export_custom_fields)) col-sm-3 @else col-sm-4 @endif">
