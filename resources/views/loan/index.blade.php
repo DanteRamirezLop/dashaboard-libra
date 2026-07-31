@@ -279,6 +279,39 @@ $(document).on('click', '.clear_arrears_btn', function(e) {
     });
 });
 
+$(document).on('click', '.change_loan_type_btn', function(e) {
+    e.preventDefault();
+    var href = $(this).data('href');
+    var target_type = $(this).data('type');
+    var target_label = target_type == 'rent-sale' ? 'Alquiler Venta' : 'Venta';
+    swal({
+        title: '¿Cambiar tipo de préstamo?',
+        text: 'El préstamo pasará a tipo "' + target_label + '".',
+        icon: 'warning',
+        buttons: ['Cancelar', 'Confirmar'],
+    }).then(function(confirm) {
+        if (confirm) {
+            $.ajax({
+                method: 'PATCH',
+                url: href,
+                data: { _token: $('meta[name="csrf-token"]').attr('content') },
+                dataType: 'json',
+                success: function(result) {
+                    if (result.success) {
+                        toastr.success(result.msg);
+                        loan_table.ajax.reload();
+                    } else {
+                        toastr.error(result.msg);
+                    }
+                },
+                error: function() {
+                    toastr.error('Error al procesar la solicitud.');
+                }
+            });
+        }
+    });
+});
+
 $(document).on('click', '.open_repossess_modal', function(e) {
     e.preventDefault();
     var href = $(this).data('href');

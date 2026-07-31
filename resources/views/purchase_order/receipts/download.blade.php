@@ -293,8 +293,8 @@
                         </td>
                     </tr>
                 @else
-                    @if($purchase->custom_field_1 != 'Servicios')
 
+                    @if($purchase->custom_field_1 != 'Servicios')
                         @if($three_percent_withholding)
                         <tr>
                             <td style="text-align: center; font-size: 12px;" colspan="2">
@@ -307,9 +307,12 @@
                             @format_currency(($three_percent_withholding * $purchase->exchange_rate), $currency_details)
                             </td>
                         </tr>
+                        
                         @endif
                     @endif
                 @endif
+
+
                 <tr>
                     <td colspan="2"></td>
                     <td style="text-align: center; font-size: 13px;"colspan="2">

@@ -99,6 +99,10 @@ class LoanController extends Controller {
                                     $html .= '<li class="divider"></li>';
                                     $html .= '<li><a href="#" class="open_repossess_modal" data-id="'.$row->id.'" data-href="'.route('loan.repossess', $row->id).'"><i class="fa fa-retweet" aria-hidden="true"></i> Reposición</a></li>';
                                 }
+                                $html .= '<li class="divider"></li>';
+                                $next_type = $row->type == 'rent-sale' ? 'sale' : 'rent-sale';
+                                $change_type_label = $row->type == 'rent-sale' ? 'Cambiar a Venta' : 'Cambiar a Alquiler Venta';
+                                $html .= '<li><a href="#" class="change_loan_type_btn" data-id="'.$row->id.'" data-type="'.$next_type.'" data-href="'.route('loan.change-type', $row->id).'"><i class="fa fa-exchange-alt" aria-hidden="true"></i> '.$change_type_label.'</a></li>';
                         }else{
                           $html = '<div class="btn-group">
                                     <button type="button" class="btn btn-info dropdown-toggle btn-xs"
@@ -1398,6 +1402,7 @@ class LoanController extends Controller {
             })
             ->select(
                 'loans.id',
+                'loans.type',
                 'loans.balance_to_financed',
                 'loans.total_cost_loan',
                 'loans.created_at',
@@ -1412,8 +1417,8 @@ class LoanController extends Controller {
                 DB::raw('(SELECT SUM(IF(TP.is_return = 1,-1*TP.amount,TP.amount))
                         FROM transaction_payments AS TP
                         WHERE TP.transaction_id = transactions.id) as total_paid'),
-       
-                DB::raw('(SELECT 
+
+                DB::raw('(SELECT
                             SUM(IF(TP.is_return = 1,-1*TP.amount,TP.amount))
                             FROM transaction_payments AS TP
                             WHERE TP.transaction_id = transactions.id AND TP.payment_schedule_id IS NOT NULL
@@ -1463,9 +1468,13 @@ class LoanController extends Controller {
                                     $html .= '<li class="divider"></li>';
                                     $html .= '<li><a href="#" class="clear_arrears_btn" data-id="'.$row->id.'" data-href="'.route('loan.clear-arrears', $row->id).'"><i class="fa fa-check-circle" aria-hidden="true"></i> Actualizar estado</a></li>';
                                 }
+                                $html .= '<li class="divider"></li>';
+                                $next_type = $row->type == 'rent-sale' ? 'sale' : 'rent-sale';
+                                $change_type_label = $row->type == 'rent-sale' ? 'Cambiar a Venta' : 'Cambiar a Alquiler Venta';
+                                $html .= '<li><a href="#" class="change_loan_type_btn" data-id="'.$row->id.'" data-type="'.$next_type.'" data-href="'.route('loan.change-type', $row->id).'"><i class="fa fa-exchange-alt" aria-hidden="true"></i> '.$change_type_label.'</a></li>';
                         }else{
                           $html = '<div class="btn-group">
-                                    <button type="button" class="btn btn-info dropdown-toggle btn-xs" 
+                                    <button type="button" class="btn btn-info dropdown-toggle btn-xs"
                                         data-toggle="dropdown" aria-expanded="false">'.
                                         __('messages.actions').
                                         '<span class="caret"></span><span class="sr-only">Toggle Dropdown
@@ -1476,7 +1485,7 @@ class LoanController extends Controller {
 
                             $html .= '<li class="divider"></li>';
                             $html .= '<li><a href="'.action([\App\Http\Controllers\LoanController::class, 'show'], [$row->id]).'" "><i class="fas fa fa-calendar" aria-hidden="true"></i> Calendario de pagos</a></li>';
-                        } 
+                        }
                         $html .= '</ul></div>';
                         return $html;
                      }
@@ -1744,6 +1753,28 @@ class LoanController extends Controller {
         } catch (\Exception $e) {
             \Log::emergency('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
             return response()->json(['success' => false, 'msg' => 'Error al actualizar el estado.']);
+        }
+    }
+
+    public function changeType($id)
+    {
+        if (! request()->ajax()) {
+            abort(403);
+        }
+
+        try {
+            $business_id = request()->session()->get('user.business_id');
+            $loan = Loan::where('business_id', $business_id)->findOrFail($id);
+
+            $loan->type = $loan->type == 'rent-sale' ? 'sale' : 'rent-sale';
+            $loan->save();
+
+            $label = $loan->type == 'rent-sale' ? 'Alquiler Venta' : 'Venta';
+
+            return response()->json(['success' => true, 'msg' => 'Tipo de préstamo cambiado a '.$label.' correctamente.']);
+        } catch (\Exception $e) {
+            \Log::emergency('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
+            return response()->json(['success' => false, 'msg' => 'Error al cambiar el tipo de préstamo.']);
         }
     }
 

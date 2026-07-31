@@ -96,6 +96,7 @@ class LoanUtil
             )
             ->select(
                 'loans.id',
+                'loans.type',
                 'loans.balance_to_financed',
                 'loans.total_cost_loan',
                 'loans.created_at',
