@@ -63,7 +63,7 @@ class CalculateStatusLoan extends Command
                     ->from('payment_schedules as ps')
                     ->leftJoin('schedule_versions as sv', 'sv.id', '=', 'ps.schedule_version_id')
                     ->where('ps.loan_id', $prestamo->id)
-                    ->where('ps.status', 'overdue')
+                    ->whereIn('ps.status', ['overdue', 'partial'])
                     ->when(
                         $hasActiveVersion,
                         fn ($q) => $q->where('sv.status', 'active'),

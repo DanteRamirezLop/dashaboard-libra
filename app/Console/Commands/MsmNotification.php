@@ -49,8 +49,8 @@ class MsmNotification extends Command
                 $numeros = [];
                 $customers = [];
                 $dayRightNow = Carbon::now();
-                $primerDiaMes = Carbon::now()->startOfMonth()->startOfDay()->toDateString();
-                $ultimoDiaMes = Carbon::now()->endOfMonth()->toDateString();
+                $ventanaInicio = Carbon::now()->subDays(3)->startOfDay()->toDateString();
+                $ventanaFin = Carbon::now()->addDays(3)->toDateString();
                 $loans = Loan::whereIn('status', ['approved', 'in arrears', 'partial'])->get();
 
                 foreach ($loans as $loan) {
@@ -67,7 +67,7 @@ class MsmNotification extends Command
                         ->leftJoin('schedule_versions as sv', 'sv.id', '=', 'ps.schedule_version_id')
                         ->where('ps.loan_id', $loan->id)
                         ->whereNotIn('ps.status', ['paid', 'refinanced'])
-                        ->whereBetween('ps.sheduled_date', [$primerDiaMes, $ultimoDiaMes])
+                        ->whereBetween('ps.sheduled_date', [$ventanaInicio, $ventanaFin])
                         ->when(
                             $hasActiveVersion,
                             fn ($q) => $q->where('sv.status', 'active'),

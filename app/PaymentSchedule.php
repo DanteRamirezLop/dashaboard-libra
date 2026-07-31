@@ -5,6 +5,7 @@ namespace App;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\TransactionPayment;
+use Carbon\Carbon;
 
 class PaymentSchedule extends Model
 {
@@ -56,6 +57,8 @@ class PaymentSchedule extends Model
             if($transactionPayments->isNotEmpty()){
                  $payment_shedule_status = 'partial-overdue';
             }
+        } elseif ($payment_shedule_status == 'partial' && Carbon::parse($this->sheduled_date)->lt(Carbon::today())) {
+            $payment_shedule_status = 'partial-overdue';
         }
         switch ($payment_shedule_status) {
             case 'partial-overdue':
