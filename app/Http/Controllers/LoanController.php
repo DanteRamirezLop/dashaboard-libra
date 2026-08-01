@@ -155,9 +155,14 @@ class LoanController extends Controller {
                     $mora = round($row->mora);
                     if($mora){
                         //CALCULO CORRECTO CON PAGOS PARCIALES
-                        //Descontar el "pago a capital / regularización" ya aplicado, para no contarlo como deuda
-                        $interest_saved = bcsub($row->discount_amount ?? 0, $row->interest_saved ?? 0, 2);
-                       $total_delay = bcsub(bcsub($row->delay, $row->total_only_payments, 4), $interest_saved, 4);
+                        $total_delay = bcsub($row->delay, $row->total_only_payments, 4);
+                        if (!$row->refinanced_at) {
+                            //Descontar el "pago a capital / regularización" ya aplicado, para no contarlo como deuda
+                            //(no aplica en préstamos refinanciados: aquí discount_amount es la condonación de mora,
+                            //ya reflejada en que esas cuotas viejas no suman al total vencido)
+                            $interest_saved = bcsub($row->discount_amount ?? 0, $row->interest_saved ?? 0, 2);
+                            $total_delay = bcsub($total_delay, $interest_saved, 4);
+                        }
 
                     }else{
                         $total_delay = 0;
@@ -201,8 +206,12 @@ class LoanController extends Controller {
                     // total vencido + MORA
                      $mora = round($row->mora);
                     if($mora){
-                        $interest_saved = bcsub($row->discount_amount ?? 0, $row->interest_saved ?? 0, 2);
-                        $total_remaining = bcsub(bcsub($row->delay, $row->total_only_payments, 4), $interest_saved, 4) + $row->mora;
+                        $total_remaining = bcsub($row->delay, $row->total_only_payments, 4);
+                        if (!$row->refinanced_at) {
+                            $interest_saved = bcsub($row->discount_amount ?? 0, $row->interest_saved ?? 0, 2);
+                            $total_remaining = bcsub($total_remaining, $interest_saved, 4);
+                        }
+                        $total_remaining += $row->mora;
                     }else{
                         $total_remaining = 0;
                     }

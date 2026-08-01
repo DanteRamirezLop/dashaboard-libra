@@ -418,9 +418,13 @@ class LoanPaymentController extends Controller
             
        $amount_months_late = bcsub($total_month_now, $total_only_payments, 4); //Deuda de letras hasta hoy menos lo realmente pagado en cuotas
 
-        //Restar descuentos por pago a capital / regularización (mismo criterio que LoanUtil::computeLoanTotals)
-        $interest_saved = bcsub($sell->discount_amount ?? 0, $loan->interest_saved ?? 0, 4);
-        $amount_months_late = bcsub($amount_months_late, $interest_saved, 4);
+        if (! $loan->refinanced_at) {
+            //Restar descuentos por pago a capital / regularización (mismo criterio que LoanUtil::computeLoanTotals)
+            //(no aplica en préstamos refinanciados: ahí discount_amount es la condonación de mora, ya excluida
+            //al filtrar las cuotas viejas con status='refinanced' arriba)
+            $interest_saved = bcsub($sell->discount_amount ?? 0, $loan->interest_saved ?? 0, 4);
+            $amount_months_late = bcsub($amount_months_late, $interest_saved, 4);
+        }
 
         if( $amount_months_late < 0)
             $amount_months_late = 0;

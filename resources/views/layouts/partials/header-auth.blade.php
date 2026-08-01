@@ -39,12 +39,7 @@
                 class="tw-border-2 tw-border-white tw-rounded-full tw-h-10 md:tw-h-12 tw-w-24 tw-flex tw-items-center tw-justify-center">
                 @if (!($request->segment(1) == 'business' && $request->segment(2) == 'register'))
 
-                    <!-- Register Url -->
                     @if (config('constants.allow_registration'))
-                        <a href="{{route('business.getRegister')}}@if(!empty(request()->lang)){{'?lang='.request()->lang}}@endif"
-                            class="tw-text-white tw-font-medium tw-text-sm md:tw-text-base hover:tw-text-white">{{ __('business.register') }}
-                        </a>
-
                         <!-- pricing url -->
                         @if (Route::has('pricing') && config('app.env') != 'demo' && $request->segment(1) != 'pricing')
                             <a class="tw-text-white tw-font-medium tw-text-sm md:tw-text-base hover:tw-text-white"

@@ -18,7 +18,7 @@ class LoanUtil
             ->selectRaw("
                 ps.loan_id,
                 COALESCE(SUM(
-                    CASE WHEN ps.status <> 'pending'
+                    CASE WHEN ps.status NOT IN ('pending', 'refinanced')
                     THEN ps.mount_quota + ps.gps_quota + ps.sure_quota + ps.admin_fee_quota + ps.initial
                     ELSE 0 END
                 ),0) as delay,
@@ -140,7 +140,14 @@ class LoanUtil
         $mora = round($row->mora);
 
         $interest_saved = bcsub($row->discount_amount ?? 0, $row->interest_saved ?? 0, 2);
-        $total_delay = $mora ? bcsub(bcsub($row->delay, $row->total_only_payments, 4), $interest_saved, 4) : 0;
+        if ($mora) {
+            $total_delay = bcsub($row->delay, $row->total_only_payments, 4);
+            if (! $row->refinanced_at) {
+                $total_delay = bcsub($total_delay, $interest_saved, 4);
+            }
+        } else {
+            $total_delay = 0;
+        }
         if ($total_delay < 0 && $total_delay > -0.5) {
             $total_delay = 0;
         }
