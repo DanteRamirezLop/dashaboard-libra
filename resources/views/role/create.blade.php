@@ -1585,7 +1585,7 @@
       <!-- SECCION DE PRESTAMOS -->
       <div class="row check_group">
         <div class="col-md-1">
-          <h4>@lang( 'loand.loands' ) ***** </h4>
+          <h4>@lang( 'loand.loands' ) </h4>
         </div>
         <div class="col-md-2">
           <div class="checkbox">

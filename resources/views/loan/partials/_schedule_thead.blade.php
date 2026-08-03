@@ -12,7 +12,7 @@
         <th>Capital</th>
         <th>Intereses</th>
         <th>Saldo final</th>
-        @if($showActions ?? true)
+        @if(($showActions ?? true) && auth()->user()->can('loans.update'))
             <th>@lang('messages.action')</th>
         @endif
     </tr>

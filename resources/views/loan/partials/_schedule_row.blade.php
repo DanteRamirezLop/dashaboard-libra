@@ -37,7 +37,7 @@
     <td>@format_currency($item->capital)</td>
     <td>@format_currency($item->interests)</td>
     <td>@format_currency($item->final_balance)</td>
-    @if($showActions ?? true)
+    @if(($showActions ?? true) && auth()->user()->can('loans.update'))
     <td>
         @if($item->status == 'paid')
             <span class="label bg-light-green"><i class="fas fa-check"></i> @lang('loans.paid_payment')</span>
