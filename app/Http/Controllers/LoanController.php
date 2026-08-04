@@ -892,6 +892,21 @@ class LoanController extends Controller {
         return view('loan.show')->with(compact('countVersion','annexes','canPayCapital','there_is_mora','paymentSchedules','type','customer','loan','user','total'));
     }
 
+    // Recarga solo la tabla del cronograma de pagos (usado tras acciones AJAX como pagar/revertir/eliminar)
+    public function table($id)
+    {
+        $loan = Loan::find($id);
+        $scheduleVersionId = ScheduleVersion::where('loan_id', $loan->id)
+            ->where('status', 'active')
+            ->value('id');
+
+        $paymentSchedules = PaymentSchedule::where('loan_id', $loan->id)
+            ->when($scheduleVersionId, fn ($q) => $q->where('schedule_version_id', $scheduleVersionId))
+            ->get();
+
+        return view('loan.table_quotes')->with(compact('paymentSchedules'));
+    }
+
     public function update(Request $request, $id){
         try {
             $loan = Loan::find($id);

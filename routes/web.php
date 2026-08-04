@@ -472,6 +472,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::resource('delay-payment',DelayPaymentController::class);
     //PRESTAMOS
     Route::resource('loans', LoanController::class);
+    Route::get('loans/table/{id}', [LoanController::class,'table'])->name('loans.table');
     Route::get('report',[LoanController::class,'report'])->name('loans.report');
     Route::get('add-letter-loan/{id}',[LoanController::class,'addLetterLoan'])->name('add-letter-loan');
     Route::get('loan/addPayment/{payment_schedules_id}', [LoanController::class,'addPayment'])->name('add.pay.loan');

@@ -127,14 +127,17 @@
             @endcomponent
         @endif
        
-        @component('components.widget', ['class' => 'box-primary', 'title' => __('loans.all_lletters_payments')]) 
+        @component('components.widget', ['class' => 'box-primary', 'title' => __('loans.all_lletters_payments')])
             <div class="box-tools grap-2">
-                 @if($countVersion) 
-                    <span class="label label-default text-center ">
+                 @if($countVersion)
+                    <span class="label label-default text-center mr-8 ">
                          Nuevo conograma de pagos versión <span class="label" style="background-color: #fff !important;color: #615ca8 !important;">{{$countVersion}}</span>
-                    </span> 
+                    </span>
                   @endif
-            </div> 
+                  <a href="{{ action([\App\Http\Controllers\TransactionPaymentController::class, 'show'], [$loan->transaction_id]) }}" class="tw-dw-btn tw-dw-btn-outline tw-dw-btn-primary tw-dw-btn-sm view_payment_modal">
+                      <i class="fa fa-eye"></i> Ver pagos
+                  </a>
+            </div>
             <div class="tab-content mt-5">
                 <div class="table-responsive" id="table_quotes"> 
                     @include('loan.table_quotes')
@@ -165,10 +168,12 @@
 </section>
 <!-- /.content -->
 <div class="modal fade payment_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
+<div class="modal fade edit_payment_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
 <div class="modal fade delay_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
 
 @stop
 @section('javascript')
+    <script src="{{ asset('js/payment.js')}}"></script>
     <script type="text/javascript">
         //Date range as a button
         $('#purchase_list_filter_date_range').daterangepicker(
@@ -184,36 +189,14 @@
             purchase_table.ajax.reload();
         });  
 
-        $(document).on('click', '.add_payment_modal', function(e) {
-            e.preventDefault();
-            var container = $('.payment_modal');
-            $.ajax({
-                url: $(this).attr('href'),
-                dataType: 'json',
-                success: function(result) {
-                    if (result.status == 'due') {
-                        container.html(result.view).modal('show');
-                         __currency_convert_recursively(container);
-                        $('#paid_on').datetimepicker({
-                            format: moment_date_format + ' ' + moment_time_format,
-                            ignoreReadonly: true,
-                        });
-                        container.find('form#transaction_payment_add_form').validate();
-                        set_default_payment_account();
-
-                        $('.payment_modal')
-                            .find('input[type="checkbox"].input-icheck')
-                            .each(function() {
-                                $(this).iCheck({
-                                    checkboxClass: 'icheckbox_square-blue',
-                                    radioClass: 'iradio_square-blue',
-                                });
-                            });
-                    } else {
-                        toastr.error(result.msg);
-                    }
-                },
-            });
+        // Refrescar el cronograma de cuotas cuando se elimina un pago (incluye pagos a capital)
+        $(document).ajaxSuccess(function (event, xhr, settings) {
+            if (settings.type && settings.type.toLowerCase() === 'delete' && settings.url && settings.url.indexOf('/payments/') !== -1) {
+                var result = xhr.responseJSON;
+                if (result && result.success) {
+                    $('#table_quotes').load('/loans/table/{{ $loan->id }}');
+                }
+            }
         });
 
         //cambios de Soles a dolares

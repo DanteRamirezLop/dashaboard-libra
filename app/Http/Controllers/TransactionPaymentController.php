@@ -18,6 +18,8 @@ use Illuminate\Http\Request;
 use App\PaymentApplication;
 use App\PaymentSchedule;
 use App\Delay;
+use App\Loan;
+use App\ScheduleVersion;
 
 class TransactionPaymentController extends Controller
 {
@@ -358,23 +360,78 @@ class TransactionPaymentController extends Controller
                 $payment = TransactionPayment::findOrFail($id);
                 DB::beginTransaction();
 
-                // Eliminar pago a capital
-                // $there_is_pay_capital =  PaymentApplication::where('transaction_id',$payment->transaction_id)->whereNull('payment_schedule_id')->exists();
-                // if($there_is_pay_capital){
-                //     $output = ['success' => false,'msg' => 'Por ahora no se puede eliminar un pago a capital'];
-                //     return $output;
-                // }
+                // Eliminar pago a capital: revertir el cronograma a la versión anterior
+                // (o al cronograma original si era la única versión)
+                $isCapitalPayment = false;
+                $capitalScheduleVersion = ScheduleVersion::where('transaction_payment_id', $payment->id)->first();
+                if ($capitalScheduleVersion) {
+                    $isCapitalPayment = true;
+
+                    if ($capitalScheduleVersion->status !== 'active') {
+                        DB::rollBack();
+                        return ['success' => false, 'msg' => 'No se puede eliminar: existen pagos a capital posteriores. Elimine primero el pago a capital más reciente.'];
+                    }
+
+                    $versionRowIds = PaymentSchedule::where('schedule_version_id', $capitalScheduleVersion->id)->pluck('id');
+                    $hasDependents = TransactionPayment::whereIn('payment_schedule_id', $versionRowIds)
+                            ->where('id', '!=', $payment->id)
+                            ->exists()
+                        || Delay::whereIn('payment_schedule_id', $versionRowIds)->exists();
+                    if ($hasDependents) {
+                        DB::rollBack();
+                        return ['success' => false, 'msg' => 'No se puede eliminar: ya se registraron pagos o moras sobre el cronograma generado por este pago a capital.'];
+                    }
+
+                    // Revertir el descuento aplicado a la transacción
+                    $capitalApplication = PaymentApplication::where('transaction_payment_id', $payment->id)
+                        ->whereNull('payment_schedule_id')
+                        ->first();
+                    if ($capitalApplication) {
+                        $transaction = Transaction::find($payment->transaction_id);
+                        $transaction->discount_amount = $transaction->discount_amount - $capitalApplication->amount_discounted;
+                        $transaction->final_total = $transaction->final_total + $capitalApplication->amount_discounted;
+                        $transaction->save();
+                        $capitalApplication->delete();
+                    }
+
+                    // Borrar las cuotas generadas por esta versión
+                    PaymentSchedule::where('schedule_version_id', $capitalScheduleVersion->id)->delete();
+
+                    // Reactivar la versión anterior, o volver al cronograma original si no había ninguna
+                    $loan = Loan::find($capitalScheduleVersion->loan_id);
+                    $previousVersion = ScheduleVersion::where('loan_id', $capitalScheduleVersion->loan_id)
+                        ->where('id', '<', $capitalScheduleVersion->id)
+                        ->orderByDesc('id')
+                        ->first();
+
+                    if ($previousVersion) {
+                        $previousVersion->update(['status' => 'active']);
+                        $loan->interest_saved = PaymentApplication::where('transaction_payment_id', $previousVersion->transaction_payment_id)
+                            ->whereNull('payment_schedule_id')
+                            ->value('amount_discounted') ?? 0;
+                    } else {
+                        $loan->interest_saved = 0;
+                    }
+                    if ($loan->status === 'paid') {
+                        $loan->status = 'partial';
+                    }
+                    $loan->save();
+
+                    $capitalScheduleVersion->delete();
+                }
 
                 //Eliminar pagos adelantado si es que lo tenga
-                $is_prepayment = PaymentApplication::where('transaction_id',$payment->transaction_id)->where('payment_schedule_id',$payment->payment_schedule_id)->exists();
-                if(!empty($is_prepayment)){
-                    $payment_application =  PaymentApplication::where('transaction_id',$payment->transaction_id)->where('payment_schedule_id',$payment->payment_schedule_id)->first();
-                    $interestSaved = $payment_application->amount_discounted;
-                    $transaction = Transaction::find($payment->transaction_id);
-                    $transaction->discount_amount =  $transaction->discount_amount - $interestSaved;
-                    $transaction->final_total = $transaction->final_total + $interestSaved;
-                    $transaction->save();
-                    $payment_application->delete();
+                if (! $isCapitalPayment) {
+                    $is_prepayment = PaymentApplication::where('transaction_id',$payment->transaction_id)->where('payment_schedule_id',$payment->payment_schedule_id)->exists();
+                    if(!empty($is_prepayment)){
+                        $payment_application =  PaymentApplication::where('transaction_id',$payment->transaction_id)->where('payment_schedule_id',$payment->payment_schedule_id)->first();
+                        $interestSaved = $payment_application->amount_discounted;
+                        $transaction = Transaction::find($payment->transaction_id);
+                        $transaction->discount_amount =  $transaction->discount_amount - $interestSaved;
+                        $transaction->final_total = $transaction->final_total + $interestSaved;
+                        $transaction->save();
+                        $payment_application->delete();
+                    }
                 }
 
                 //Eliminar pagos relacionados a una letra
