@@ -110,7 +110,12 @@ class LoanUtil
                 'loans.refinanced_at',
                 'loans.interest_saved',
                 'transactions.final_total as final_total',
-                'transactions.discount_amount as discount_amount',
+                // Solo descuentos "estructurales" (pago a capital/refinanciamiento); los ligados
+                // a una cuota puntual ya quedan neutralizados en delay - total_only_payments.
+                DB::raw('(SELECT COALESCE(SUM(pa.amount_discounted),0)
+                        FROM payment_applications AS pa
+                        WHERE pa.loan_id = loans.id AND pa.payment_schedule_id IS NULL
+                    ) as discount_amount'),
                 DB::raw('(SELECT SUM(IF(TP.is_return = 1,-1*TP.amount,TP.amount))
                         FROM transaction_payments AS TP
                         WHERE TP.transaction_id = transactions.id) as total_paid'),
