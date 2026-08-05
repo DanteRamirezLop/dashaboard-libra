@@ -12,6 +12,8 @@
         @component('components.filters', ['title' => __('report.filters')])
             @include('loan.loan_list_filters')
         @endcomponent
+
+        
         <!-- Nueva tabla -->
         @component('components.widget', ['class' => 'box-primary', 'title' => __('loans.all_loans')])
             @can('customer.view_own')

@@ -170,7 +170,7 @@
                 {!! Form::number("target_cuotas", $pending_count, ['class' => 'form-control', 'required', 'min' => 1, 'max' => $pending_count]); !!}
               </div>
               <span class="help-block" style="font-size:11px;">
-                Actualmente quedan {{ $pending_count }} cuotas de @num_format($current_installment) c/u.
+                Actualmente quedan {{ $pending_count }} cuotas de {{ @num_format($current_installment) }} c/u.
                 Ingresa cuántas cuotas quedarán después de este pago (mín. 1, máx. {{ $pending_count }}); la cuota mensual se recalculará para ese nuevo plazo.
               </span>
             </div>
