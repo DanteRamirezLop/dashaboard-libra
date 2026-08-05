@@ -901,7 +901,7 @@ class SellController extends Controller
         // if (!auth()->user()->can('sell.view') && !auth()->user()->can('direct_sell.access') && !auth()->user()->can('view_own_sell_only')) {
         //     abort(403, 'Unauthorized action.');
         // }
-
+ 
         $business_id = request()->session()->get('user.business_id');
         $taxes = TaxRate::where('business_id', $business_id)
                             ->pluck('name', 'id');
@@ -995,6 +995,9 @@ class SellController extends Controller
      */
     public function edit($id)
     {
+
+
+
         if (! auth()->user()->can('direct_sell.update') && ! auth()->user()->can('so.update')) {
             abort(403, 'Unauthorized action.');
         }
@@ -1108,7 +1111,7 @@ class SellController extends Controller
                         
         if (! empty($sell_details)) {
             foreach ($sell_details as $key => $value) {
-                $variation = Variation::with('media')->findOrFail($value->variation_id);
+                $variation = Variation::withTrashed()->with('media')->findOrFail($value->variation_id);
                 $sell_details[$key]->media = $variation->media;
                 $sell_details[$key]->is_cyber_combo = $transaction->selling_price_group_id == 2 && (
                     $value->category_id == 12 ||

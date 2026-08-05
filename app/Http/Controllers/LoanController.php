@@ -84,10 +84,9 @@ class LoanController extends Controller {
                                 $html .= '<li><a href="#" class="print-invoice" data-href="'.route('sell.printInvoice', [$row->transaction_id]).'"><i class="fas fa-print" aria-hidden="true"></i> '.__('lang_v1.print_invoice').'</a></li>';
                                 $html .= '<li><a href="'.action([\App\Http\Controllers\TransactionPaymentController::class, 'show'], [$row->transaction_id]).'" class="view_payment_modal"><i class="fas fa-money-bill-alt"></i> '.__('purchase.view_payments').'</a></li>';
                                 $html .= '<li><a href="#" data-href="'.action([\App\Http\Controllers\SellController::class, 'show'], [$row->transaction_id]).'" class="btn-modal" data-container=".view_modal"><i class="fas fa-eye" aria-hidden="true"></i> '.__('messages.view').'</a></li>';
-                                // $html .= '<li><a href="'.action([\App\Http\Controllers\LoanController::class, 'destroy'], [$row->id]).'" class="delete_loan_button"> <i class="fas fa-trash"></i> '.__('messages.delete').'</a></li>';
+                                $html .= '<li><a href="'.action([\App\Http\Controllers\LoanController::class, 'destroy'], [$row->id]).'" class="delete_loan_button"> <i class="fas fa-trash"></i> '.__('messages.delete').'</a></li>';
                                 if (in_array($row->status, ['in arrears', 'partial'])) {
-                                    $html .= '<li class="divider"></li>';
-                                    $html .= '<li><a href="#" class="clear_arrears_btn" data-id="'.$row->id.'" data-href="'.route('loan.clear-arrears', $row->id).'"><i class="fa fa-check-circle" aria-hidden="true"></i> Actualizar estado</a></li>';
+                                    $html .= '<li><a href="#" class="clear_arrears_btn" data-id="'.$row->id.'" data-href="'.route('loan.clear-arrears', $row->id).'"><i class="fa fa-check-circle" aria-hidden="true"></i>Actualizar estado</a></li>';
                                 }
                                 if (in_array($row->status, ['in arrears', 'partial', 'approved'])) {
                                     if(!$row->refinanced_at){
@@ -1100,6 +1099,10 @@ class LoanController extends Controller {
                     $transaction_id = $loan->transaction_id;
                     if ($transaction_id) {
                         $output = $this->transactionUtil->deleteSale($business_id, $transaction_id); //Eliminar la transacción
+                        if (! $output['success']) {
+                            DB::rollBack();
+                            return $output;
+                        }
                         $loan->delete(); //Eliminar el Prestamo y sus relaciones
                         $output = ['success' => true,'msg' => __('loans.loan_destroy'),];
                     }else{
@@ -1487,10 +1490,9 @@ class LoanController extends Controller {
                                 $html .= '<li><a href="#" class="print-invoice" data-href="'.route('sell.printInvoice', [$row->transaction_id]).'"><i class="fas fa-print" aria-hidden="true"></i> '.__('lang_v1.print_invoice').'</a></li>';
                                 $html .= '<li><a href="'.action([\App\Http\Controllers\TransactionPaymentController::class, 'show'], [$row->transaction_id]).'" class="view_payment_modal"><i class="fas fa-money-bill-alt"></i> '.__('purchase.view_payments').'</a></li>';
                                 $html .= '<li><a href="#" data-href="'.action([\App\Http\Controllers\SellController::class, 'show'], [$row->transaction_id]).'" class="btn-modal" data-container=".view_modal"><i class="fas fa-eye" aria-hidden="true"></i> '.__('messages.view').'</a></li>';
-                                // $html .= '<li><a href="'.action([\App\Http\Controllers\LoanController::class, 'destroy'], [$row->id]).'" class="delete_loan_button"> <i class="fas fa-trash"></i> '.__('messages.delete').'</a></li>';
+                                $html .= '<li><a href="'.action([\App\Http\Controllers\LoanController::class, 'destroy'], [$row->id]).'" class="delete_loan_button"> <i class="fas fa-trash"></i> '.__('messages.delete').'</a></li>';
                                 if (in_array($row->status, ['in arrears', 'partial'])) {
-                                    $html .= '<li class="divider"></li>';
-                                    $html .= '<li><a href="#" class="clear_arrears_btn" data-id="'.$row->id.'" data-href="'.route('loan.clear-arrears', $row->id).'"><i class="fa fa-check-circle" aria-hidden="true"></i> Actualizar estado</a></li>';
+                                    $html .= '<li><a href="#" class="clear_arrears_btn" data-id="'.$row->id.'" data-href="'.route('loan.clear-arrears', $row->id).'"><i class="fa fa-check-circle" aria-hidden="true"></i>Actualizar estado</a></li>';
                                 }
                                 $html .= '<li class="divider"></li>';
                                 $next_type = $row->type == 'rent-sale' ? 'sale' : 'rent-sale';
