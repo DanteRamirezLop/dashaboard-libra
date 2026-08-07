@@ -135,7 +135,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
 
     Route::resource('brands', BrandController::class);
 
-    Route::resource('payment-account', 'PaymentAccountController');
+    // Route::resource('payment-account', 'PaymentAccountController'); // Controlador no existe, rompe route:list
 
     Route::resource('tax-rates', TaxRateController::class);
 
@@ -477,6 +477,8 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('add-letter-loan/{id}',[LoanController::class,'addLetterLoan'])->name('add-letter-loan');
     Route::get('loan/addPayment/{payment_schedules_id}', [LoanController::class,'addPayment'])->name('add.pay.loan');
     Route::get('loan/addCapital/{loan_id}/{type}', [LoanController::class,'addCapital'])->name('add.capital.loan');
+    Route::get('loan/simulateCapital/{loan_id}/{type}', [LoanController::class,'simulateCapital'])->name('loan.simulate.capital.form');
+    Route::post('loan/simulateCapital', [LoanController::class,'previewCapitalSchedule'])->name('loan.simulate.capital');
     Route::post('get-customer-sunat',[LoanController::class,'getCustomerSunat']);
     Route::post('letter-annexe-update',[LoanController::class,'updateLetterAnnexe']);
 

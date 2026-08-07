@@ -132,6 +132,84 @@ class TransactionUtil extends Util
         return $interestSaved;
     }
 
+    // Igual que regeneratePaymentSchedule pero sin persistir nada en BD: se usa como simulador
+    // para previsualizar el nuevo cronograma antes de ejecutar el pago a capital real.
+    public function simulateCapitalPaymentSchedule(int $loanId, ?int $fromVersionId, float $capitalPayment, $type_pay, float $moraAmount = 0.0, ?int $targetCuotas = null): array
+    {
+        $fromVersionId = $fromVersionId ?: null;
+        $loan = Loan::findOrFail($loanId);
+        $rows = PaymentSchedule::query()
+            ->where('loan_id', $loanId)
+            ->where('schedule_version_id', $fromVersionId)
+            ->orderBy('id')
+            ->get();
+
+        $nextPending = $rows->first(fn($r) => $r->status === 'pending');
+        if (!$nextPending) {
+            return ['success' => false, 'msg' => 'No hay cuotas pendientes para simular.'];
+        }
+
+        $pendingRows = $rows->filter(fn($r) => $r->status === 'pending')->values();
+        $pendingCount = $pendingRows->count();
+        $n = $targetCuotas ?: $pendingCount;
+        $n = max(1, min($n, $pendingCount));
+        $monthlyRate = round(($loan->annual_interest_rate / 100) / 12, 6);
+        $balanceBefore = (float) $nextPending->opening_balance + $moraAmount;
+        $oldInstallment = ((float) $nextPending->capital) + ((float) $nextPending->interests);
+
+        $oldTotals = $this->simulateFrenchScheduleTotals($balanceBefore, $monthlyRate, $pendingCount, $oldInstallment);
+        $newBalance = max(0, $balanceBefore - $capitalPayment);
+        $installment = round($this->calcPMT($newBalance, $monthlyRate, $n), 2);
+        $newTotals = $this->simulateFrenchScheduleTotals($newBalance, $monthlyRate, $n, $installment);
+
+        // Filas de vista previa (instancias nunca guardadas: ->replicate() sin ->save())
+        $previewRows = collect();
+
+        foreach ($rows->where('status', '=', 'paid') as $oldRow) {
+            $previewRows->push($oldRow->replicate());
+        }
+
+        $loanWouldBePaid = ! ($type_pay == 'parcial' && $newBalance > 0.01);
+
+        if (! $loanWouldBePaid) {
+            $balance = $newBalance;
+            foreach ($pendingRows->take($n) as $index => $oldRow) {
+                $isLastPending = ($index === $n - 1);
+                $interests = round($balance * $monthlyRate, 2);
+                $principal = round($installment - $interests, 2);
+                if ($isLastPending) {
+                    $principal = $balance; // cerrar saldo por redondeos
+                }
+
+                $installmentFinal = round($principal + $interests, 2);
+                $balanceAfter = round($balance - $principal, 2);
+
+                $newRow = $oldRow->replicate();
+                $newRow->opening_balance = $balance;
+                $newRow->mount_quota = $installmentFinal;
+                $newRow->interests = $interests;
+                $newRow->capital = $principal;
+                $newRow->final_balance = $balanceAfter;
+                $previewRows->push($newRow);
+                $balance = $balanceAfter;
+            }
+        }
+
+        $interestSaved = round($oldTotals['total_interests'] - $newTotals['total_interests'], 4);
+
+        return [
+            'success' => true,
+            'schedules' => $previewRows,
+            'interest_saved' => $interestSaved,
+            'old_installment' => $oldInstallment,
+            'new_installment' => $installment,
+            'pending_count' => $pendingCount,
+            'target_cuotas' => $n,
+            'new_balance' => $newBalance,
+            'loan_would_be_paid' => $loanWouldBePaid,
+        ];
+    }
+
     private function calcPMT(float $principal, float $monthlyRate,int $n): float
     {
         if ($n <= 0) return 0.0;

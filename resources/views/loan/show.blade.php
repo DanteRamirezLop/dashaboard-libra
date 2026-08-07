@@ -145,34 +145,40 @@
             </div>  
         @endcomponent
 
-        @if($there_is_mora)
-            <div class="box box-warning" >
-                <div class="box-body text-center">
-                    <h3 class="text-center"> <i class="fa fa-exclamation-triangle text-yellow"></i>  Tienes deuda por concepto de mora</h3>
-                    <p class="mb-5">Puede pagarla en Gestionar Mora</p>
-                    <a href="#" class="tw-dw-btn tw-dw-btn-primary tw-text-white tw-dw-btn-sm clear_arrears_btn" data-id="{{$loan->id}}" data-href="{{route('loan.clear-arrears', $loan->id)}}">
-                        <i class="fa fa-check-circle" aria-hidden="true"></i> Actualizar estado
-                    </a>
+        @can('loans.update')
+            @if($there_is_mora)
+                <div class="box box-warning" >
+                    <div class="box-body text-center">
+                        <h3 class="text-center"> <i class="fa fa-exclamation-triangle text-yellow"></i>  Tienes deuda por concepto de mora</h3>
+                        <p class="mb-5">Puede pagarla en Gestionar Mora</p>
+                        <a href="#" class="tw-dw-btn tw-dw-btn-primary tw-text-white tw-dw-btn-sm clear_arrears_btn" data-id="{{$loan->id}}" data-href="{{route('loan.clear-arrears', $loan->id)}}">
+                            <i class="fa fa-check-circle" aria-hidden="true"></i> Actualizar estado
+                        </a>
+                    </div>
                 </div>
-            </div>
-        @else
-            @if($loan->status == 'partial')
-                @component('components.widget', ['class' => 'box-success', 'title' => '']) 
-                    <!-- <a class="margin-left-10 btn btn btn-success pull-right add_payment_modal" href="{{route('add.capital.loan',['loan_id'=>$loan->id,'type'=>'total']) }}">
-                        <i class="fas fa fa-money-bill-wave-alt"></i> Pagar todo
-                    </a> -->
-                    <a class="margin-left-10 tw-dw-btn tw-dw-btn-primary tw-text-white tw-dw-btn-md pull-right add_payment_modal" href="{{route('add.capital.loan',['loan_id'=>$loan->id,'type'=>'parcial']) }}">
-                        <i class="fas fa fa-hand-holding-usd"></i> Pagar a capital
-                    </a>
-                    
-                @endcomponent
+            @else
+                @if($loan->status == 'partial')
+                    @component('components.widget', ['class' => 'box-success', 'title' => ''])
+                        <!-- <a class="margin-left-10 btn btn btn-success pull-right add_payment_modal" href="{{route('add.capital.loan',['loan_id'=>$loan->id,'type'=>'total']) }}">
+                            <i class="fas fa fa-money-bill-wave-alt"></i> Pagar todo
+                        </a> -->
+                        <a class="margin-left-10 tw-dw-btn tw-dw-btn-primary tw-text-white tw-dw-btn-md pull-right add_payment_modal" href="{{route('add.capital.loan',['loan_id'=>$loan->id,'type'=>'parcial']) }}">
+                            <i class="fas fa fa-hand-holding-usd"></i> Pagar a capital
+                        </a>
+                        <a class="margin-left-10 tw-dw-btn tw-dw-btn-outline tw-dw-btn-primary tw-dw-btn-md pull-right simulate_capital_modal" href="{{route('loan.simulate.capital.form',['loan_id'=>$loan->id,'type'=>'parcial']) }}">
+                            <i class="fas fa-calculator"></i> Simular cronograma
+                        </a>
+
+                    @endcomponent
+                @endif
             @endif
-        @endif
+        @endcan
 </section>
 <!-- /.content -->
 <div class="modal fade payment_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
 <div class="modal fade edit_payment_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
 <div class="modal fade delay_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
+<div class="modal fade simulate_payment_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
 
 @stop
 @section('javascript')
@@ -191,6 +197,67 @@
             $('#purchase_list_filter_date_range').val('');
             purchase_table.ajax.reload();
         });  
+
+        // Simular cronograma de pago a capital (no persiste ningún cambio en BD)
+        $(document).on('click', '.simulate_capital_modal', function(e) {
+            e.preventDefault();
+            var container = $('.simulate_payment_modal');
+            $.ajax({
+                url: $(this).attr('href'),
+                dataType: 'json',
+                success: function(result) {
+                    if (result.status == 'due') {
+                        container.html(result.view).modal('show');
+                        __currency_convert_recursively(container);
+                    } else {
+                        toastr.error(result.msg);
+                    }
+                },
+            });
+        });
+
+        $(document).on('click', '.back_to_simulate_form', function(e) {
+            e.preventDefault();
+            var container = $('.simulate_payment_modal');
+            $.ajax({
+                url: $(this).data('href'),
+                dataType: 'json',
+                success: function(result) {
+                    if (result.status == 'due') {
+                        container.html(result.view);
+                        __currency_convert_recursively(container);
+                    } else {
+                        toastr.error(result.msg);
+                    }
+                },
+            });
+        });
+
+        $(document).on('submit', '#simulate_capital_form', function(e) {
+            e.preventDefault();
+            var $form = $(this);
+            var container = $('.simulate_payment_modal');
+            $form.find('button[type="submit"]').prop('disabled', true);
+            $.ajax({
+                url: $form.attr('action'),
+                type: 'POST',
+                data: $form.serialize(),
+                dataType: 'json',
+                success: function(result) {
+                    if (result.success) {
+                        container.html(result.view);
+                        __currency_convert_recursively(container);
+                    } else {
+                        toastr.error(result.msg);
+                        $form.find('button[type="submit"]').prop('disabled', false);
+                    }
+                },
+                error: function() {
+                    toastr.error('Error al simular el cronograma.');
+                    $form.find('button[type="submit"]').prop('disabled', false);
+                }
+            });
+        });
 
         // Refrescar el cronograma de cuotas cuando se elimina un pago (incluye pagos a capital)
         $(document).ajaxSuccess(function (event, xhr, settings) {

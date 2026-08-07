@@ -6,6 +6,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A web-based ERP system ("Ultimate POS v6") built with Laravel 9. It handles point-of-sale, inventory, purchasing, sales, accounting, and loan/lending management. Spanish is used in commit messages and some UI text.
 
+## Local Environment
+
+The project runs locally via Docker (Laradock), not a native PHP install. Containers include `laravel9-workspace-1`, `laravel9-php-fpm-1`, `laravel9-nginx-1`, `laravel9-mysql-1`, `laravel9-redis-1`, `laravel9-phpmyadmin-1`. Run `artisan`/`composer`/`npm` commands inside the workspace container, not on the host:
+
+```bash
+docker exec -w /var/www laravel9-workspace-1 php artisan migrate
+docker exec -w /var/www laravel9-workspace-1 php artisan test
+docker exec -w /var/www laravel9-workspace-1 composer install
+```
+
+The host's PHP (if any) may be a different, incompatible version — always prefer the containerized `php` for anything artisan-related.
+
 ## Common Commands
 
 ```bash

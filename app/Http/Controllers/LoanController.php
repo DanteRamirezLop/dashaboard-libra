@@ -1180,6 +1180,98 @@ class LoanController extends Controller {
         }
     }
 
+    // Muestra el formulario del simulador de pago a capital (mismas condiciones que addCapital,
+    // pero sin datos de método de pago/cuenta ya que no se ejecuta ningún pago real).
+    public function simulateCapital($loan_id, $type)
+    {
+        if (! auth()->user()->can('purchase.payments') && ! auth()->user()->can('sell.payments') && ! auth()->user()->can('all_expense.access') && ! auth()->user()->can('view_own_expense')) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        try {
+            if (request()->ajax()) {
+                $loan = Loan::find($loan_id);
+                $schedule_version = ScheduleVersion::where('loan_id', $loan->id)->where('status', 'active')->first();
+                $schedule_version_id = $schedule_version ? $schedule_version->id : NULL;
+                $business_id = request()->session()->get('user.business_id');
+                $transaction = Transaction::where('business_id', $business_id)->findOrFail($loan->transaction_id);
+                if ($transaction->payment_status != 'paid') {
+                    $rows = PaymentSchedule::query()
+                        ->where('loan_id', $loan->id)
+                        ->where('schedule_version_id', $schedule_version_id)
+                        ->orderBy('id')
+                        ->get();
+
+                    $nextPending = $rows->firstWhere('status', 'pending');
+                    if (!$nextPending) {
+                        return; // no hay cuotas pendientes
+                    }
+
+                    $amount = (float) $nextPending->opening_balance;
+                    $amount_formated = $this->transactionUtil->num_f($amount);
+                    $pending_count = $rows->where('status', 'pending')->count();
+                    $current_installment = round((float) $nextPending->capital + (float) $nextPending->interests, 2);
+                    $view = view('loan.simulate_capital')->with(compact('loan', 'amount', 'amount_formated', 'type', 'pending_count', 'current_installment'))->render();
+
+                    $output = ['status' => 'due', 'view' => $view];
+                } else {
+                    $output = ['status' => 'paid', 'view' => '', 'msg' => __('purchase.amount_already_paid'),];
+                }
+                return json_encode($output);
+            }
+        } catch (\Throwable $th) {
+            \Log::emergency('File:'.$th->getFile().'Line:'.$th->getLine().'Message:'.$th->getMessage());
+            $output = ['status' => 'error', 'view' => '', 'msg' => 'Error: '.$th->getLine().'Message:'.$th->getMessage()];
+            return json_encode($output);
+        }
+    }
+
+    // Calcula el nuevo cronograma con los mismos datos que usaría un pago a capital real
+    // (LoanUtil/TransactionUtil::regeneratePaymentSchedule), pero sin escribir nada en BD:
+    // sirve para previsualizar el resultado antes de ejecutar "Pagar a capital".
+    public function previewCapitalSchedule(Request $request)
+    {
+        if (! auth()->user()->can('purchase.payments') && ! auth()->user()->can('sell.payments') && ! auth()->user()->can('all_expense.access') && ! auth()->user()->can('view_own_expense')) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        try {
+            $loan = Loan::findOrFail($request->input('loan_id'));
+            $type_pay = $request->input('type_pay');
+
+            $schedule_version = ScheduleVersion::where('loan_id', $loan->id)->where('status', 'active')->first();
+            $schedule_version_id = $schedule_version ? $schedule_version->id : null;
+
+            $amount = (float) $this->transactionUtil->num_uf($request->input('amount'));
+            $moraAmount = (float) $this->transactionUtil->num_uf($request->input('mora_amount', 0));
+            $targetCuotas = $request->filled('target_cuotas') ? (int) $request->input('target_cuotas') : null;
+
+            $result = $this->transactionUtil->simulateCapitalPaymentSchedule($loan->id, $schedule_version_id, $amount, $type_pay, $moraAmount, $targetCuotas);
+
+            if (! $result['success']) {
+                return response()->json(['success' => false, 'msg' => $result['msg']]);
+            }
+
+            $view = view('loan.simulate_capital_result')->with([
+                'loan' => $loan,
+                'type' => $type_pay,
+                'paymentSchedules' => $result['schedules'],
+                'interest_saved' => $result['interest_saved'],
+                'old_installment' => $result['old_installment'],
+                'new_installment' => $result['new_installment'],
+                'pending_count' => $result['pending_count'],
+                'target_cuotas' => $result['target_cuotas'],
+                'new_balance' => $result['new_balance'],
+                'loan_would_be_paid' => $result['loan_would_be_paid'],
+            ])->render();
+
+            return response()->json(['success' => true, 'view' => $view]);
+        } catch (\Throwable $th) {
+            \Log::emergency('ERROR IN SIMULATE CAPITAL BECAUSE:'.$th->getMessage().' IN FILE:'.$th->getFile().' LINE:'.$th->getLine());
+            return response()->json(['success' => false, 'msg' => __('messages.something_went_wrong')]);
+        }
+    }
+
     public function addPayment($payment_schedules_id){
         if (request()->ajax()) {
             //busco el tipo de cambio del dia
