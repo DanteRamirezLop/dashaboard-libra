@@ -19,16 +19,11 @@
 </div>
 @endif
 
-@if(empty($only) || in_array('only_repossessed', $only))
-<div class="col-md-3" style="margin-bottom: 7px;">
+@if(empty($only) || in_array('only_repossessed', $only) || in_array('only_execution', $only))
+<div class="col-md-3">
     <div class="form-group">
-        <div class="checkbox">
-            <label>
-                <br>
-            {!! Form::checkbox('only_repossessed', 1, false,
-            [ 'class' => 'input-icheck', 'id' => 'only_repossessed']); !!} Solo Reposición
-            </label>
-        </div>
+        {!! Form::label('loan_special_filter', __('loans.exceptional_states') . ':') !!}
+        {!! Form::select('loan_special_filter', ['only_repossessed' => 'Solo Reposición', 'only_execution' => 'Solo Ejecución'], null, ['class' => 'form-control select2', 'style' => 'width:100%', 'placeholder' => __('lang_v1.all')]); !!}
     </div>
 </div>
 @endif

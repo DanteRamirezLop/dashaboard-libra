@@ -106,6 +106,35 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="execution_modal" tabindex="-1" role="dialog" aria-labelledby="executionModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="executionModalLabel"> Registrar Ejecución</h4>
+            </div>
+            <form id="execution_form">
+                <div class="modal-body">
+                    <input type="hidden" id="execution_loan_url" value="">
+                    <div class="form-group">
+                        <label for="execution_date">Fecha de ejecución <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="execution_date" name="execution_date" required>
+                    </div>
+                    <div class="alert alert-warning" style="margin-bottom:0;">
+                        <i class="fa fa-exclamation-triangle"></i>
+                        Esta acción cambiará el estado del préstamo a <strong>Ejecución</strong> y <strong>pausará la mora</strong> acumulada. Luego se podrá reponer a <strong>Parcial</strong> para que la mora vuelva a generarse con normalidad.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="tw-dw-btn tw-dw-btn-neutral tw-text-white" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="tw-dw-btn tw-dw-btn-primary tw-text-white"><i class="fa fa-check"></i> Confirmar ejecución</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 <div class="modal fade payment_modal" tabindex="-1" role="dialog"
     aria-labelledby="gridSystemModalLabel">
 </div>
@@ -125,14 +154,14 @@ $(document).ready( function(){
         ajax: {
             url: url,
             data: function(d) {
-                 var waiter = $("#service_staffs option:selected").text();
-                    if (waiter.toLowerCase() === "todos") {
-                        waiter = '';
-                    }
+                 var waiter = $('#service_staffs').val() ? $("#service_staffs option:selected").text() : '';
                 d.service_staffs = waiter;
                 d.loan_list_filter_status = $('#loan_list_filter_status').val();
-                if ($('#only_repossessed').is(':checked')) {
+                var loan_special_filter = $('#loan_special_filter').val();
+                if (loan_special_filter == 'only_repossessed') {
                     d.only_repossessed = 1;
+                } else if (loan_special_filter == 'only_execution') {
+                    d.only_execution = 1;
                 }
             }
         },
@@ -215,7 +244,7 @@ $(document).ready( function(){
         loan_table.ajax.reload();
     });
 
-    $('#only_repossessed').on('ifChanged', function(event) {
+    $(document).on('change', '#loan_special_filter', function() {
         loan_table.ajax.reload();
     });
 
@@ -351,6 +380,78 @@ $('#repossess_form').on('submit', function(e) {
         },
         error: function() {
             toastr.error('Error al procesar la reposición.');
+        }
+    });
+});
+
+$(document).on('click', '.open_execution_modal', function(e) {
+    e.preventDefault();
+    var href = $(this).data('href');
+    $('#execution_loan_url').val(href);
+    $('#execution_date').val('');
+    $('#execution_modal').modal('show');
+});
+
+$('#execution_form').on('submit', function(e) {
+    e.preventDefault();
+    var url = $('#execution_loan_url').val();
+    var date = $('#execution_date').val();
+
+    if (!date) {
+        toastr.error('Ingresa la fecha de ejecución.');
+        return;
+    }
+
+    $.ajax({
+        method: 'POST',
+        url: url,
+        data: {
+            _token: $('meta[name="csrf-token"]').attr('content'),
+            execution_date: date,
+        },
+        dataType: 'json',
+        success: function(result) {
+            if (result.success) {
+                $('#execution_modal').modal('hide');
+                toastr.success(result.msg);
+                loan_table.ajax.reload();
+            } else {
+                toastr.error(result.msg);
+            }
+        },
+        error: function() {
+            toastr.error('Error al procesar la ejecución.');
+        }
+    });
+});
+
+$(document).on('click', '.revert_execution_btn', function(e) {
+    e.preventDefault();
+    var href = $(this).data('href');
+    swal({
+        title: '¿Reponer a Parcial?',
+        text: 'El préstamo volverá al estado Parcial y la mora se generará con normalidad nuevamente.',
+        icon: 'warning',
+        buttons: ['Cancelar', 'Confirmar'],
+    }).then(function(confirm) {
+        if (confirm) {
+            $.ajax({
+                method: 'PATCH',
+                url: href,
+                data: { _token: $('meta[name="csrf-token"]').attr('content') },
+                dataType: 'json',
+                success: function(result) {
+                    if (result.success) {
+                        toastr.success(result.msg);
+                        loan_table.ajax.reload();
+                    } else {
+                        toastr.error(result.msg);
+                    }
+                },
+                error: function() {
+                    toastr.error('Error al procesar la solicitud.');
+                }
+            });
         }
     });
 });

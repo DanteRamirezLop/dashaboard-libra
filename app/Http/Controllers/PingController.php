@@ -108,6 +108,7 @@ class PingController extends Controller
             'partial' => 'Parcial',
             'paid' => 'Pagado',
             'repossessed' => 'Recuperado',
+            'in execution' => 'Ejecución',
         ][$status] ?? ucfirst($status);
     }
 

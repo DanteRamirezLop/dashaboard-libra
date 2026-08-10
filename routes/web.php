@@ -483,7 +483,10 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::post('letter-annexe-update',[LoanController::class,'updateLetterAnnexe']);
 
     //RENTA DE MAQUINARIA EN LA SECCION DE PRESTAMOS
-    Route::get('/loan/list-rent-sale', [LoanController::class,'listRentSale'])->name('rent.sale.loan'); 
+    Route::get('/loan/list-rent-sale', [LoanController::class,'listRentSale'])->name('rent.sale.loan');
+
+    //PRESTAMOS EN EJECUCION
+    Route::get('/loan/list-execution', [LoanController::class,'listExecution'])->name('loan.list-execution');
 
     //COTIZACIONES DE PRESTAMOS
     Route::resource('loans-quotations', LoanQuotationController::class);
@@ -507,6 +510,8 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::post('loan/refinance/{id}', [LoanController::class, 'refinanceStore'])->name('loan.refinance.store');
     Route::patch('loan/{id}/clear-arrears', [LoanController::class, 'clearArrears'])->name('loan.clear-arrears');
     Route::post('loan/{id}/repossess', [LoanController::class, 'repossessStore'])->name('loan.repossess');
+    Route::post('loan/{id}/execution', [LoanController::class, 'executionStore'])->name('loan.execution');
+    Route::patch('loan/{id}/execution/revert', [LoanController::class, 'revertExecution'])->name('loan.execution.revert');
     Route::patch('loan/{id}/change-type', [LoanController::class, 'changeType'])->name('loan.change-type');
 
     Route::resource('types-of-service', TypesOfServiceController::class);

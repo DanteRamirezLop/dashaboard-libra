@@ -83,7 +83,9 @@ class LoanUtil
             })
             ->where('loans.business_id', $business_id)
             ->where('loans.status', '!=', 'quotation')
-            ->where('loans.type', '!=', 'rent-sale')
+            ->when(empty($filters['include_all_types'] ?? null), function ($q) {
+                $q->where('loans.type', '!=', 'rent-sale');
+            })
             ->when(! empty($filters['service_staffs'] ?? null), function ($q) use ($filters) {
                 $q->where('loans.waiter', $filters['service_staffs']);
             })
@@ -93,6 +95,10 @@ class LoanUtil
             ->when(! empty($filters['only_repossessed'] ?? null),
                 fn ($q) => $q->whereNotNull('loans.repossessed_at'),
                 fn ($q) => $q->whereNull('loans.repossessed_at')
+            )
+            ->when(! empty($filters['only_execution'] ?? null),
+                fn ($q) => $q->whereNotNull('loans.in_execution_at'),
+                fn ($q) => $q->whereNull('loans.in_execution_at')
             )
             ->select(
                 'loans.id',

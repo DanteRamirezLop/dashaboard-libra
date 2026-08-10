@@ -68,5 +68,9 @@ return [
     'condone' => 'Condone',
     'delete_delay' => 'Delete Arrears',
     'delete_delay_confirm' => 'Are you sure you want to delete this arrears?',
-    'loan_destroy' => 'Loan Deleted'
+    'loan_destroy' => 'Loan Deleted',
+    'exceptional_states' => 'Exceptional States',
+    'rent_sale_list' => 'Rent Sale List',
+    'add_rent_sale' => 'Add Rent Sale',
+    'execution_list' => 'Execution List'
 ];

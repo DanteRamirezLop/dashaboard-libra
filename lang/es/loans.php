@@ -68,8 +68,12 @@ return [
     'condone'=>'Condonar',
     'delete_delay'=>'Eliminar mora',
     'delete_delay_confirm'=>'¿Está seguro de que desea eliminar esta mora?',
-    'loan_destroy'=>'Prestamo eliminado'
- 
+    'loan_destroy'=>'Prestamo eliminado',
+    'exceptional_states'=>'Estados excepcionales',
+    'rent_sale_list'=>'Lista de alquiler venta',
+    'add_rent_sale'=>'Agregar alquiler venta',
+    'execution_list'=>'Lista en Ejecución'
+
 
 ];
 

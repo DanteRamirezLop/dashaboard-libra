@@ -63,215 +63,7 @@ class LoanController extends Controller {
         if (request()->ajax()) {
             $loans = $this->loanUtil->loanListQuery($business_id, request()->all())->get();
 
-            return Datatables::of($loans)->addColumn(
-                    'action',
-                     function ($row){
-                             if (auth()->user()->can('user.view') || auth()->user()->can('user.create') || auth()->user()->can('roles.view')){                
-                                $html = '<div class="btn-group">
-                                    <button type="button" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline  tw-dw-btn-info tw-w-max dropdown-toggle"
-                                        data-toggle="dropdown" aria-expanded="false">'.
-                                        __('messages.actions').
-                                        '<span class="caret"></span><span class="sr-only">Toggle Dropdown
-                                        </span>
-                                    </button>
-                                        <ul class="dropdown-menu dropdown-menu-left" role="menu">.   
-                                            <li><a href="'.route('add-letter-loan',[$row->id]).'"><i class="fa fa-list" aria-hidden="true"></i> Asignar número de letra</a></li>';
-
-                                $html .= '<li class="divider"></li>';
-                                $html .= '<li><a href="'.action([\App\Http\Controllers\LoanController::class, 'show'], [$row->id]).'" "><i class="fas fa fa-calendar" aria-hidden="true"></i> Calendario de pagos</a></li>';
-                                $html .= '<li class="divider"></li>';
-                                $html .= '<li><a href="'.action([\App\Http\Controllers\LoanPaymentController::class, 'statemenPDF'], [$row->id]).'"  ><i class="fas fa fa-download" aria-hidden="true"></i> Descargar estado de cuenta</a></li>';
-                                $html .= '<li><a href="#" class="print-invoice" data-href="'.route('sell.printInvoice', [$row->transaction_id]).'"><i class="fas fa-print" aria-hidden="true"></i> '.__('lang_v1.print_invoice').'</a></li>';
-                                $html .= '<li><a href="'.action([\App\Http\Controllers\TransactionPaymentController::class, 'show'], [$row->transaction_id]).'" class="view_payment_modal"><i class="fas fa-money-bill-alt"></i> '.__('purchase.view_payments').'</a></li>';
-                                $html .= '<li><a href="#" data-href="'.action([\App\Http\Controllers\SellController::class, 'show'], [$row->transaction_id]).'" class="btn-modal" data-container=".view_modal"><i class="fas fa-eye" aria-hidden="true"></i> '.__('messages.view').'</a></li>';
-                                $html .= '<li><a href="'.action([\App\Http\Controllers\LoanController::class, 'destroy'], [$row->id]).'" class="delete_loan_button"> <i class="fas fa-trash"></i> '.__('messages.delete').'</a></li>';
-                                if (in_array($row->status, ['in arrears', 'partial'])) {
-                                    $html .= '<li><a href="#" class="clear_arrears_btn" data-id="'.$row->id.'" data-href="'.route('loan.clear-arrears', $row->id).'"><i class="fa fa-check-circle" aria-hidden="true"></i>Actualizar estado</a></li>';
-                                }
-                                if (in_array($row->status, ['in arrears', 'partial', 'approved'])) {
-                                    if(!$row->refinanced_at){
-                                        $html .= '<li class="divider"></li>';
-                                        $html .= '<li><a href="#" class="open_refinance_modal" data-href="'.route('loan.refinance.form', $row->id).'"><i class="fa fa-landmark" aria-hidden="true"></i> Refinanciar</a></li>';
-                                    }
-                                }
-                                if (!in_array($row->status, ['repossessed', 'paid', 'cancelled'])) {
-                                    $html .= '<li class="divider"></li>';
-                                    $html .= '<li><a href="#" class="open_repossess_modal" data-id="'.$row->id.'" data-href="'.route('loan.repossess', $row->id).'"><i class="fa fa-retweet" aria-hidden="true"></i> Reposición</a></li>';
-                                }
-                                $html .= '<li class="divider"></li>';
-                                $next_type = $row->type == 'rent-sale' ? 'sale' : 'rent-sale';
-                                $change_type_label = $row->type == 'rent-sale' ? 'Cambiar a Venta' : 'Cambiar a Alquiler Venta';
-                                $html .= '<li><a href="#" class="change_loan_type_btn" data-id="'.$row->id.'" data-type="'.$next_type.'" data-href="'.route('loan.change-type', $row->id).'"><i class="fa fa-exchange-alt" aria-hidden="true"></i> '.$change_type_label.'</a></li>';
-                        }else{
-                          $html = '<div class="btn-group">
-                                    <button type="button" class="btn btn-info dropdown-toggle btn-xs"
-                                        data-toggle="dropdown" aria-expanded="false">'.
-                                        __('messages.actions').
-                                        '<span class="caret"></span><span class="sr-only">Toggle Dropdown
-                                        </span>
-                                    </button>
-                                     <ul class="dropdown-menu dropdown-menu-left" role="menu">
-                                     <li><a href="'.action([\App\Http\Controllers\LoanPaymentController::class, 'statemenPDF'], [$row->id]).'"  ><i class="fas fa fa-download" aria-hidden="true"></i> Descargar estado de cuenta</a></li>';
-
-                            $html .= '<li class="divider"></li>';
-                            $html .= '<li><a href="'.action([\App\Http\Controllers\LoanController::class, 'show'], [$row->id]).'" "><i class="fas fa fa-calendar" aria-hidden="true"></i> Calendario de pagos</a></li>';
-                        }
-                        $html .= '</ul></div>';
-                        return $html;
-                     }
-                )->addColumn(
-                    'label',
-                    function ($row){
-                        switch ($row->status) {
-                            case "approved":
-                                $label = '<span class="label label-info">Aprobado</span>';
-                                break;
-                            case"partial":
-                                $label = '<span class="label label-info">Parcial</span>';
-                                break;
-                            case"in arrears":
-                                $label = '<span class="label label-danger">Atrasado</span>';
-                                break;
-                            case"cancelled":
-                                $label = '<span class="label label-default">Cancelado</span>';
-                                break;
-                            case"paid":
-                                $label = '<span class="label label-success">pagado</span>';
-                                break;
-                            case"repossessed":
-                                $label = '<span class="label label-warning">Reposeido</span>';
-                                break;
-                            default:
-                                $label = '<span class="label label-warning"> - </span>';
-                            break;
-
-                        }
-                        return $label;
-                     }
-                )
-                 ->addColumn('total_delay', function ($row) {
-                    //total vencido
-                    $mora = round($row->mora);
-                    if($mora){
-                        //CALCULO CORRECTO CON PAGOS PARCIALES
-                        $total_delay = bcsub($row->delay, $row->total_only_payments, 4);
-                        if (!$row->refinanced_at) {
-                            //Descontar el "pago a capital / regularización" ya aplicado, para no contarlo como deuda
-                            //(no aplica en préstamos refinanciados: aquí discount_amount es la condonación de mora,
-                            //ya reflejada en que esas cuotas viejas no suman al total vencido)
-                            $interest_saved = bcsub($row->discount_amount ?? 0, $row->interest_saved ?? 0, 2);
-                            $total_delay = bcsub($total_delay, $interest_saved, 4);
-                        }
-
-                    }else{
-                        $total_delay = 0;
-                    }
-                    if ($total_delay < 0 && $total_delay > -0.5) {
-                        $total_delay = 0;
-                    }
-
-                    $total_delay_html = '<span class="payment_due" data-orig-value="'.$total_delay.'">'.$this->transactionUtil->num_f($total_delay, true).'</span>';
-                    return $total_delay_html;
-
-                })
-                ->addColumn('total_to_delay', function ($row) {
-                    // Total por vencer
-                
-                    if($row->refinanced_at){
-                        $total_to_delay =  $row->for_due;
-                    }else{
-                        //calculo la mora
-                        $mora = round($row->mora);
-                        if($mora){
-                            $paid_partial = 0;
-                        }else{
-                            $paid_partial = bcsub($row->delay, $row->total_only_payments, 4);
-                        }
-
-                        //Calculo algun descuento (Descuento por capitalización / Regularización)
-                        $interest_saved = bcsub($row->discount_amount ?? 0, $row->interest_saved ?? 0, 2);
-
-                       $total_to_delay =  $row->for_due + bcsub($paid_partial,$interest_saved,4);
-                    }
-
-                    if ($total_to_delay < 0 && $total_to_delay > -0.5) {
-                        $total_to_delay = 0;
-                    }
-                    
-                    $total_to_delay_html = '<span class="payment_due" data-orig-value="'.$total_to_delay.'">'.$this->transactionUtil->num_f($total_to_delay, true).'</span>';
-                    return $total_to_delay_html;
-                })
-                ->addColumn('total_remaining', function ($row) {
-                    // total vencido + MORA
-                     $mora = round($row->mora);
-                    if($mora){
-                        $total_remaining = bcsub($row->delay, $row->total_only_payments, 4);
-                        if (!$row->refinanced_at) {
-                            $interest_saved = bcsub($row->discount_amount ?? 0, $row->interest_saved ?? 0, 2);
-                            $total_remaining = bcsub($total_remaining, $interest_saved, 4);
-                        }
-                        $total_remaining += $row->mora;
-                    }else{
-                        $total_remaining = 0;
-                    }
-
-                    if ($total_remaining < 0 && $total_remaining > -0.5) {
-                        $total_remaining = 0;
-                    }
-
-                    $total_remaining_html = '<span class="payment_due" data-orig-value="'.$total_remaining.'">'.$this->transactionUtil->num_f($total_remaining, true).'</span>';
-                    return $total_remaining_html;
-                })
-
-                 ->addColumn('total_mora', function ($row) {
-                    //mora
-                    $total_mora = $row->mora;
-                    if ($total_mora < 0 && $total_mora > -0.5) {
-                        $total_mora = 0;
-                    }
-                    $total_mora_html = '<span class="payment_due" data-orig-value="'.$total_mora.'">'.$this->transactionUtil->num_f($total_mora, true).'</span>';
-                    return $total_mora_html;
-                })
-
-                 ->addColumn('total_remaining_mora', function ($row) {
-                    // Total debido
-                    $total_remaining = $row->final_total - $row->total_paid;
-                    if ($total_remaining < 0 && $total_remaining > -0.5) {
-                        $total_remaining = 0;
-                    }
-                    $total_remaining_html = '<span class="payment_due" data-orig-value="'.$total_remaining.'">'.$this->transactionUtil->num_f($total_remaining, true).'</span>';
-                    return $total_remaining_html;
-                })
-
-                ->editColumn('next_due_amount', function ($row) {
-                    // Monto a pagar en el mes (próxima cuota pendiente)
-                    if (is_null($row->next_due_amount)) {
-                        return '-';
-                    }
-                    return '<span class="payment_due" data-orig-value="'.$row->next_due_amount.'">'.$this->transactionUtil->num_f($row->next_due_amount, true).'</span>';
-                })
-                ->editColumn('next_due_date', function ($row) {
-                    // Fecha de vencimiento de la cuota
-                    return $row->next_due_date ? date('Y/m/d', strtotime($row->next_due_date)) : '-';
-                })
-                ->editColumn('loan_end_date', function ($row) {
-                    // Fecha del fin del plazo total del préstamo
-                    return $row->loan_end_date ? date('Y/m/d', strtotime($row->loan_end_date)) : '-';
-                })
-                ->editColumn(
-                    'final_total',
-                    '<span class="final-total" data-orig-value="{{$final_total}}"> @format_currency($final_total)  </span>'
-                )
-                ->editColumn(
-                    'total_paid',
-                    '<span class="total-paid" data-orig-value="{{$total_paid}}">@format_currency($total_paid)</span>'
-                )
-
-                ->editColumn('balance_to_financed','@format_currency($balance_to_financed)')
-                ->editColumn('total_cost_loan','@format_currency($total_cost_loan)')
-                ->editColumn('created_at','{{date("Y/m/d",strtotime($created_at))}}')
-                ->rawColumns(['action','label','seller','total','final_total','total_paid','total_remaining','total_delay','total_to_delay','total_mora','total_remaining_mora','next_due_amount'])
-                ->make(true);
+            return $this->loanDatatableResponse($loans);
         }
          //Service staff filter
         $service_staffs = null;
@@ -281,6 +73,252 @@ class LoanController extends Controller {
 
         $type = request()->get('id');
         return view('loan.index',compact('type','service_staffs'));
+    }
+
+    public function listExecution()
+    {
+        $business_id = request()->session()->get('user.business_id');
+        if (request()->ajax()) {
+            $filters = array_merge(request()->all(), [
+                'only_execution'    => 1,
+                'include_all_types' => 1,
+            ]);
+            $loans = $this->loanUtil->loanListQuery($business_id, $filters)->get();
+
+            return $this->loanDatatableResponse($loans);
+        }
+        //Service staff filter
+        $service_staffs = null;
+        if ($this->productUtil->isModuleEnabled('service_staff')) {
+            $service_staffs = $this->productUtil->serviceStaffDropdown($business_id);
+        }
+
+        $type = request()->get('id');
+        return view('loan.index',compact('type','service_staffs'));
+    }
+
+    private function loanDatatableResponse($loans)
+    {
+        return Datatables::of($loans)->addColumn(
+                'action',
+                 function ($row){
+                         if (auth()->user()->can('user.view') || auth()->user()->can('user.create') || auth()->user()->can('roles.view')){
+                            $html = '<div class="btn-group">
+                                <button type="button" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline  tw-dw-btn-info tw-w-max dropdown-toggle"
+                                    data-toggle="dropdown" aria-expanded="false">'.
+                                    __('messages.actions').
+                                    '<span class="caret"></span><span class="sr-only">Toggle Dropdown
+                                    </span>
+                                </button>
+                                    <ul class="dropdown-menu dropdown-menu-left" role="menu">.
+                                        <li><a href="'.route('add-letter-loan',[$row->id]).'"><i class="fa fa-list" aria-hidden="true"></i> Asignar número de letra</a></li>';
+
+                            $html .= '<li class="divider"></li>';
+                            $html .= '<li><a href="'.action([\App\Http\Controllers\LoanController::class, 'show'], [$row->id]).'" "><i class="fas fa fa-calendar" aria-hidden="true"></i> Calendario de pagos</a></li>';
+                            $html .= '<li class="divider"></li>';
+                            $html .= '<li><a href="'.action([\App\Http\Controllers\LoanPaymentController::class, 'statemenPDF'], [$row->id]).'"  ><i class="fas fa fa-download" aria-hidden="true"></i> Descargar estado de cuenta</a></li>';
+                            $html .= '<li><a href="#" class="print-invoice" data-href="'.route('sell.printInvoice', [$row->transaction_id]).'"><i class="fas fa-print" aria-hidden="true"></i> '.__('lang_v1.print_invoice').'</a></li>';
+                            // $html .= '<li><a href="'.action([\App\Http\Controllers\TransactionPaymentController::class, 'show'], [$row->transaction_id]).'" class="view_payment_modal"><i class="fas fa-money-bill-alt"></i> '.__('purchase.view_payments').'</a></li>';
+                            $html .= '<li><a href="#" data-href="'.action([\App\Http\Controllers\SellController::class, 'show'], [$row->transaction_id]).'" class="btn-modal" data-container=".view_modal"><i class="fas fa-eye" aria-hidden="true"></i> '.__('messages.view').'</a></li>';
+                            $html .= '<li><a href="'.action([\App\Http\Controllers\LoanController::class, 'destroy'], [$row->id]).'" class="delete_loan_button"> <i class="fas fa-trash"></i> '.__('messages.delete').'</a></li>';
+                            if (in_array($row->status, ['in arrears', 'partial'])) {
+                                $html .= '<li><a href="#" class="clear_arrears_btn" data-id="'.$row->id.'" data-href="'.route('loan.clear-arrears', $row->id).'"><i class="fa fa-check-circle" aria-hidden="true"></i>Actualizar estado</a></li>';
+                            }
+                            if (in_array($row->status, ['in arrears', 'partial', 'approved'])) {
+                                if(!$row->refinanced_at){
+                                    $html .= '<li class="divider"></li>';
+                                    $html .= '<li><a href="#" class="open_refinance_modal" data-href="'.route('loan.refinance.form', $row->id).'"><i class="fa fa-landmark" aria-hidden="true"></i> Refinanciar</a></li>';
+                                }
+                            }
+                            if (!in_array($row->status, ['repossessed', 'paid', 'cancelled'])) {
+                                $html .= '<li class="divider"></li>';
+                                $html .= '<li><a href="#" class="open_repossess_modal" data-id="'.$row->id.'" data-href="'.route('loan.repossess', $row->id).'"><i class="fa fa-retweet" aria-hidden="true"></i> Reposición</a></li>';
+                            }
+                            if (!in_array($row->status, ['repossessed', 'paid', 'cancelled', 'in execution'])) {
+                                $html .= '<li><a href="#" class="open_execution_modal" data-id="'.$row->id.'" data-href="'.route('loan.execution', $row->id).'"><i class="fa fa-gavel" aria-hidden="true"></i> Ejecución</a></li>';
+                            }
+                            if ($row->status === 'in execution') {
+                                $html .= '<li class="divider"></li>';
+                                $html .= '<li><a href="#" class="revert_execution_btn" data-id="'.$row->id.'" data-href="'.route('loan.execution.revert', $row->id).'"><i class="fa fa-undo" aria-hidden="true"></i> Reponer a Parcial</a></li>';
+                            }
+                            $html .= '<li class="divider"></li>';
+                            $next_type = $row->type == 'rent-sale' ? 'sale' : 'rent-sale';
+                            $change_type_label = $row->type == 'rent-sale' ? 'Cambiar a Venta' : 'Cambiar a Alquiler Venta';
+                            $html .= '<li><a href="#" class="change_loan_type_btn" data-id="'.$row->id.'" data-type="'.$next_type.'" data-href="'.route('loan.change-type', $row->id).'"><i class="fa fa-exchange-alt" aria-hidden="true"></i> '.$change_type_label.'</a></li>';
+                    }else{
+                      $html = '<div class="btn-group">
+                                <button type="button" class="btn btn-info dropdown-toggle btn-xs"
+                                    data-toggle="dropdown" aria-expanded="false">'.
+                                    __('messages.actions').
+                                    '<span class="caret"></span><span class="sr-only">Toggle Dropdown
+                                    </span>
+                                </button>
+                                 <ul class="dropdown-menu dropdown-menu-left" role="menu">
+                                 <li><a href="'.action([\App\Http\Controllers\LoanPaymentController::class, 'statemenPDF'], [$row->id]).'"  ><i class="fas fa fa-download" aria-hidden="true"></i> Descargar estado de cuenta</a></li>';
+
+                        $html .= '<li class="divider"></li>';
+                        $html .= '<li><a href="'.action([\App\Http\Controllers\LoanController::class, 'show'], [$row->id]).'" "><i class="fas fa fa-calendar" aria-hidden="true"></i> Calendario de pagos</a></li>';
+                    }
+                    $html .= '</ul></div>';
+                    return $html;
+                 }
+            )->addColumn(
+                'label',
+                function ($row){
+                    switch ($row->status) {
+                        case "approved":
+                            $label = '<span class="label label-info">Aprobado</span>';
+                            break;
+                        case"partial":
+                            $label = '<span class="label label-info">Parcial</span>';
+                            break;
+                        case"in arrears":
+                            $label = '<span class="label label-danger">Atrasado</span>';
+                            break;
+                        case"cancelled":
+                            $label = '<span class="label label-default">Cancelado</span>';
+                            break;
+                        case"paid":
+                            $label = '<span class="label label-success">pagado</span>';
+                            break;
+                        case"repossessed":
+                            $label = '<span class="label label-warning">Reposeido</span>';
+                            break;
+                        case"in execution":
+                            $label = '<span class="label label-primary">Ejecución</span>';
+                            break;
+                            
+                        default:
+                            $label = '<span class="label label-warning"> - </span>';
+                        break;
+
+                    }
+                    return $label;
+                 }
+            )
+             ->addColumn('total_delay', function ($row) {
+                //total vencido
+                $mora = round($row->mora);
+                if($mora){
+                    //CALCULO CORRECTO CON PAGOS PARCIALES
+                    $total_delay = bcsub($row->delay, $row->total_only_payments, 4);
+                    if (!$row->refinanced_at) {
+                        //Descontar el "pago a capital / regularización" ya aplicado, para no contarlo como deuda
+                        //(no aplica en préstamos refinanciados: aquí discount_amount es la condonación de mora,
+                        //ya reflejada en que esas cuotas viejas no suman al total vencido)
+                        $interest_saved = bcsub($row->discount_amount ?? 0, $row->interest_saved ?? 0, 2);
+                        $total_delay = bcsub($total_delay, $interest_saved, 4);
+                    }
+
+                }else{
+                    $total_delay = 0;
+                }
+                if ($total_delay < 0 && $total_delay > -0.5) {
+                    $total_delay = 0;
+                }
+
+                $total_delay_html = '<span class="payment_due" data-orig-value="'.$total_delay.'">'.$this->transactionUtil->num_f($total_delay, true).'</span>';
+                return $total_delay_html;
+
+            })
+            ->addColumn('total_to_delay', function ($row) {
+                // Total por vencer
+
+                if($row->refinanced_at){
+                    $total_to_delay =  $row->for_due;
+                }else{
+                    //calculo la mora
+                    $mora = round($row->mora);
+                    if($mora){
+                        $paid_partial = 0;
+                    }else{
+                        $paid_partial = bcsub($row->delay, $row->total_only_payments, 4);
+                    }
+
+                    //Calculo algun descuento (Descuento por capitalización / Regularización)
+                    $interest_saved = bcsub($row->discount_amount ?? 0, $row->interest_saved ?? 0, 2);
+
+                   $total_to_delay =  $row->for_due + bcsub($paid_partial,$interest_saved,4);
+                }
+
+                if ($total_to_delay < 0 && $total_to_delay > -0.5) {
+                    $total_to_delay = 0;
+                }
+
+                $total_to_delay_html = '<span class="payment_due" data-orig-value="'.$total_to_delay.'">'.$this->transactionUtil->num_f($total_to_delay, true).'</span>';
+                return $total_to_delay_html;
+            })
+            ->addColumn('total_remaining', function ($row) {
+                // total vencido + MORA
+                 $mora = round($row->mora);
+                if($mora){
+                    $total_remaining = bcsub($row->delay, $row->total_only_payments, 4);
+                    if (!$row->refinanced_at) {
+                        $interest_saved = bcsub($row->discount_amount ?? 0, $row->interest_saved ?? 0, 2);
+                        $total_remaining = bcsub($total_remaining, $interest_saved, 4);
+                    }
+                    $total_remaining += $row->mora;
+                }else{
+                    $total_remaining = 0;
+                }
+
+                if ($total_remaining < 0 && $total_remaining > -0.5) {
+                    $total_remaining = 0;
+                }
+
+                $total_remaining_html = '<span class="payment_due" data-orig-value="'.$total_remaining.'">'.$this->transactionUtil->num_f($total_remaining, true).'</span>';
+                return $total_remaining_html;
+            })
+
+             ->addColumn('total_mora', function ($row) {
+                //mora
+                $total_mora = $row->mora;
+                if ($total_mora < 0 && $total_mora > -0.5) {
+                    $total_mora = 0;
+                }
+                $total_mora_html = '<span class="payment_due" data-orig-value="'.$total_mora.'">'.$this->transactionUtil->num_f($total_mora, true).'</span>';
+                return $total_mora_html;
+            })
+
+             ->addColumn('total_remaining_mora', function ($row) {
+                // Total debido
+                $total_remaining = $row->final_total - $row->total_paid;
+                if ($total_remaining < 0 && $total_remaining > -0.5) {
+                    $total_remaining = 0;
+                }
+                $total_remaining_html = '<span class="payment_due" data-orig-value="'.$total_remaining.'">'.$this->transactionUtil->num_f($total_remaining, true).'</span>';
+                return $total_remaining_html;
+            })
+
+            ->editColumn('next_due_amount', function ($row) {
+                // Monto a pagar en el mes (próxima cuota pendiente)
+                if (is_null($row->next_due_amount)) {
+                    return '-';
+                }
+                return '<span class="payment_due" data-orig-value="'.$row->next_due_amount.'">'.$this->transactionUtil->num_f($row->next_due_amount, true).'</span>';
+            })
+            ->editColumn('next_due_date', function ($row) {
+                // Fecha de vencimiento de la cuota
+                return $row->next_due_date ? date('Y/m/d', strtotime($row->next_due_date)) : '-';
+            })
+            ->editColumn('loan_end_date', function ($row) {
+                // Fecha del fin del plazo total del préstamo
+                return $row->loan_end_date ? date('Y/m/d', strtotime($row->loan_end_date)) : '-';
+            })
+            ->editColumn(
+                'final_total',
+                '<span class="final-total" data-orig-value="{{$final_total}}"> @format_currency($final_total)  </span>'
+            )
+            ->editColumn(
+                'total_paid',
+                '<span class="total-paid" data-orig-value="{{$total_paid}}">@format_currency($total_paid)</span>'
+            )
+
+            ->editColumn('balance_to_financed','@format_currency($balance_to_financed)')
+            ->editColumn('total_cost_loan','@format_currency($total_cost_loan)')
+            ->editColumn('created_at','{{date("Y/m/d",strtotime($created_at))}}')
+            ->rawColumns(['action','label','seller','total','final_total','total_paid','total_remaining','total_delay','total_to_delay','total_mora','total_remaining_mora','next_due_amount'])
+            ->make(true);
     }
 
 
@@ -1580,11 +1618,22 @@ class LoanController extends Controller {
                                 $html .= '<li class="divider"></li>';
                                 $html .= '<li><a href="'.action([\App\Http\Controllers\LoanPaymentController::class, 'statemenPDF'], [$row->id]).'"  ><i class="fas fa fa-download" aria-hidden="true"></i> Descargar estado de cuenta</a></li>';
                                 $html .= '<li><a href="#" class="print-invoice" data-href="'.route('sell.printInvoice', [$row->transaction_id]).'"><i class="fas fa-print" aria-hidden="true"></i> '.__('lang_v1.print_invoice').'</a></li>';
-                                $html .= '<li><a href="'.action([\App\Http\Controllers\TransactionPaymentController::class, 'show'], [$row->transaction_id]).'" class="view_payment_modal"><i class="fas fa-money-bill-alt"></i> '.__('purchase.view_payments').'</a></li>';
+                                // $html .= '<li><a href="'.action([\App\Http\Controllers\TransactionPaymentController::class, 'show'], [$row->transaction_id]).'" class="view_payment_modal"><i class="fas fa-money-bill-alt"></i> '.__('purchase.view_payments').'</a></li>';
                                 $html .= '<li><a href="#" data-href="'.action([\App\Http\Controllers\SellController::class, 'show'], [$row->transaction_id]).'" class="btn-modal" data-container=".view_modal"><i class="fas fa-eye" aria-hidden="true"></i> '.__('messages.view').'</a></li>';
                                 $html .= '<li><a href="'.action([\App\Http\Controllers\LoanController::class, 'destroy'], [$row->id]).'" class="delete_loan_button"> <i class="fas fa-trash"></i> '.__('messages.delete').'</a></li>';
                                 if (in_array($row->status, ['in arrears', 'partial'])) {
                                     $html .= '<li><a href="#" class="clear_arrears_btn" data-id="'.$row->id.'" data-href="'.route('loan.clear-arrears', $row->id).'"><i class="fa fa-check-circle" aria-hidden="true"></i>Actualizar estado</a></li>';
+                                }
+                                if (!in_array($row->status, ['repossessed', 'paid', 'cancelled'])) {
+                                    $html .= '<li class="divider"></li>';
+                                    $html .= '<li><a href="#" class="open_repossess_modal" data-id="'.$row->id.'" data-href="'.route('loan.repossess', $row->id).'"><i class="fa fa-retweet" aria-hidden="true"></i> Reposición</a></li>';
+                                }
+                                if (!in_array($row->status, ['repossessed', 'paid', 'cancelled', 'in execution'])) {
+                                    $html .= '<li><a href="#" class="open_execution_modal" data-id="'.$row->id.'" data-href="'.route('loan.execution', $row->id).'"><i class="fa fa-gavel" aria-hidden="true"></i> Ejecución</a></li>';
+                                }
+                                if ($row->status === 'in execution') {
+                                    $html .= '<li class="divider"></li>';
+                                    $html .= '<li><a href="#" class="revert_execution_btn" data-id="'.$row->id.'" data-href="'.route('loan.execution.revert', $row->id).'"><i class="fa fa-undo" aria-hidden="true"></i> Reponer a Parcial</a></li>';
                                 }
                                 $html .= '<li class="divider"></li>';
                                 $next_type = $row->type == 'rent-sale' ? 'sale' : 'rent-sale';
@@ -1625,6 +1674,12 @@ class LoanController extends Controller {
                                 break;
                             case"paid":
                                 $label = '<span class="label label-success">pagado</span>';
+                                break;
+                            case"repossessed":
+                                $label = '<span class="label label-warning">Reposeido</span>';
+                                break;
+                            case"in execution":
+                                $label = '<span class="label label-primary">Ejecución</span>';
                                 break;
                         }
                         return $label;
@@ -1971,6 +2026,64 @@ class LoanController extends Controller {
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['success' => false, 'msg' => 'Error al procesar la reposición.']);
+        }
+    }
+
+    public function executionStore(Request $request, $id)
+    {
+        $request->validate([
+            'execution_date' => 'required|date',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $loan = Loan::findOrFail($id);
+
+            if ($loan->status === 'in execution') {
+                return response()->json(['success' => false, 'msg' => 'El préstamo ya está en Ejecución.']);
+            }
+
+            // Pausar mora: soft-delete de todos los registros de mora activos
+            \App\Delay::where('loan_id', $loan->id)
+                ->where('status', 'late')
+                ->delete();
+
+            $loan->status          = 'in execution';
+            $loan->in_execution_at = Carbon::parse($request->execution_date);
+            $loan->save();
+
+            DB::commit();
+
+            return response()->json(['success' => true, 'msg' => 'Préstamo marcado en Ejecución y mora pausada.']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'msg' => 'Error al procesar la ejecución.']);
+        }
+    }
+
+    public function revertExecution($id)
+    {
+        if (! request()->ajax()) {
+            abort(403);
+        }
+
+        try {
+            $business_id = request()->session()->get('user.business_id');
+            $loan = Loan::where('business_id', $business_id)->findOrFail($id);
+
+            if ($loan->status !== 'in execution') {
+                return response()->json(['success' => false, 'msg' => 'El préstamo no está en Ejecución.']);
+            }
+
+            $loan->status          = 'partial';
+            $loan->in_execution_at = null;
+            $loan->save();
+
+            return response()->json(['success' => true, 'msg' => 'Préstamo repuesto a Parcial. La mora se generará con normalidad.']);
+        } catch (\Exception $e) {
+            \Log::emergency('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
+            return response()->json(['success' => false, 'msg' => 'Error al reponer el préstamo.']);
         }
     }
 }

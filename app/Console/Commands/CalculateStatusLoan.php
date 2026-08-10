@@ -50,6 +50,7 @@ class CalculateStatusLoan extends Command
             DB::beginTransaction();
             $prestamos = Loan::whereIn('status', ['approved', 'in arrears', 'partial'])
                 ->whereNull('repossessed_at')
+                ->whereNull('in_execution_at')
                 ->get();
             foreach ($prestamos as $prestamo) {
                 // ¿Existe una versión activa para este préstamo?

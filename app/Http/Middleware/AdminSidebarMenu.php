@@ -837,7 +837,7 @@ class AdminSidebarMenu
                         if(auth()->user()->can('loans.view')) {
                             $sub->url(
                                 action([\App\Http\Controllers\LoanController::class, 'listRentSale']),
-                                'Lista de alquiler venta',
+                                __('loans.rent_sale_list'),
                                 ['icon' => '', 'active' => request()->segment(1) == 'loan'  && request()->segment(2) == 'list-rent-sale']
                             );
                         }
@@ -845,11 +845,20 @@ class AdminSidebarMenu
                        if(auth()->user()->can('loans.create')) {
                          $sub->url(
                              action([\App\Http\Controllers\LoanController::class, 'create'], ['type' => 'rent-sale']),
-                            'Agregar alquiler venta',
+                            __('loans.add_rent_sale'),
                             ['icon' => '', 'active' => request()->segment(1) == 'loans' && request()->segment(2) == 'create' && request()->get('type') == 'rent-sale']
                            
                          );
                        }
+
+
+                        if(auth()->user()->can('loans.view')) {
+                            $sub->url(
+                                action([\App\Http\Controllers\LoanController::class, 'listExecution']),
+                                __('loans.execution_list'),
+                                ['icon' => '', 'active' => request()->segment(1) == 'loan'  && request()->segment(2) == 'list-execution']
+                            );
+                        }
                         
                         if(auth()->user()->can('loans.own_quotation') || auth()->user()->can('loans.all_quotation')){ 
                             $sub->url(
