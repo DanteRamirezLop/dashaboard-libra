@@ -49,7 +49,7 @@ class SalesController extends Controller
                     'id' => $row->id,
                     'factura' => $row->invoice_no,
                     'fecha' => $row->sale_date,
-                    'cliente' => $row->name,
+                    'cliente' => $row->name ?: ($row->supplier_business_name ?: 'Sin nombre'),
                     'vendedor' => trim(preg_replace('/\s+/', ' ', $row->added_by)) ?: 'Sin asignar',
                     'fuente_contacto' => $row->custom_field_2 ?: 'Sin especificar',
                     'estado_pago' => $this->estadoPagoLabel($row->payment_status),
