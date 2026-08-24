@@ -51,7 +51,7 @@ class SalesController extends Controller
                     'fecha' => $row->sale_date,
                     'cliente' => $row->name,
                     'vendedor' => trim(preg_replace('/\s+/', ' ', $row->added_by)) ?: 'Sin asignar',
-                    'sucursal' => $row->business_location,
+                    'fuente_contacto' => $row->custom_field_2 ?: 'Sin especificar',
                     'estado_pago' => $this->estadoPagoLabel($row->payment_status),
                     'total' => $total,
                     'pagado' => $pagado,
