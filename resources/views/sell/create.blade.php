@@ -304,6 +304,17 @@
 
 			        $is_custom_field_2_required = !empty($custom_labels['sell']['is_custom_field_2_required']) && $custom_labels['sell']['is_custom_field_2_required'] == 1 ? true : false;
 
+			        $fuente_contacto_options = [
+			        	'' => __('messages.please_select'),
+			        	'Facebook' => 'Facebook',
+			        	'Instagram' => 'Instagram',
+			        	'WhatsApp' => 'WhatsApp',
+			        	'TikTok' => 'TikTok',
+			        	'Contacto directo del vendedor' => 'Contacto directo del vendedor',
+			        	'Pasando por la tienda' => 'Pasando por la tienda',
+			        	'Otro' => 'Otro',
+			        ];
+
 			        $custom_field_3_label = !empty($custom_labels['sell']['custom_field_3']) ? $custom_labels['sell']['custom_field_3'] : '';
 
 			        $is_custom_field_3_required = !empty($custom_labels['sell']['is_custom_field_3_required']) && $custom_labels['sell']['is_custom_field_3_required'] == 1 ? true : false;
@@ -338,7 +349,7 @@
 		        	<div class="col-md-4">
 				        <div class="form-group">
 				            {!! Form::label('custom_field_2', $label_2 ) !!}
-				            {!! Form::text('custom_field_2', null, ['class' => 'form-control','placeholder' => $custom_field_2_label, 'required' => $is_custom_field_2_required]); !!}
+				            {!! Form::select('custom_field_2', $fuente_contacto_options, null, ['class' => 'form-control select2', 'required' => $is_custom_field_2_required]); !!}
 				        </div>
 				    </div>
 		        @endif

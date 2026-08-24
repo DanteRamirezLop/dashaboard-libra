@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Utils\TransactionUtil;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class SalesController extends Controller
 {
@@ -32,6 +33,11 @@ class SalesController extends Controller
         $sales = $this->transactionUtil
             ->getListSells($businessId)
             ->whereBetween('transactions.transaction_date', [$from, $to])
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('loans')
+                    ->whereColumn('loans.transaction_id', 'transactions.id');
+            })
             ->groupBy('transactions.id')
             ->orderBy('transactions.transaction_date', 'desc')
             ->get()
