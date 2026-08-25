@@ -54,8 +54,9 @@ class GetExchageRate extends Command
                 $err = curl_error($curl);
                 curl_close($curl);
                 $data = json_decode($response, true);
-                if ($err) {
-                    echo "cURL Error #:" . $err;
+                if ($err || empty($data['data']['moneda'])) {
+                    Log::warning('TIPO DE CAMBIO: LA PETICION A LA API FALLO (' . ($err ?: 'respuesta invalida: ' . $response) . '), SE DUPLICARA EL TIPO DE CAMBIO DEL DIA ANTERIOR PARA: ' . $date);
+                    $this->duplicatePreviousExchangeRate($date);
                 } else {
                     ExchangeRates::create([
                         'base_currency'=> 'PE',
@@ -68,8 +69,36 @@ class GetExchageRate extends Command
                 }
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::emergency('ERRO EN GENERAR LA TASA DE CAMBIO,  File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
+            \Log::emergency('ERRO, NO SE GENERÓ LA TASA DE CAMBIO,  File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
             exit('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
         }
+    }
+
+    /**
+     * Duplica el ultimo tipo de cambio registrado y lo guarda como si fuera del dia indicado.
+     *
+     * @param string $date
+     * @return void
+     */
+    protected function duplicatePreviousExchangeRate($date)
+    {
+        $previous = ExchangeRates::where('search_date', '<', $date)
+            ->orderByDesc('search_date')
+            ->first();
+
+        if (!$previous) {
+            Log::emergency('TIPO DE CAMBIO: NO SE PUDO DUPLICAR EL TIPO DE CAMBIO DEL DIA ANTERIOR PORQUE NO EXISTE NINGUN REGISTRO PREVIO. FECHA: ' . $date);
+            return;
+        }
+
+        ExchangeRates::create([
+            'base_currency' => $previous->base_currency,
+            'target_currency' => $previous->target_currency,
+            'purchase' => $previous->purchase,
+            'sale' => $previous->sale,
+            'search_date' => $date,
+        ]);
+
+        Log::warning('TIPO DE CAMBIO: SE DUPLICO EL TIPO DE CAMBIO DEL DIA ' . $previous->search_date . ' PARA LA FECHA ' . $date . ' DEBIDO A QUE FALLO LA PETICION A LA API.');
     }
 }
