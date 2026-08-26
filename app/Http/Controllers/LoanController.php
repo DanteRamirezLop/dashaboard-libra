@@ -684,6 +684,14 @@ class LoanController extends Controller {
     {
         $location_id = BusinessLocation::where('business_id', $loan->business_id)->value('id');
 
+        // Resuelve el id del vendedor ("Derivado a vendedor") a partir del nombre guardado en loans.waiter
+        $waiter_id = null;
+        if (! empty($loan->waiter)) {
+            $waiter_key = collect($this->transactionUtil->getModuleStaff($loan->business_id, 'customer.view_own', true))
+                ->search($loan->waiter);
+            $waiter_id = $waiter_key !== false ? (int) $waiter_key : null;
+        }
+
         // Iniciales (nuevas columnas)
         $initial_admin_fee = (float) ($loan->initial_admin_fee ?? 0);
         $initial_gps       = (float) ($loan->initial_gps ?? 0);
@@ -707,7 +715,7 @@ class LoanController extends Controller {
         return [
             'location_id' => $location_id,
             'contact_id' => $loan->customer_id,
-            'res_waiter_id' => auth()->id(),
+            'res_waiter_id' => $waiter_id ?: auth()->id(),
             'final_total' => $final_total,
             'status' => 'final',
             'additional_notes' => '',
