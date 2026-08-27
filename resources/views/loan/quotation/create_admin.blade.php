@@ -90,8 +90,8 @@
                             <option value="0" selected disabled>@lang('messages.please_select' )</option>
                             <option value="Facebook">Facebook</option>
                             <option value="Instagram">Instagram</option>
-                            <option value="TikTok">TikTok</option>
                             <option value="Whatsapp">Whatsapp</option>
+                            <option value="TikTok">TikTok</option>
                             <option value="Web de Libra International">Web de Libra International</option>
                             <option value="Contacto directo del vendedor">Contacto directo del vendedor</option>
                         </select>

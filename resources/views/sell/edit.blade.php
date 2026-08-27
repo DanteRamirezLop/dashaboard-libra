@@ -230,11 +230,10 @@
 			        	'' => __('messages.please_select'),
 			        	'Facebook' => 'Facebook',
 			        	'Instagram' => 'Instagram',
-			        	'WhatsApp' => 'WhatsApp',
+			        	'Whatsapp' => 'Whatsapp',
 			        	'TikTok' => 'TikTok',
+			        	'Web de Libra International' => 'Web de Libra International',
 			        	'Contacto directo del vendedor' => 'Contacto directo del vendedor',
-			        	'Pasando por la tienda' => 'Pasando por la tienda',
-			        	'Otro' => 'Otro',
 			        ];
 
 			        $custom_field_3_label = !empty($custom_labels['sell']['custom_field_3']) ? $custom_labels['sell']['custom_field_3'] : '';

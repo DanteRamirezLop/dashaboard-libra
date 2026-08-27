@@ -82,10 +82,7 @@
 
 
       <div class="@if(!empty($export_custom_fields)) col-sm-3 @else col-sm-4 @endif">
-        @if(!empty($sell->contact->supplier_business_name))
-          {{ $sell->contact->supplier_business_name }}<br>
-        @endif
-        <b>{{ __('sale.customer_name') }}:</b> {{ $sell->contact->name }}<br>
+        <b>{{ __('sale.customer_name') }}:</b> {{ trim(($sell->contact->supplier_business_name ?? '') . ' ' . ($sell->contact->name ?? '')) }}<br>
         <b>{{ __('business.address') }}:</b><br>
         @if(!empty($sell->billing_address()))
           {{$sell->billing_address()}}
