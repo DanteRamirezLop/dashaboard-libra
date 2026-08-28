@@ -68,6 +68,12 @@ class PingController extends Controller
                     'bucket' => $this->bucketLabel($dias),
                     'pctPag' => $venta > 0 ? round($pagado / $venta * 100, 1) : 0,
                     'pctVenc' => $saldo > 0 ? round($vm / $saldo * 100, 1) : 0,
+                    // Prioridad 1 (DATOS_~1.MD): cronograma real en vez de estimaciones.
+                    'vin' => $row->vin,
+                    'creacion' => $row->created_at ? Carbon::parse($row->created_at)->format('Y-m-d') : null,
+                    'fecha_vencimiento_cuota' => $row->next_due_date ? Carbon::parse($row->next_due_date)->format('Y-m-d') : null,
+                    'monto_mes' => $cuota,
+                    'fecha_fin' => $row->loan_end_date ? Carbon::parse($row->loan_end_date)->format('Y-m-d') : null,
                 ];
             })
             ->values();
