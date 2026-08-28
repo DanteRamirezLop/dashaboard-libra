@@ -42,7 +42,11 @@
                                 <tr>
                                     <th scope="row">Total a pagar</th>
                                     <td>  @format_currency($total) </td>
-                                </tr>                            
+                                </tr>
+                                <tr>
+                                    <th scope="row">Fuente de contacto</th>
+                                    <td>{{$loan->contact_source}}</td>
+                                </tr>
                             </tbody>
                         </table>                
                     </div>

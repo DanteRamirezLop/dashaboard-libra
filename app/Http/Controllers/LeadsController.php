@@ -27,7 +27,10 @@ class LeadsController extends Controller
     {
         $businessId = config('services.dashboard.business_id');
 
-        $year = (int) $request->input('year', now()->year);
+        // El dashboard y las METAS cargadas solo cubren el plan 2026: se fija el año
+        // acá (se ignora cualquier ?year= de la query) para que nunca se sirvan datos
+        // de otro año contra un plan que no existe.
+        $year = 2026;
         $from = Carbon::createFromDate($year, 1, 1)->startOfDay();
         $to = Carbon::createFromDate($year, 12, 31)->endOfDay();
 
@@ -41,12 +44,19 @@ class LeadsController extends Controller
                 $total = (float) $row->final_total;
                 $pagado = (float) $row->total_paid;
 
+                // El vendedor real es quien atiende al cliente ("Personal de servicio" /
+                // res_waiter_id), no quien tipea la venta en el sistema — quien registra
+                // la venta suele ser personal de oficina, no el vendedor. Por eso ya no
+                // se usa added_by como respaldo: si la venta no marcó Personal de
+                // servicio, el vendedor queda sin identificar.
+                $waiter = trim(preg_replace('/\s+/', ' ', (string) $row->waiter));
+
                 return [
                     'id' => $row->id,
                     'factura' => $row->invoice_no,
                     'fecha' => Carbon::parse($row->transaction_date)->format('Y-m-d'),
                     'cliente' => $row->name ?: ($row->supplier_business_name ?: 'Sin nombre'),
-                    'vendedor' => trim(preg_replace('/\s+/', ' ', $row->added_by)) ?: 'Sin asignar',
+                    'vendedor' => $waiter !== '' ? $waiter : 'Sin asignar',
                     'fuente_contacto' => $row->custom_field_2 ?: 'Sin especificar',
                     'unidades' => (int) $row->total_items,
                     'total' => $total,
@@ -62,7 +72,7 @@ class LeadsController extends Controller
         // conteo histórico de "cotizaciones emitidas ese mes" (ver nota en el dashboard).
         $cotizaciones = DB::table('transactions as t')
             ->leftJoin('contacts as c', 't.contact_id', '=', 'c.id')
-            ->leftJoin('users as u', 't.created_by', '=', 'u.id')
+            ->leftJoin('users as w', 't.res_waiter_id', '=', 'w.id')
             ->where('t.business_id', $businessId)
             ->where('t.type', 'sell')
             ->where('t.is_quotation', 1)
@@ -75,17 +85,21 @@ class LeadsController extends Controller
                 'c.supplier_business_name',
                 't.custom_field_2 as fuente_contacto',
                 't.final_total as total',
-                DB::raw("CONCAT(COALESCE(u.surname, ''),' ',COALESCE(u.first_name, ''),' ',COALESCE(u.last_name,'')) as vendedor")
+                DB::raw("CONCAT(COALESCE(w.surname, ''),' ',COALESCE(w.first_name, ''),' ',COALESCE(w.last_name,'')) as waiter")
             )
             ->orderBy('t.created_at')
             ->get()
             ->map(function ($row) {
+                // Mismo criterio que en "cierres": el vendedor es el Personal de
+                // servicio que atiende al cliente, no quien tipea la cotización.
+                $waiter = trim(preg_replace('/\s+/', ' ', (string) $row->waiter));
+
                 return [
                     'id' => $row->id,
                     'factura' => $row->factura,
                     'fecha' => Carbon::parse($row->created_at)->format('Y-m-d'),
                     'cliente' => $row->cliente ?: ($row->supplier_business_name ?: 'Sin nombre'),
-                    'vendedor' => trim(preg_replace('/\s+/', ' ', $row->vendedor)) ?: 'Sin asignar',
+                    'vendedor' => $waiter !== '' ? $waiter : 'Sin asignar',
                     'fuente_contacto' => $row->fuente_contacto ?: 'Sin especificar',
                     'total' => (float) $row->total,
                 ];

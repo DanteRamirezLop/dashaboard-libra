@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\LoanController as ApiLoanController;
 use App\Http\Controllers\PingController;
 use App\Http\Controllers\SalesController;
 use App\Http\Controllers\LeadsController;
+use App\Http\Controllers\MachineryController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -18,6 +19,7 @@ use App\Http\Controllers\LeadsController;
 Route::middleware('api.token')->get('/ping', [PingController::class,'index']);
 Route::middleware('api.token')->get('/sales', [SalesController::class,'index']);
 Route::middleware('api.token')->get('/leads', [LeadsController::class,'index']);
+Route::middleware('api.token')->get('/machinery', [MachineryController::class,'index']);
 
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
