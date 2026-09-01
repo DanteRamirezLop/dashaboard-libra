@@ -294,7 +294,7 @@
                     </tr>
                 @else
 
-                    @if($purchase->custom_field_1 != 'Servicios')
+                    @if($purchase->custom_field_1 == 'Compra Nacional')
                         @if($three_percent_withholding)
                         <tr>
                             <td style="text-align: center; font-size: 12px;" colspan="2">

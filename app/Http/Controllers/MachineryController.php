@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Category;
 use App\Loan;
+use App\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -14,8 +16,14 @@ class MachineryController extends Controller
      * ventas de maquinaria a través del módulo de préstamos/financiamiento
      * (tabla `loans`), que ya queda acotado a la categoría "Maquinarias"
      * desde que se crea cada registro (ver LoanQuotationController y
-     * LoanController). Año fijo en 2026 para que coincida con el
-     * seguimiento anual pedido.
+     * LoanController). Trae todo desde 2024 hasta fin del año en curso —
+     * el filtro por año (2024/2025/2026/todos) se aplica en el propio
+     * dashboard (JS), no aquí, para no tener que volver a pegarle a la API
+     * cada vez que el usuario cambia el año.
+     * Además de `loans`, "ventas" incluye las ventas de maquinaria pagadas
+     * por una financiera externa (ver ventasCreditoTerceros) y las ventas al
+     * contado directo (ver ventasContado) — ninguna de las dos pasa por el
+     * módulo de préstamos, así que no quedan registradas en `loans`.
      * Secured by the api.token middleware (Bearer DASHBOARD_API_TOKEN), not user auth,
      * since the dashboard is a static file with no login.
      */
@@ -23,9 +31,8 @@ class MachineryController extends Controller
     {
         $businessId = config('services.dashboard.business_id');
 
-        $year = 2026;
-        $from = $year.'-01-01';
-        $to = $year.'-12-31';
+        $from = '2024-01-01';
+        $to = Carbon::now()->endOfYear()->toDateString();
 
         $rows = Loan::where('business_id', $businessId)
             ->whereBetween('date', [$from, $to])
@@ -57,16 +64,133 @@ class MachineryController extends Controller
             'recaudado' => (float) ($recaudadoPorTransaccion[$row->transaction_id] ?? 0),
         ]);
 
+        $ventasCreditoTerceros = $this->ventasCreditoTerceros($businessId, $from, $to, $transactionIds);
+        $ventasContado = $this->ventasContado($businessId, $from, $to, $transactionIds->concat($ventasCreditoTerceros->pluck('id')));
+
         return response()->json([
             'cotizaciones' => $cotizaciones,
-            'ventas' => $ventas,
+            'ventas' => $ventas->concat($ventasCreditoTerceros)->concat($ventasContado)->values(),
             'period' => [
-                'year' => $year,
                 'from' => $from,
                 'to' => $to,
             ],
             'generated_at' => Carbon::now()->toIso8601String(),
         ]);
+    }
+
+    /**
+     * Ventas de maquinaria pagadas por una financiera externa (p.ej. "XCMG
+     * Finance"): la venta queda registrada como sell normal en `transactions`
+     * con `custom_field_3` = nombre de la financiera (ver credito_tercero_options
+     * en resources/views/sell/create.blade.php y edit.blade.php). Para
+     * nosotros es una venta al contado — la financiera paga el total por
+     * adelantado — por lo que nunca genera fila en `loans`, a diferencia de
+     * las ventas financiadas por Libra internamente. $loanTransactionIds se
+     * excluye por seguridad para no duplicar si alguna vez coincidieran.
+     */
+    protected function ventasCreditoTerceros($businessId, $from, $to, $loanTransactionIds)
+    {
+        $categoryId = Category::where('name', 'Maquinarias')->value('id');
+        if (! $categoryId) {
+            return collect();
+        }
+
+        $rows = Transaction::where('business_id', $businessId)
+            ->where('type', 'sell')
+            ->where('status', 'final')
+            ->whereBetween('transaction_date', [$from.' 00:00:00', $to.' 23:59:59'])
+            ->whereNotNull('custom_field_3')
+            ->where('custom_field_3', '!=', '')
+            ->whereNotIn('id', $loanTransactionIds)
+            ->whereHas('sell_lines.product', fn ($q) => $q->where('category_id', $categoryId))
+            ->with(['contact', 'service_staff', 'sell_lines.product'])
+            ->orderBy('transaction_date')
+            ->get();
+
+        $recaudadoPorTransaccion = DB::table('transaction_payments')
+            ->whereIn('transaction_id', $rows->pluck('id'))
+            ->selectRaw('transaction_id, SUM(IF(is_return = 1, -1 * amount, amount)) as total')
+            ->groupBy('transaction_id')
+            ->pluck('total', 'transaction_id');
+
+        return $rows->map(function ($row) use ($recaudadoPorTransaccion) {
+            $lines = $row->sell_lines;
+            $firstProduct = optional($lines->first())->product;
+            $producto = $firstProduct ? $firstProduct->name : 'Sin especificar';
+            if ($lines->count() > 1) {
+                $producto .= ' (+'.($lines->count() - 1).' más)';
+            }
+
+            return [
+                'id' => $row->id,
+                'fecha' => $row->transaction_date,
+                'cliente' => optional($row->contact)->full_name ?: 'Sin nombre',
+                'vendedor' => trim((string) optional($row->service_staff)->user_full_name) ?: 'Sin asignar',
+                'producto' => $producto,
+                'pago' => 'Crédito 3ros',
+                'cantidad' => (float) $lines->sum('quantity'),
+                'monto' => (float) $row->final_total,
+                'fuente' => $row->custom_field_3,
+                'estado' => $this->estadoLabelPago($row->payment_status),
+                'recaudado' => (float) ($recaudadoPorTransaccion[$row->id] ?? 0),
+            ];
+        });
+    }
+
+    /**
+     * Ventas de maquinaria pagadas al contado directo (sin financiera de por
+     * medio): igual que ventasCreditoTerceros() pero filtrando por
+     * `custom_field_4` = 'Contado' (ver $credito_contado_options en
+     * resources/views/sell/create.blade.php y edit.blade.php) en vez de
+     * `custom_field_3`. $excludeTransactionIds evita duplicar filas que ya
+     * se contaron como venta financiada (loans) o crédito 3ros.
+     */
+    protected function ventasContado($businessId, $from, $to, $excludeTransactionIds)
+    {
+        $categoryId = Category::where('name', 'Maquinarias')->value('id');
+        if (! $categoryId) {
+            return collect();
+        }
+
+        $rows = Transaction::where('business_id', $businessId)
+            ->where('type', 'sell')
+            ->where('status', 'final')
+            ->whereBetween('transaction_date', [$from.' 00:00:00', $to.' 23:59:59'])
+            ->where('custom_field_4', 'Contado')
+            ->whereNotIn('id', $excludeTransactionIds)
+            ->whereHas('sell_lines.product', fn ($q) => $q->where('category_id', $categoryId))
+            ->with(['contact', 'service_staff', 'sell_lines.product'])
+            ->orderBy('transaction_date')
+            ->get();
+
+        $recaudadoPorTransaccion = DB::table('transaction_payments')
+            ->whereIn('transaction_id', $rows->pluck('id'))
+            ->selectRaw('transaction_id, SUM(IF(is_return = 1, -1 * amount, amount)) as total')
+            ->groupBy('transaction_id')
+            ->pluck('total', 'transaction_id');
+
+        return $rows->map(function ($row) use ($recaudadoPorTransaccion) {
+            $lines = $row->sell_lines;
+            $firstProduct = optional($lines->first())->product;
+            $producto = $firstProduct ? $firstProduct->name : 'Sin especificar';
+            if ($lines->count() > 1) {
+                $producto .= ' (+'.($lines->count() - 1).' más)';
+            }
+
+            return [
+                'id' => $row->id,
+                'fecha' => $row->transaction_date,
+                'cliente' => optional($row->contact)->full_name ?: 'Sin nombre',
+                'vendedor' => trim((string) optional($row->service_staff)->user_full_name) ?: 'Sin asignar',
+                'producto' => $producto,
+                'pago' => 'Contado',
+                'cantidad' => (float) $lines->sum('quantity'),
+                'monto' => (float) $row->final_total,
+                'fuente' => 'Sin especificar',
+                'estado' => $this->estadoLabelPago($row->payment_status),
+                'recaudado' => (float) ($recaudadoPorTransaccion[$row->id] ?? 0),
+            ];
+        });
     }
 
     protected function mapRow($row)
@@ -122,5 +246,19 @@ class MachineryController extends Controller
             'in execution' => 'Ejecución',
             'refinanced' => 'Refinanciado',
         ][$status] ?? ucfirst($status);
+    }
+
+    /**
+     * Igual que estadoLabel() pero para transactions.payment_status (ventas
+     * crédito 3ros), que usa un vocabulario distinto al de loans.status.
+     */
+    protected function estadoLabelPago($status)
+    {
+        return [
+            'paid' => 'Pagado',
+            'due' => 'Pendiente',
+            'partial' => 'Parcial',
+            'overdue' => 'Atrasado',
+        ][$status] ?? ucfirst((string) $status);
     }
 }

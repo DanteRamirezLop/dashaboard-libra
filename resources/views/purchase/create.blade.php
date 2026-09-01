@@ -147,6 +147,12 @@
 
 		    $is_custom_field_1_required = !empty($custom_labels['purchase']['is_custom_field_1_required']) && $custom_labels['purchase']['is_custom_field_1_required'] == 1 ? true : false;
 
+		    $purchase_type_options = [
+		    	'' => __('messages.please_select'),
+		    	'Maquinarias' => 'Maquinarias',
+		    	'Otros' => 'Otros',
+		    ];
+
 		    $custom_field_2_label = !empty($custom_labels['purchase']['custom_field_2']) ? $custom_labels['purchase']['custom_field_2'] : '';
 
 		    $is_custom_field_2_required = !empty($custom_labels['purchase']['is_custom_field_2_required']) && $custom_labels['purchase']['is_custom_field_2_required'] == 1 ? true : false;
@@ -170,7 +176,7 @@
 			<div class="col-md-4">
 		        <div class="form-group">
 		            {!! Form::label('custom_field_1', $label_1 ) !!}
-		            {!! Form::text('custom_field_1', null, ['class' => 'form-control','placeholder' => $custom_field_1_label, 'required' => $is_custom_field_1_required]); !!}
+		            {!! Form::select('custom_field_1', $purchase_type_options, null, ['class' => 'form-control select2', 'required' => $is_custom_field_1_required]); !!}
 		        </div>
 		    </div>
 		@endif

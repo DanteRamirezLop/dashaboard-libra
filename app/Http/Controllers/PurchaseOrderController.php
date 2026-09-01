@@ -898,8 +898,8 @@ class PurchaseOrderController extends Controller
              $exchange_rate_purchase = isset($exchange_rate->sale)? $exchange_rate->sale: 0 ;
              $percent_withholding =  $purchase->final_total * (int) $purchase->service_custom_field_2 / 100;
         }else{
-            if($purchase->custom_field_1 != 'Servicios'){
-                //Obtener rentencion de 3% 
+            if($purchase->custom_field_1 == 'Compra Nacional'){
+                //Obtener rentencion de 3%
                 $is_currency_base =  ($purchase->exchange_rate == 1)? true : false;
                 if($is_currency_base){
                     $search_date = Carbon::parse($purchase->transaction_date)->format('y-m-d');
@@ -920,7 +920,7 @@ class PurchaseOrderController extends Controller
                     $three_percent_withholding =  ($purchase->final_total >= $seven_hundred_usa) ? $three_percente : 0;
                 }
             }else{
-                $three_percent_withholding =  10;
+                $three_percent_withholding =  0;
             }
 
 

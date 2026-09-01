@@ -240,9 +240,20 @@
 
 			        $is_custom_field_3_required = !empty($custom_labels['sell']['is_custom_field_3_required']) && $custom_labels['sell']['is_custom_field_3_required'] == 1 ? true : false;
 
+			        $credito_tercero_options = [
+			        	'' => __('messages.please_select'),
+			        	'XCMG Finance' => 'XCMG Finance',
+			        ];
+
 			        $custom_field_4_label = !empty($custom_labels['sell']['custom_field_4']) ? $custom_labels['sell']['custom_field_4'] : '';
 
 			        $is_custom_field_4_required = !empty($custom_labels['sell']['is_custom_field_4_required']) && $custom_labels['sell']['is_custom_field_4_required'] == 1 ? true : false;
+
+			        $credito_contado_options = [
+			        	'' => __('messages.please_select'),
+			        	'Credito' => 'Crédito',
+			        	'Contado' => 'Contado',
+			        ];
 		        @endphp
 		        @if(!empty($custom_field_1_label))
 		        	@php
@@ -285,7 +296,7 @@
 		        	<div class="col-md-4">
 				        <div class="form-group">
 				            {!! Form::label('custom_field_3', $label_3 ) !!}
-				            {!! Form::text('custom_field_3', $transaction->custom_field_3, ['class' => 'form-control','placeholder' => $custom_field_3_label, 'required' => $is_custom_field_3_required]); !!}
+				            {!! Form::select('custom_field_3', $credito_tercero_options, $transaction->custom_field_3, ['class' => 'form-control select2', 'required' => $is_custom_field_3_required]); !!}
 				        </div>
 				    </div>
 		        @endif
@@ -300,7 +311,7 @@
 		        	<div class="col-md-4">
 				        <div class="form-group">
 				            {!! Form::label('custom_field_4', $label_4 ) !!}
-				            {!! Form::text('custom_field_4', $transaction->custom_field_4, ['class' => 'form-control','placeholder' => $custom_field_4_label, 'required' => $is_custom_field_4_required]); !!}
+				            {!! Form::select('custom_field_4', $credito_contado_options, $transaction->custom_field_4, ['class' => 'form-control select2', 'required' => $is_custom_field_4_required]); !!}
 				        </div>
 				    </div>
 		        @endif
