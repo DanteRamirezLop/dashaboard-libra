@@ -173,7 +173,7 @@
 				}
 			@endphp
 
-			<div class="col-md-4">
+			<div class="col-sm-3">
 		        <div class="form-group">
 		            {!! Form::label('custom_field_1', $label_1 ) !!}
 		            {!! Form::select('custom_field_1', $purchase_type_options, null, ['class' => 'form-control select2', 'required' => $is_custom_field_1_required]); !!}

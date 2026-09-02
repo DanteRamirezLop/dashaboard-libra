@@ -24,6 +24,8 @@ class MachineryController extends Controller
      * por una financiera externa (ver ventasCreditoTerceros) y las ventas al
      * contado directo (ver ventasContado) — ninguna de las dos pasa por el
      * módulo de préstamos, así que no quedan registradas en `loans`.
+     * También incluye "compras" (ver compras()): registros de compra con
+     * custom_field_1 = 'Maquinarias', leídos directo de `transactions`.
      * Secured by the api.token middleware (Bearer DASHBOARD_API_TOKEN), not user auth,
      * since the dashboard is a static file with no login.
      */
@@ -70,12 +72,60 @@ class MachineryController extends Controller
         return response()->json([
             'cotizaciones' => $cotizaciones,
             'ventas' => $ventas->concat($ventasCreditoTerceros)->concat($ventasContado)->values(),
+            'compras' => $this->compras($businessId, $from, $to),
             'period' => [
                 'from' => $from,
                 'to' => $to,
             ],
             'generated_at' => Carbon::now()->toIso8601String(),
         ]);
+    }
+
+    /**
+     * Compras de maquinaria: registros de `transactions` con `type` = 'purchase'
+     * y `custom_field_1` = 'Maquinarias' (ver $purchase_type_options en
+     * resources/views/purchase/create.blade.php y edit.blade.php — es el único
+     * otro valor posible es 'Otros'). A diferencia de las ventas, las compras
+     * no pasan por el módulo de préstamos, así que se leen directo de
+     * `transactions`.
+     */
+    protected function compras($businessId, $from, $to)
+    {
+        $rows = Transaction::where('business_id', $businessId)
+            ->where('type', 'purchase')
+            ->whereBetween('transaction_date', [$from.' 00:00:00', $to.' 23:59:59'])
+            ->where('custom_field_1', 'Maquinarias')
+            ->with(['contact', 'purchase_lines.product'])
+            ->orderBy('transaction_date')
+            ->get();
+
+        $pagadoPorTransaccion = DB::table('transaction_payments')
+            ->whereIn('transaction_id', $rows->pluck('id'))
+            ->selectRaw('transaction_id, SUM(IF(is_return = 1, -1 * amount, amount)) as total')
+            ->groupBy('transaction_id')
+            ->pluck('total', 'transaction_id');
+
+        return $rows->map(function ($row) use ($pagadoPorTransaccion) {
+            $lines = $row->purchase_lines;
+            $firstProduct = optional($lines->first())->product;
+            $producto = $firstProduct ? $firstProduct->name : 'Sin especificar';
+            if ($lines->count() > 1) {
+                $producto .= ' (+'.($lines->count() - 1).' más)';
+            }
+
+            return [
+                'id' => $row->id,
+                'fecha' => $row->transaction_date,
+                'refNo' => $row->ref_no,
+                'proveedor' => optional($row->contact)->full_name ?: 'Sin nombre',
+                'producto' => $producto,
+                'cantidad' => (float) $lines->sum('quantity'),
+                'monto' => (float) $row->final_total,
+                'pagado' => (float) ($pagadoPorTransaccion[$row->id] ?? 0),
+                'estado' => $this->estadoLabelCompra($row->status),
+                'estadoPago' => $this->estadoLabelPago($row->payment_status),
+            ];
+        })->values();
     }
 
     /**
@@ -246,6 +296,20 @@ class MachineryController extends Controller
             'in execution' => 'Ejecución',
             'refinanced' => 'Refinanciado',
         ][$status] ?? ucfirst($status);
+    }
+
+    /**
+     * Igual que estadoLabel() pero para transactions.status en compras
+     * ('ordered'/'received'/'pending'), que usa un vocabulario distinto al
+     * de loans.status.
+     */
+    protected function estadoLabelCompra($status)
+    {
+        return [
+            'received' => 'Recibido',
+            'pending' => 'Pendiente',
+            'ordered' => 'Pedido',
+        ][$status] ?? ucfirst((string) $status);
     }
 
     /**
