@@ -26,7 +26,7 @@ class PingController extends Controller
         $businessId = config('services.dashboard.business_id');
 
         $days = (int) $request->input('days', 30);
-        $days = max(1, min($days, 365));
+        $days = max(1, min($days, 3650));
         $to = Carbon::today()->endOfDay();
         $from = Carbon::today()->subDays($days - 1)->startOfDay();
 
