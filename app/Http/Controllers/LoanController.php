@@ -1127,6 +1127,188 @@ class LoanController extends Controller {
         }
     }
 
+    // ─── REPROGRAMACIÓN DE FECHAS ───────────────────────────────────────────
+    // Corre las fechas del cronograma vigente N meses hacia adelante a partir
+    // de una cuota específica (las anteriores a esa cuota no se tocan),
+    // conservando montos y estados tal cual. El cronograma anterior no se
+    // modifica: queda guardado como una ScheduleVersion "disabled" (el mismo
+    // mecanismo que ya usa el pago a capital), así que siempre se puede
+    // consultar cuál era el cronograma original.
+    public function rescheduleForm($id)
+    {
+        if (! request()->ajax()) {
+            abort(403);
+        }
+
+        $business_id = request()->session()->get('user.business_id');
+        $loan        = Loan::where('business_id', $business_id)->findOrFail($id);
+
+        $scheduleVersionId = ScheduleVersion::where('loan_id', $loan->id)
+            ->where('status', 'active')
+            ->value('id');
+
+        $paymentSchedules = PaymentSchedule::where('loan_id', $loan->id)
+            ->when($scheduleVersionId,
+                fn ($q) => $q->where('schedule_version_id', $scheduleVersionId),
+                fn ($q) => $q->whereNull('schedule_version_id')
+            )
+            ->orderBy('number_quota')
+            ->get();
+
+        $nextPendingQuota = optional($paymentSchedules->firstWhere('status', 'pending'))->number_quota;
+
+        $view = view('loan.reschedule_modal', compact('loan', 'paymentSchedules', 'nextPendingQuota'))->render();
+
+        return response()->json(['status' => 'ok', 'view' => $view]);
+    }
+
+    public function rescheduleStore(Request $request, $id)
+    {
+        $request->validate([
+            'from_number_quota' => 'required|integer|min:1',
+            'months'            => 'required|integer|min:1|max:12',
+            'reason'            => 'required|string|max:255',
+        ]);
+
+        try {
+            $business_id     = $request->session()->get('user.business_id');
+            $months          = (int) $request->input('months');
+            $fromNumberQuota = (int) $request->input('from_number_quota');
+            $reason          = $request->input('reason');
+
+            DB::transaction(function () use ($id, $business_id, $months, $fromNumberQuota, $reason) {
+                $loan = Loan::where('business_id', $business_id)->findOrFail($id);
+
+                $currentVersion   = ScheduleVersion::where('loan_id', $loan->id)->where('status', 'active')->first();
+                $currentVersionId = $currentVersion ? $currentVersion->id : null;
+
+                $currentRows = PaymentSchedule::where('loan_id', $loan->id)
+                    ->when($currentVersionId,
+                        fn ($q) => $q->where('schedule_version_id', $currentVersionId),
+                        fn ($q) => $q->whereNull('schedule_version_id')
+                    )
+                    ->orderBy('number_quota')
+                    ->get();
+
+                if ($currentRows->isEmpty()) {
+                    throw new \Exception('No se encontró el cronograma actual del préstamo.');
+                }
+
+                if (! $currentRows->firstWhere('number_quota', $fromNumberQuota)) {
+                    throw new \Exception('La cuota seleccionada no pertenece al cronograma vigente.');
+                }
+
+                // Desactivar la versión vigente (si existe): queda intacta como historial.
+                if ($currentVersion) {
+                    $currentVersion->update(['status' => 'disabled']);
+                }
+
+                // Nueva versión activa para las fechas reprogramadas.
+                $newVersion = ScheduleVersion::create([
+                    'loan_id'                => $loan->id,
+                    'transaction_payment_id' => null,
+                    'status'                 => 'active',
+                    'reason'                 => 'Reprogramación de fechas desde la cuota #' . $fromNumberQuota
+                        . ' (+' . $months . ' mes' . ($months > 1 ? 'es' : '') . '): ' . $reason,
+                    'generated_at'           => now(),
+                ]);
+
+                $now  = now();
+                $rows = [];
+                foreach ($currentRows as $row) {
+                    $shedDate = Carbon::parse($row->sheduled_date);
+                    if ($row->number_quota >= $fromNumberQuota) {
+                        $shedDate = $shedDate->addMonthsNoOverflow($months);
+                    }
+
+                    $rows[] = [
+                        'loan_id'                 => $loan->id,
+                        'number_quota'            => $row->number_quota,
+                        'sheduled_date'           => $shedDate->toDateString(),
+                        'mount_quota'             => $row->mount_quota,
+                        'status'                  => $row->status,
+                        'opening_balance'         => $row->opening_balance,
+                        'capital'                 => $row->capital,
+                        'interests'               => $row->interests,
+                        'final_balance'           => $row->final_balance,
+                        'gps_quota'               => $row->gps_quota,
+                        'sure_quota'              => $row->sure_quota,
+                        'admin_fee_quota'         => $row->admin_fee_quota,
+                        'number_letter'           => $row->number_letter,
+                        'initial'                 => $row->initial,
+                        'schedule_version_id'     => $newVersion->id,
+                        'ref_payment_schedule_id' => $row->id,
+                        'refinanced_at'           => $row->refinanced_at,
+                        'created_at'              => $now,
+                        'updated_at'              => $now,
+                    ];
+                }
+
+                PaymentSchedule::insert($rows);
+            });
+
+            return redirect(route('loans.show', $id))->with('status', [
+                'success' => true,
+                'msg'     => 'Cronograma reprogramado correctamente. El cronograma anterior queda guardado como historial.',
+            ]);
+        } catch (\Exception $e) {
+            \Log::emergency('Reschedule error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            return redirect()->back()->with('status', [
+                'success' => false,
+                'msg'     => 'Error al reprogramar el cronograma: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
+    // Historial de cronogramas del préstamo: la versión original (sin
+    // schedule_version_id) más cada ScheduleVersion generada después
+    // (pago a capital, reprogramación de fechas, etc.), de más antigua a más reciente.
+    public function scheduleHistory($id)
+    {
+        if (! request()->ajax()) {
+            abort(403);
+        }
+
+        $business_id = request()->session()->get('user.business_id');
+        $loan        = Loan::where('business_id', $business_id)->findOrFail($id);
+
+        $versions = ScheduleVersion::where('loan_id', $loan->id)->orderBy('id')->get();
+
+        $blocks = [];
+
+        $originalRows = PaymentSchedule::where('loan_id', $loan->id)
+            ->whereNull('schedule_version_id')
+            ->orderBy('number_quota')
+            ->get();
+
+        if ($originalRows->isNotEmpty()) {
+            $blocks[] = [
+                'label'        => 'Cronograma original',
+                'reason'       => null,
+                'generated_at' => $loan->created_at,
+                'status'       => $versions->isEmpty() ? 'active' : 'disabled',
+                'rows'         => $originalRows,
+            ];
+        }
+
+        foreach ($versions as $version) {
+            $blocks[] = [
+                'label'        => 'Versión ' . $version->id,
+                'reason'       => $version->reason,
+                'generated_at' => $version->generated_at,
+                'status'       => $version->status,
+                'rows'         => PaymentSchedule::where('loan_id', $loan->id)
+                    ->where('schedule_version_id', $version->id)
+                    ->orderBy('number_quota')
+                    ->get(),
+            ];
+        }
+
+        $view = view('loan.schedule_history_modal', compact('loan', 'blocks'))->render();
+
+        return response()->json(['status' => 'ok', 'view' => $view]);
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
 
     public function destroy($id)

@@ -141,6 +141,14 @@
                   <a href="{{ action([\App\Http\Controllers\TransactionPaymentController::class, 'show'], [$loan->transaction_id]) }}" class="tw-dw-btn tw-dw-btn-outline tw-dw-btn-primary tw-dw-btn-sm view_payment_modal">
                       <i class="fa fa-eye"></i> Ver pagos
                   </a>
+                  <a href="#" class="tw-dw-btn tw-dw-btn-outline tw-dw-btn-default tw-dw-btn-sm schedule_history_btn" data-href="{{ route('loan.schedule-history', $loan->id) }}">
+                      <i class="fa fa-eye"></i> Ver historial de cronograma
+                  </a>
+                  @can('loans.update')
+                  <a href="#" class="tw-dw-btn tw-dw-btn-outline tw-dw-btn-warning tw-dw-btn-sm open_reschedule_modal" data-href="{{ route('loan.reschedule.form', $loan->id) }}">
+                      <i class="fa fa-calendar"></i> Reprogramar fechas
+                  </a>
+                  @endcan
             </div>
             <div class="tab-content mt-5">
                 <div class="table-responsive" id="table_quotes"> 
@@ -183,6 +191,8 @@
 <div class="modal fade edit_payment_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
 <div class="modal fade delay_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
 <div class="modal fade simulate_payment_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
+<div class="modal fade reschedule_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
+<div class="modal fade schedule_history_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
 
 @stop
 @section('javascript')
@@ -217,6 +227,50 @@
                         toastr.error(result.msg);
                     }
                 },
+            });
+        });
+
+        // Reprogramar fechas del cronograma vigente
+        $(document).on('click', '.open_reschedule_modal', function(e) {
+            e.preventDefault();
+            var container = $('.reschedule_modal');
+            $.ajax({
+                method: 'GET',
+                url: $(this).data('href'),
+                dataType: 'json',
+                success: function(result) {
+                    if (result.status === 'ok') {
+                        container.html(result.view).modal('show');
+                        __currency_convert_recursively(container);
+                    } else {
+                        toastr.error('No se pudo cargar el formulario de reprogramación.');
+                    }
+                },
+                error: function() {
+                    toastr.error('Error al cargar el formulario de reprogramación.');
+                }
+            });
+        });
+
+        // Ver historial de cronogramas (original + versiones posteriores)
+        $(document).on('click', '.schedule_history_btn', function(e) {
+            e.preventDefault();
+            var container = $('.schedule_history_modal');
+            $.ajax({
+                method: 'GET',
+                url: $(this).data('href'),
+                dataType: 'json',
+                success: function(result) {
+                    if (result.status === 'ok') {
+                        container.html(result.view).modal('show');
+                        __currency_convert_recursively(container);
+                    } else {
+                        toastr.error('No se pudo cargar el historial de cronograma.');
+                    }
+                },
+                error: function() {
+                    toastr.error('Error al cargar el historial de cronograma.');
+                }
             });
         });
 

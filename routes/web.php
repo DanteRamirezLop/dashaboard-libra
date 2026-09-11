@@ -508,6 +508,9 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::patch('loan/schedule/{id}/revert-pending', [LoanController::class, 'revertToPending'])->name('loan.schedule.revert-pending');
     Route::get('loan/refinance/{id}', [LoanController::class, 'refinanceForm'])->name('loan.refinance.form');
     Route::post('loan/refinance/{id}', [LoanController::class, 'refinanceStore'])->name('loan.refinance.store');
+    Route::get('loan/reschedule/{id}', [LoanController::class, 'rescheduleForm'])->name('loan.reschedule.form');
+    Route::post('loan/reschedule/{id}', [LoanController::class, 'rescheduleStore'])->name('loan.reschedule.store');
+    Route::get('loan/{id}/schedule-history', [LoanController::class, 'scheduleHistory'])->name('loan.schedule-history');
     Route::patch('loan/{id}/clear-arrears', [LoanController::class, 'clearArrears'])->name('loan.clear-arrears');
     Route::post('loan/{id}/repossess', [LoanController::class, 'repossessStore'])->name('loan.repossess');
     Route::post('loan/{id}/execution', [LoanController::class, 'executionStore'])->name('loan.execution');
