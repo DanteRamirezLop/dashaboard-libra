@@ -1203,6 +1203,28 @@ class LoanController extends Controller {
                     $currentVersion->update(['status' => 'disabled']);
                 }
 
+                // Las moras del cronograma anterior quedan obsoletas al reprogramar las fechas.
+                // Solo se resta la mora todavía vigente ('late'): 'condone' ya fue restado de la
+                // venta al condonarse, y en 'partial'/'regularized' el monto que sigue contado en
+                // additional_expense_value_2 es la parte que el cliente ya pagó, no la condonada.
+                $moraToRemove = Delay::where('loan_id', $loan->id)
+                    ->whereNull('deleted_at')
+                    ->where('status', 'late')
+                    ->sum('late_amount');
+
+                if ($moraToRemove > 0) {
+                    $transaction = Transaction::find($loan->transaction_id);
+                    if ($transaction) {
+                        $transaction->final_total -= $moraToRemove;
+                        $transaction->additional_expense_value_2 = max(0, $transaction->additional_expense_value_2 - $moraToRemove);
+                        $transaction->save();
+                    }
+                }
+
+                Delay::where('loan_id', $loan->id)
+                    ->whereNull('deleted_at')
+                    ->update(['deleted_at' => now()]);
+
                 // Nueva versión activa para las fechas reprogramadas.
                 $newVersion = ScheduleVersion::create([
                     'loan_id'                => $loan->id,
