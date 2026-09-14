@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Category;
+use App\Http\Controllers\Concerns\NormalizesContactSource;
 use App\Loan;
 use App\Transaction;
 use Illuminate\Http\Request;
@@ -11,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 
 class MachineryController extends Controller
 {
+    use NormalizesContactSource;
+
     /**
      * Feeds public/dashboard/machinery.html — seguimiento de cotizaciones vs
      * ventas de maquinaria a través del módulo de préstamos/financiamiento
@@ -256,32 +259,6 @@ class MachineryController extends Controller
             'monto' => (float) $row->product_price,
             'fuente' => $this->fuenteLabel($row->contact_source),
         ];
-    }
-
-    /**
-     * Normaliza mayúsculas/minúsculas de contact_source: en producción conviven
-     * variantes como "Whatsapp" y "WhatsApp" para el mismo canal (MySQL las trata
-     * como iguales por su collation, pero el dashboard las compara en JS de forma
-     * exacta) — sin esto, la mayoría de registros de WhatsApp quedaban agrupados
-     * como "otras fuentes" en vez de "leads".
-     */
-    protected function fuenteLabel($raw)
-    {
-        $raw = trim((string) $raw);
-        if ($raw === '') {
-            return 'Sin especificar';
-        }
-
-        $canonicas = [
-            'contacto directo del vendedor' => 'Contacto directo del vendedor',
-            'whatsapp' => 'WhatsApp',
-            'facebook' => 'Facebook',
-            'instagram' => 'Instagram',
-            'tiktok' => 'TikTok',
-            'web de libra international' => 'Web de Libra International',
-        ];
-
-        return $canonicas[mb_strtolower($raw)] ?? $raw;
     }
 
     protected function estadoLabel($status)

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Category;
+use App\Http\Controllers\Concerns\NormalizesContactSource;
 use App\Loan;
 use App\Transaction;
 use App\User;
@@ -13,6 +14,8 @@ use Spatie\Permission\Models\Role;
 
 class RepuestosController extends Controller
 {
+    use NormalizesContactSource;
+
     /**
      * Feeds the "vendedor de repuestos" section of public/dashboard/ventas-vs-cotizaciones.html.
      * Unlike MachineryController (which reads the `loans` table, scoped to the
@@ -38,6 +41,11 @@ class RepuestosController extends Controller
      * Cotización = draft sell with is_quotation=1 (the POS quotation feature,
      * not a loan quotation); venta = status final. Año fijo 2026, igual que
      * el resto del dashboard.
+     * "fuente": custom_field_2 en `transactions` (el mismo campo "Fuente de
+     * contacto" del formulario de venta), normalizado con fuenteLabel()
+     * (ver NormalizesContactSource) para que el dashboard clasifique "Leads"
+     * (Facebook, Instagram, TikTok, WhatsApp, Web de Libra International)
+     * igual que en la pestaña de Maquinarias.
      * Secured by the api.token middleware (Bearer DASHBOARD_API_TOKEN), not user auth,
      * since the dashboard is a static file with no login.
      */
@@ -139,6 +147,7 @@ class RepuestosController extends Controller
             'producto' => $producto,
             'cantidad' => (float) $lines->sum('quantity'),
             'monto' => (float) $row->final_total,
+            'fuente' => $this->fuenteLabel($row->custom_field_2),
         ];
     }
 

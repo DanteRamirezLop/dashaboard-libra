@@ -236,6 +236,20 @@ class SellController extends Controller
                 }
             }
 
+            // Tipo de venta: las ventas de "Maquinarias" son las que tienen
+            // custom_field_4 = 'Credito' o 'Contado' (ver $credito_contado_options
+            // en resources/views/sell/create.blade.php); todo lo demás es
+            // "Filtros, Repuestos y otros".
+            $sale_category = request()->input('sale_category');
+            if ($sale_category == 'maquinarias') {
+                $sells->whereIn('transactions.custom_field_4', ['Credito', 'Contado']);
+            } elseif ($sale_category == 'repuestos') {
+                $sells->where(function ($q) {
+                    $q->whereNull('transactions.custom_field_4')
+                        ->orWhereNotIn('transactions.custom_field_4', ['Credito', 'Contado']);
+                });
+            }
+
             if ($is_crm) {
                 $sells->addSelect('transactions.crm_is_order_request');
 

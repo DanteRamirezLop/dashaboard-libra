@@ -5,8 +5,7 @@
 
     <!-- Content Header (Page header) -->
     <section class="content-header no-print">
-        <h1  class="tw-text-xl md:tw-text-3xl tw-font-bold tw-text-black">@lang('sale.sells')
-        </h1>
+        <h1  class="tw-text-xl md:tw-text-3xl tw-font-bold tw-text-black">@lang('sale.sells')  </h1>
     </section>
 
     <!-- Main content -->
@@ -39,6 +38,22 @@
                     </div>
                 </div>
             @endif
+
+            <div class="col-md-3">
+                <div class="form-group">
+                    {!! Form::label('sell_list_filter_sale_category', 'Tipo de venta:') !!}
+
+                    {!! Form::select('sell_list_filter_sale_category', [
+                        'all' => 'Todas',
+                        'maquinarias' => 'Maquinarias',
+                        'repuestos' => 'Filtros, Repuestos y otros',
+                    ], 'repuestos', [
+                        'class' => 'form-control select2',
+                        'style' => 'width:100%',
+                        'id' => 'sell_list_filter_sale_category',
+                    ]) !!}
+                </div>
+            </div>
         @endcomponent
         
         @component('components.widget', ['class' => 'box-primary', 'title' => __('lang_v1.all_sales')])
@@ -187,6 +202,8 @@
                         if ($('#payment_method').length) {
                             d.payment_method = $('#payment_method').val();
                         }
+
+                        d.sale_category = $('#sell_list_filter_sale_category').val();
 
                         d = __datatable_ajax_callback(d);
                     }
@@ -368,7 +385,7 @@
             });
 
             $(document).on('change',
-                '#sell_list_filter_location_id, #sell_list_filter_customer_id, #sell_list_filter_payment_status, #created_by, #sales_cmsn_agnt, #service_staffs, #shipping_status, #sell_list_filter_source, #payment_method',
+                '#sell_list_filter_location_id, #sell_list_filter_customer_id, #sell_list_filter_payment_status, #created_by, #sales_cmsn_agnt, #service_staffs, #shipping_status, #sell_list_filter_source, #payment_method, #sell_list_filter_sale_category',
                 function() {
                     sell_table.ajax.reload();
                 });
