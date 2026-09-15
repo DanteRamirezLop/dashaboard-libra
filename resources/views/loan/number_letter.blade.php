@@ -43,7 +43,30 @@
                             <tr>
                                 <th scope="row">Total a pagar</th>
                                 <td> @format_currency($total)</td>
-                            </tr>                            
+                            </tr>
+                            <tr id="{{$loan->id}}" data-id="contact_source">
+                                <th scope="row">Fuente de contacto</th>
+                                <td>
+                                    <div class="eq-height-col tw-gap-1">
+                                        <select class="form-control contact_source">
+                                            <option value="">-- {{__('messages.please_select')}} --</option>
+                                            @foreach(['Facebook', 'Instagram', 'Whatsapp', 'TikTok', 'Web de Libra International', 'Contacto directo del vendedor'] as $source_name)
+                                                <option value="{{$source_name}}" @if($loan->contact_source == $source_name) selected @endif>{{$source_name}}</option>
+                                            @endforeach
+                                        </select>
+                                        <button class="tw-dw-btn tw-dw-btn-primary tw-dw-btn-sm tw-text-white editar-btn-source"> Actualizar </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr id="{{$loan->id}}" data-id="billing_date">
+                                <th scope="row">Fecha de transacción/facturación</th>
+                                <td>
+                                    <div class="eq-height-col tw-gap-1">
+                                        <input type="text" class="form-control billing_date" value="{{ $loan->transaction_date ? \Carbon\Carbon::parse($loan->transaction_date)->format('d/m/Y') : '' }}" placeholder="dd/mm/aaaa" autocomplete="off">
+                                        <button class="tw-dw-btn tw-dw-btn-primary tw-dw-btn-sm tw-text-white editar-btn-billing-date"> Actualizar </button>
+                                    </div>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>                
                 </div>
@@ -202,6 +225,8 @@
 @section('javascript')
     <script>
             $(document).ready(function () {
+              $(".billing_date").datepicker({ dateFormat: 'dd/mm/yy', autoclose: true });
+
               $(".editar-btn").on('click', function () {
                 let fila = $(this).closest(".list-schedule"); 
                 let id = fila.data("id");
@@ -226,6 +251,61 @@
                 });
             });
             
+            $(".editar-btn-source").on('click', function () {
+               let fila = $(this).closest("tr");
+               let id = fila.attr("id");
+               let value = fila.find(".contact_source").val();
+                $.ajax({
+                    type: "POST",
+                    url: "/letter-annexe-update",
+                    data: {
+                        id: id,
+                        value: value,
+                        type: 'source',
+                        celda: ''
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.success == true) {
+                            toastr.success(result.msg);
+                        } else {
+                            toastr.error(result.msg);
+                        }
+                    }
+                });
+            });
+
+            $(".editar-btn-billing-date").on('click', function () {
+               let fila = $(this).closest("tr");
+               let id = fila.attr("id");
+               let raw = fila.find(".billing_date").val();
+               let value = '';
+               if (raw) {
+                   let parts = raw.split('/');
+                   if (parts.length === 3) {
+                       value = parts[2] + '-' + parts[1] + '-' + parts[0];
+                   }
+               }
+                $.ajax({
+                    type: "POST",
+                    url: "/letter-annexe-update",
+                    data: {
+                        id: id,
+                        value: value,
+                        type: 'billing_date',
+                        celda: ''
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.success == true) {
+                            toastr.success(result.msg);
+                        } else {
+                            toastr.error(result.msg);
+                        }
+                    }
+                });
+            });
+
             $(".editar-btn-annexes").on('click', function () {
                let fila = $(this).closest("td");
                let id = fila.attr("id");

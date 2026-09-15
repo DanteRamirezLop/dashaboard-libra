@@ -1557,6 +1557,23 @@ class LoanController extends Controller {
                 $item->save();
             }
 
+            if($request->type == 'source'){
+                $loan = Loan::find($request->id);
+                $loan->contact_source = $request->value;
+                $loan->save();
+            }
+
+            if($request->type == 'billing_date'){
+                $loan = Loan::find($request->id);
+                $date = $request->value ? Carbon::createFromFormat('Y-m-d', $request->value) : null;
+                $loan->transaction_date = $date;
+                $loan->save();
+
+                if ($date && $loan->transaction_id) {
+                    Transaction::where('id', $loan->transaction_id)->update(['transaction_date' => $date]);
+                }
+            }
+
             if($request->type == 'annexe'){
                 $loan =  Loan::find($request->id);
                 $annexes = json_decode($loan->annexes);

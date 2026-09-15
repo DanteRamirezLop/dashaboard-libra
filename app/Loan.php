@@ -57,6 +57,7 @@ class Loan extends Model
         'refinanced_at',
         'repossessed_at',
         'in_execution_at',
+        'transaction_date',
     ];
     
     public function contact()
