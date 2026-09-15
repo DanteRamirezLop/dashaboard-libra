@@ -732,6 +732,11 @@ class LoanController extends Controller {
             'pay_term_number' => $loan->number_month,
             'pay_term_type' => 'months',
 
+            // Fuente de contacto: mismo campo/valor que usan las ventas normales (custom_field_2)
+            'custom_field_2' => $loan->contact_source,
+            // Todo préstamo es una venta a crédito
+            'custom_field_4' => 'Credito',
+
             'additional_expense_key_1' => 'Importe total de los intereses',
             'additional_expense_value_1' => $interest_total,
 
