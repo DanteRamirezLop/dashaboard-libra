@@ -467,9 +467,15 @@
       </div>
       <div class="col-md-3">
         <div class="form-group">
-            {!! Form::label('custom_field9', $contact_custom_field9 . ':') !!}
-            {!! Form::text('custom_field9', $contact->custom_field9, ['class' => 'form-control', 
-                'placeholder' => $contact_custom_field9]); !!}
+            @php
+                $retention_agent_options = ['no' => 'No', 'si' => 'Sí'];
+                //Conservar valores antiguos de texto libre para no perderlos al guardar
+                if (!empty($contact->custom_field9) && !isset($retention_agent_options[$contact->custom_field9])) {
+                    $retention_agent_options[$contact->custom_field9] = $contact->custom_field9;
+                }
+            @endphp
+            {!! Form::label('custom_field9', (!empty($custom_labels['contact']['custom_field_9']) ? $custom_labels['contact']['custom_field_9'] : 'Agente de retención') . ':') !!}
+            {!! Form::select('custom_field9', $retention_agent_options, !empty($contact->custom_field9) ? $contact->custom_field9 : 'no', ['class' => 'form-control']); !!}
         </div>
       </div>
       <div class="col-md-3">

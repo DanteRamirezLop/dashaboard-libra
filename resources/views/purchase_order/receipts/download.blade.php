@@ -295,7 +295,19 @@
                 @else
 
                     @if($purchase->custom_field_1 == 'Compra Nacional')
-                        @if($three_percent_withholding)
+                        @if(!empty($is_retention_agent))
+                        <tr>
+                            <td style="text-align: center; font-size: 12px;" colspan="2">
+                                <b>EL PROVEEDOR TAMBIÉN ES AGENTE DE RETENCIÓN, NO APLICAR RETENCIÓN </b>
+                            </td>
+                            <td style="text-align: center; font-size: 13px;"colspan="2">
+                                <b>-</b> 
+                            </td> 
+                            <td style="text-align: center; font-size: 13px;"colspan="2">
+                                <b>-</b> 
+                            </td> 
+                        </tr>
+                        @elseif($three_percent_withholding)
                         <tr>
                             <td style="text-align: center; font-size: 12px;" colspan="2">
                                 Retencióm minima de  S/.700 con tipo de cambio <b> {{number_format($exchange_rate_purchase,3)}}</b> 

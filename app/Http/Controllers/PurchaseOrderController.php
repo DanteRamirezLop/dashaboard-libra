@@ -894,6 +894,8 @@ class PurchaseOrderController extends Controller
          $exchange_rate_purchase = 0;
          $percent_withholding = 0;
          $three_percent_withholding = 0;
+        //Proveedor agente de retención (Campo personalizado 9 del contacto)
+        $is_retention_agent = !empty($purchase->contact) && $purchase->contact->custom_field9 == 'si';
         if($purchase->service_custom_field_1 == 'si'){
              $exchange_rate_purchase = isset($exchange_rate->sale)? $exchange_rate->sale: 0 ;
              $percent_withholding =  $purchase->final_total * (int) $purchase->service_custom_field_2 / 100;
@@ -923,15 +925,17 @@ class PurchaseOrderController extends Controller
                 $three_percent_withholding =  0;
             }
 
-
-            
+            //Proveedor agente de retención: no se le aplica la retención de 3%
+            if ($is_retention_agent) {
+                $three_percent_withholding = 0;
+            }
         }
 
 
         //Determinar la moneda de la compra - transaccion
         $currency_details = $this->transactionUtil->currencyDetails($business_id,$purchase->currency_id, $purchase->exchange_rate);
         //Generate pdf 
-        $pdf = Pdf::set_option('isRemoteEnabled', true)->loadView('purchase_order.receipts.download',compact('exchange_rate_purchase','percent_withholding','three_percent_withholding','taxes','location_details','date_delivery','date_release','purchase', 'invoice_layout', 'date_print','currency_details'));
+        $pdf = Pdf::set_option('isRemoteEnabled', true)->loadView('purchase_order.receipts.download',compact('exchange_rate_purchase','percent_withholding','three_percent_withholding','is_retention_agent','taxes','location_details','date_delivery','date_release','purchase', 'invoice_layout', 'date_print','currency_details'));
         return $pdf->download('Orden-Compra-'.$purchase->ref_no.'.pdf');
     }
 

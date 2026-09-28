@@ -471,9 +471,8 @@
           </div>
           <div class="col-md-3">
             <div class="form-group">
-                {!! Form::label('custom_field9', $contact_custom_field9 . ':') !!}
-                {!! Form::text('custom_field9', null, ['class' => 'form-control', 
-                    'placeholder' => $contact_custom_field9]); !!}
+                {!! Form::label('custom_field9', (!empty($custom_labels['contact']['custom_field_9']) ? $custom_labels['contact']['custom_field_9'] : 'Agente de retención') . ':') !!}
+                {!! Form::select('custom_field9', ['no' => 'No', 'si' => 'Sí'], 'no', ['class' => 'form-control']); !!}
             </div>
           </div>
           <div class="col-md-3">
