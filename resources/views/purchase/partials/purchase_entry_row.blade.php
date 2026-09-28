@@ -106,7 +106,7 @@
                 $discount_percent = !empty($imported_data['discount_percent']) ? $imported_data['discount_percent'] : $discount_percent;
             @endphp
             {!! Form::text('purchases[' . $row_count . '][pp_without_discount]',
-            number_format($pp_without_discount, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm purchase_unit_cost_without_discount input_number', 'required']); !!}
+            format_unit_price($pp_without_discount, $currency_precision, $currency_details), ['class' => 'form-control input-sm purchase_unit_cost_without_discount input_number', 'required']); !!}
 
             @if(!empty($last_purchase_line))
                 <br>
@@ -126,7 +126,7 @@
         </td>
         <td>
             {!! Form::text('purchases[' . $row_count . '][purchase_price]',
-            number_format($purchase_price, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm purchase_unit_cost input_number', 'required']); !!}
+            format_unit_price($purchase_price, $currency_precision, $currency_details), ['class' => 'form-control input-sm purchase_unit_cost input_number', 'required']); !!}
         </td>
         <td class="{{$hide_tax}}">
             <span class="row_subtotal_before_tax display_currency">0</span>
@@ -153,7 +153,7 @@
                     $dpp_inc_tax = number_format($variation->default_purchase_price, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator);
                 }
 
-                $dpp_inc_tax = !empty($purchase_order_line) ? number_format($purchase_order_line->purchase_price_inc_tax , $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator) : $dpp_inc_tax;
+                $dpp_inc_tax = !empty($purchase_order_line) ? format_unit_price($purchase_order_line->purchase_price_inc_tax, $currency_precision, $currency_details) : $dpp_inc_tax;
 
             @endphp
             

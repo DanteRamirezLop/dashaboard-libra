@@ -146,3 +146,26 @@ if (! function_exists('str_ordinal')) {
         return number_format($number).$suffix;
     }
 }
+
+if (! function_exists('format_unit_price')) {
+    /**
+     * Formatea un precio unitario con hasta 4 decimales, recortando los ceros sobrantes
+     * sin bajar de la precisión de moneda (9.3000 -> 9.30, 10.9740 -> 10.974).
+     * Evita que al editar una compra se redondee el unitario y se descuadre el total.
+     *
+     * @param  float  $value
+     * @param  int  $currency_precision
+     * @param  object  $currency_details  (decimal_separator, thousand_separator)
+     * @return string
+     */
+    function format_unit_price($value, $currency_precision, $currency_details)
+    {
+        $precision = max(4, (int) $currency_precision);
+        $value = round((float) $value, $precision);
+        while ($precision > $currency_precision && round($value, $precision - 1) == $value) {
+            $precision--;
+        }
+
+        return number_format($value, $precision, $currency_details->decimal_separator, $currency_details->thousand_separator);
+    }
+}

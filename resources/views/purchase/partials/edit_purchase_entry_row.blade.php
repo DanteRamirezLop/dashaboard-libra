@@ -124,14 +124,14 @@
                 @endif
             </td>
             <td>
-                {!! Form::text('purchases[' . $loop->index . '][pp_without_discount]', number_format($purchase_line->pp_without_discount * $purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm purchase_unit_cost_without_discount input_number', 'required']); !!}
+                {!! Form::text('purchases[' . $loop->index . '][pp_without_discount]', format_unit_price($purchase_line->pp_without_discount * $purchase->exchange_rate, $currency_precision, $currency_details), ['class' => 'form-control input-sm purchase_unit_cost_without_discount input_number', 'required']); !!}
             </td>
             <td>
                 {!! Form::text('purchases[' . $loop->index . '][discount_percent]', number_format($purchase_line->discount_percent, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm inline_discounts input_number', 'required']); !!} <b>%</b>
             </td>
             <td>
                 {!! Form::text('purchases[' . $loop->index . '][purchase_price]', 
-                number_format($purchase_line->purchase_price * $purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm purchase_unit_cost input_number', 'required']); !!}
+                format_unit_price($purchase_line->purchase_price * $purchase->exchange_rate, $currency_precision, $currency_details), ['class' => 'form-control input-sm purchase_unit_cost input_number', 'required']); !!}
             </td>
             <td class="{{$hide_tax}}">
                 <span class="row_subtotal_before_tax">
@@ -152,18 +152,18 @@
                     <span class="input-group-addon purchase_product_unit_tax_text">
                         {{number_format($purchase_line->item_tax * $purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)}}
                     </span>
-                    {!! Form::hidden('purchases[' . $loop->index . '][item_tax]', number_format($purchase_line->item_tax * $purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'purchase_product_unit_tax']); !!}
+                    {!! Form::hidden('purchases[' . $loop->index . '][item_tax]', format_unit_price($purchase_line->item_tax * $purchase->exchange_rate, $currency_precision, $currency_details), ['class' => 'purchase_product_unit_tax']); !!}
                 </div>
             </td>
 
             @php
-                $multiple = 0.1;
+                $multiple = 0.01;
                 $rounded_number =  $purchase_line->purchase_price_inc_tax * $purchase_line->quantity * $purchase->exchange_rate;
                 $purchase_unit_cost_after_tax = round($rounded_number / $multiple) * $multiple;
             @endphp
             
             <td class="{{$hide_tax}}">
-                {!! Form::text('purchases[' . $loop->index . '][purchase_price_inc_tax]', number_format($purchase_line->purchase_price_inc_tax * $purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm purchase_unit_cost_after_tax input_number', 'required']); !!}
+                {!! Form::text('purchases[' . $loop->index . '][purchase_price_inc_tax]', format_unit_price($purchase_line->purchase_price_inc_tax * $purchase->exchange_rate, $currency_precision, $currency_details), ['class' => 'form-control input-sm purchase_unit_cost_after_tax input_number', 'required']); !!}
             </td>
             <td>
                 <span class="row_subtotal_after_tax">
