@@ -116,12 +116,9 @@ class LoanUtil
                 'loans.refinanced_at',
                 'loans.interest_saved',
                 'transactions.final_total as final_total',
-                // Solo descuentos "estructurales" (pago a capital/refinanciamiento); los ligados
-                // a una cuota puntual ya quedan neutralizados en delay - total_only_payments.
-                DB::raw('(SELECT COALESCE(SUM(pa.amount_discounted),0)
-                        FROM payment_applications AS pa
-                        WHERE pa.loan_id = loans.id AND pa.payment_schedule_id IS NULL
-                    ) as discount_amount'),
+                // Descuentos tomados de payment_applications (no de transactions.discount_amount,
+                // que se sobrescribe al editar la venta). Ver discountAmountSql().
+                DB::raw('('.$this->discountAmountSql('loans.id').') as discount_amount'),
                 DB::raw('(SELECT SUM(IF(TP.is_return = 1,-1*TP.amount,TP.amount))
                         FROM transaction_payments AS TP
                         WHERE TP.transaction_id = transactions.id) as total_paid'),
@@ -189,5 +186,45 @@ class LoanUtil
         }
 
         return compact('total_delay', 'total_to_delay', 'total_remaining', 'total_mora', 'total_remaining_mora');
+    }
+
+    /**
+     * Expresión SQL con el descuento acumulado de un préstamo, calculado desde
+     * payment_applications:
+     *  - Descuentos "estructurales" (pago a capital / refinanciamiento): payment_schedule_id NULL.
+     *  - Descuentos por pago adelantado de una cuota: solo la parte que realmente dejó la cuota
+     *    sin cubrir (cuota - pagado). Si el pago se registró por el total de la cuota, el descuento
+     *    ya está neutralizado en delay - total_only_payments y aporta 0.
+     *
+     * @param  string  $loanIdColumn  columna o valor con el id del préstamo
+     * @param  string|null  $untilDateColumn  si se indica, solo cuenta cuotas con sheduled_date <= este valor
+     */
+    public function discountAmountSql(string $loanIdColumn, ?string $untilDateColumn = null): string
+    {
+        $dateFilter = $untilDateColumn ? "AND ps.sheduled_date <= {$untilDateColumn}" : '';
+
+        return "(SELECT COALESCE(SUM(pa.amount_discounted),0)
+                    FROM payment_applications AS pa
+                    WHERE pa.loan_id = {$loanIdColumn} AND pa.payment_schedule_id IS NULL)
+            + (SELECT COALESCE(SUM(LEAST(
+                    (SELECT SUM(pa.amount_discounted) FROM payment_applications AS pa WHERE pa.payment_schedule_id = ps.id),
+                    GREATEST(0, ps.mount_quota + ps.gps_quota + ps.sure_quota + ps.admin_fee_quota + ps.initial
+                        - COALESCE((SELECT SUM(IF(tp.is_return = 1, -1 * tp.amount, tp.amount))
+                            FROM transaction_payments AS tp WHERE tp.payment_schedule_id = ps.id), 0))
+                )),0)
+                FROM payment_schedules AS ps
+                WHERE ps.loan_id = {$loanIdColumn} {$dateFilter}
+                    AND EXISTS (SELECT 1 FROM payment_applications AS pa2 WHERE pa2.payment_schedule_id = ps.id))";
+    }
+
+    /**
+     * Descuento acumulado de un préstamo (mismo criterio que la columna discount_amount de loanListQuery).
+     */
+    public function discountAmount(Loan $loan, $untilDate = null): float
+    {
+        $sql = $this->discountAmountSql('?', $untilDate ? '?' : null);
+        $bindings = $untilDate ? [$loan->id, $loan->id, $untilDate] : [$loan->id, $loan->id];
+
+        return (float) DB::selectOne("SELECT {$sql} AS discount_amount", $bindings)->discount_amount;
     }
 }

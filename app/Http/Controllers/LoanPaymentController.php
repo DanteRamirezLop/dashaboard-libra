@@ -10,6 +10,7 @@ use App\Utils\ProductUtil;
 use App\Utils\BusinessUtil;
 use App\Utils\ContactUtil;
 use App\Utils\NotificationUtil;
+use App\Utils\LoanUtil;
 use App\Loan;
 use App\Transaction;
 use App\TransactionPayment;
@@ -38,14 +39,16 @@ class LoanPaymentController extends Controller
     protected $businessUtil;
     protected $contactUtil;
     protected $notificationUtil;
+    protected $loanUtil;
     /**
      * Create a new controller instance.
      *
      * @param  ProductUtils  $product
      * @return void
      */
-   public function __construct(NotificationUtil $notificationUtil,TransactionUtil $transactionUtil,ModuleUtil $moduleUtil, BusinessUtil $businessUtil, ProductUtil $productUtil, ContactUtil $contactUtil)
+   public function __construct(NotificationUtil $notificationUtil,TransactionUtil $transactionUtil,ModuleUtil $moduleUtil, BusinessUtil $businessUtil, ProductUtil $productUtil, ContactUtil $contactUtil, LoanUtil $loanUtil)
     {
+        $this->loanUtil = $loanUtil;
         $this->productUtil = $productUtil;
         $this->moduleUtil = $moduleUtil;
         $this->businessUtil = $businessUtil;
@@ -419,10 +422,12 @@ class LoanPaymentController extends Controller
        $amount_months_late = bcsub($total_month_now, $total_only_payments, 4); //Deuda de letras hasta hoy menos lo realmente pagado en cuotas
 
         if (! $loan->refinanced_at) {
-            //Restar descuentos por pago a capital / regularización (mismo criterio que LoanUtil::computeLoanTotals)
-            //(no aplica en préstamos refinanciados: ahí discount_amount es la condonación de mora, ya excluida
+            //Restar descuentos por pago adelantado / pago a capital (mismo criterio que LoanUtil::computeLoanTotals)
+            //Se toman de payment_applications y no de $sell->discount_amount, que se sobrescribe al editar la venta.
+            //(no aplica en préstamos refinanciados: ahí el descuento es la condonación de mora, ya excluida
             //al filtrar las cuotas viejas con status='refinanced' arriba)
-            $interest_saved = bcsub($sell->discount_amount ?? 0, $loan->interest_saved ?? 0, 4);
+            $discount_amount = $this->loanUtil->discountAmount($loan, $dateNow->toDateString());
+            $interest_saved = bcsub($discount_amount, $loan->interest_saved ?? 0, 4);
             $amount_months_late = bcsub($amount_months_late, $interest_saved, 4);
         }
 
