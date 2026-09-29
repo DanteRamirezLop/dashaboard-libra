@@ -61,10 +61,17 @@ class DelayController extends Controller
         try {
             DB::beginTransaction();
 
-            $payment_schedules = PaymentSchedule::findOrFail($request->payment_schedule_id);
+            // lockForUpdate evita que dos envíos simultáneos creen dos moras para la misma cuota
+            $payment_schedules = PaymentSchedule::lockForUpdate()->findOrFail($request->payment_schedule_id);
             $loan = Loan::findOrFail($request->loan_id);
             $days_late =  $request->days_late;
-            
+
+            if (Delay::where('payment_schedule_id', $payment_schedules->id)->exists()) {
+                DB::rollBack();
+                $output = ['success' => false, 'msg' => 'Esta cuota ya tiene una mora registrada.'];
+                return redirect()->back()->with(['status' => $output]);
+            }
+
                 $sheduled_date = Carbon::parse($payment_schedules->sheduled_date);
                 $start_date_var =  Carbon::parse($payment_schedules->sheduled_date);
                 $start_date = $start_date_var->addDays(1);
@@ -85,6 +92,14 @@ class DelayController extends Controller
                 $transaction->final_total +=  $late_amount;
                 $transaction->additional_expense_value_2 += $late_amount;
                 $transaction->save();
+                #------CAMBIO DE ESTADO A LA LETRA EN MORA-------------
+                if ($payment_schedules->status == 'pending') {
+                    $payment_schedules->status = 'overdue';
+                    $payment_schedules->save();
+                }
+                #-----CAMBIO EL ESTADO DEL PRESTAMO EN MORA------------
+                $loan->status = 'in arrears';
+                $loan->save();
                 #------------------
                 $msg = ['success' => true,'msg' => __('Registrado')];
             #------------------

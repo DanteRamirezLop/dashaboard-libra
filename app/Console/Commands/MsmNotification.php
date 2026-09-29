@@ -91,7 +91,7 @@ class MsmNotification extends Command
                             }
                         }
                         // 1 Dia atrasado - Crear el registro de la primera mora 
-                        if($days_late == 1){
+                        if($days_late == 1 && !Delay::where('payment_schedule_id', $payment_schedules->id)->exists()){
                             $late_amount_late = $payment_schedules->getQuote() * 0.00111;
                             $late_amount = $late_amount_late ; //Calcular la cantidad de morosidad
                             //registro de la mora en el primer día
