@@ -85,7 +85,7 @@ class PingController extends Controller
             ->where('tp.is_return', 0)
             ->whereNotNull('tp.paid_on')
             ->whereBetween('tp.paid_on', [$from, $to])
-            ->select('tp.paid_on', 'tp.amount', 'tp.method', 'l.customer_name')
+            ->select('tp.paid_on', 'tp.amount', 'tp.method', 'tp.payment_schedule_id', 'l.customer_name')
             ->orderBy('tp.paid_on')
             ->get()
             ->map(fn ($row) => [
@@ -93,6 +93,8 @@ class PingController extends Controller
                 'monto' => (float) $row->amount,
                 'cliente' => $row->customer_name,
                 'metodo' => $this->metodoLabel($row->method),
+                // true solo para pagos de cuotas del cronograma (excluye la inicial)
+                'cuota' => $row->payment_schedule_id !== null,
             ]);
 
         return response()->json([
