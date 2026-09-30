@@ -13,9 +13,21 @@
       </div>
 
       <div class="row">
+        <div class="col-md-12">
+          <div class="form-group">
+            {!! Form::label("paid_on", 'Fecha de pago' . ':*') !!}
+            <div class="input-group">
+              <span class="input-group-addon">
+                <i class="fa fa-calendar"></i>
+              </span>
+              {!! Form::date("paid_on", \Carbon\Carbon::now()->format('Y-m-d'), ['class' => 'form-control', 'required']); !!}
+            </div>
+            <span class="help-block" style="font-size:11px;">Del monto se descuentan primero los intereses de los días que faltan hasta la próxima cuota; el resto se aplica a capital.</span>
+          </div>
+        </div>
         <div class="col-md-6">
           <div class="form-group">
-            {!! Form::label("amount" , 'Monto a pagar a capital'. ':*') !!}
+            {!! Form::label("amount" , 'Monto total a pagar'. ':*') !!}
             <div class="input-group">
               <span class="input-group-addon">
                 <i class="fas fa-money-bill-alt"></i>

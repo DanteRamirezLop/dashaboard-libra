@@ -8,12 +8,12 @@ A web-based ERP system ("Ultimate POS v6") built with Laravel 9. It handles poin
 
 ## Local Environment
 
-The project runs locally via Docker (Laradock), not a native PHP install. Containers include `laravel9-workspace-1`, `laravel9-php-fpm-1`, `laravel9-nginx-1`, `laravel9-mysql-1`, `laravel9-redis-1`, `laravel9-phpmyadmin-1`. Run `artisan`/`composer`/`npm` commands inside the workspace container, not on the host:
+The project runs locally via Docker (Laradock), not a native PHP install. Despite `COMPOSE_PROJECT_NAME=laravel9` in `laradock/.env`, the actually running containers are prefixed `laradock-`: `laradock-workspace-1`, `laradock-php-fpm-1`, `laradock-nginx-1`, `laradock-mysql-1`, `laradock-redis-1`, `laradock-phpmyadmin-1`. Run `artisan`/`composer` commands inside the workspace container, not on the host:
 
 ```bash
-docker exec -w /var/www laravel9-workspace-1 php artisan migrate
-docker exec -w /var/www laravel9-workspace-1 php artisan test
-docker exec -w /var/www laravel9-workspace-1 composer install
+docker exec -w /var/www laradock-workspace-1 php artisan migrate
+docker exec -w /var/www laradock-workspace-1 php artisan test
+docker exec -w /var/www laradock-workspace-1 composer install
 ```
 
 The host's PHP (if any) may be a different, incompatible version — always prefer the containerized `php` for anything artisan-related.
@@ -23,7 +23,6 @@ The host's PHP (if any) may be a different, incompatible version — always pref
 ```bash
 # Install dependencies
 composer install
-npm install
 
 # Setup
 php artisan key:generate
@@ -49,7 +48,7 @@ php artisan test --filter=TestClassName
 
 ### Module System
 
-The project uses `nwidart/laravel-modules`. Feature modules live under `/Modules/` (15 active modules including Accounting, Crm, Manufacturing, Repair, Woocommerce, etc.). Each module has its own Controllers, Models, Routes, and Views following the same Laravel conventions.
+The project uses `nwidart/laravel-modules`. Feature modules live under `/Modules/` (14 modules including Accounting, Crm, Manufacturing, Repair, Woocommerce, etc.). Each module has its own Controllers, Models, Routes, and Views following the same Laravel conventions. Note `modules_statuses.json` lists several additional modules (e.g. `Ecommerce`, `FieldForce`, `Gym`) as enabled that have no corresponding folder under `/Modules/` — treat that file as aspirational/stale, not a reliable inventory.
 
 ### Core Utilities (`/app/Utils/`)
 
@@ -103,6 +102,7 @@ Uses `spatie/laravel-permission`. Controllers check permissions with `auth()->us
 ## Current Development Focus
 
 Based on recent commits, active work is on:
-- **Multi-currency / exchange rate handling** in purchases (`PurchaseController`, `PurchaseOrderController`)
-- **Mixed payment methods** (multiple payment types in a single transaction)
-- **Purchase invoice printing** (`resources/views/purchase/partials/print_invoice.blade.php` — new file)
+- **Loan/lending features** (`LoanUtil`) — late fees (`mora`), refinancing, capital payments, payment schedules (`cronograma`), and syncing loans with sales
+- **External API sync** — recurring work updating API endpoints that feed an external dashboard
+- **Purchasing** — international purchases, exchange rates, and purchase order rounding
+- **Account statements** — PDF generation for customer statements (`estado de cuenta`), including overdue-month handling

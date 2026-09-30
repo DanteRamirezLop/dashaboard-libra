@@ -144,8 +144,13 @@
                 <span class="input-group-addon">
                   <i class="fas fa-money-bill-alt"></i>
                 </span>
-                {!! Form::text("amount", @num_format($amount), ['class' => 'form-control input_number payment_amount','required', 'placeholder' => 'Amount', 'data-rule-max-value' => @num_format($amount), 'data-msg-max-value' => __('lang_v1.max_amount_to_be_paid_is', ['amount' => $amount_formated])]); !!}
+                {!! Form::text("amount", @num_format($amount + $accrued['interest']), ['class' => 'form-control input_number payment_amount','required', 'placeholder' => 'Amount', 'data-rule-max-value' => @num_format($amount + $accrued['interest']), 'data-msg-max-value' => __('lang_v1.max_amount_to_be_paid_is', ['amount' => @num_format($amount + $accrued['interest'])])]); !!}
               </div>
+              <span class="help-block" style="font-size:11px;">
+                Primero se cobran los intereses de <strong id="accrued_days">{{ $accrued['days'] }}</strong> días hasta la próxima cuota ({{ @format_date($next_due_date) }}):
+                <strong id="accrued_interest">{{ @num_format($accrued['interest']) }}</strong>.
+                Capital aplicado: <strong id="accrued_capital">{{ @num_format($amount) }}</strong>
+              </span>
             </div>
           </div>
           <div class="col-md-4">
@@ -192,3 +197,26 @@
     {!! Form::close() !!}
   </div><!-- /.modal-content -->
 </div><!-- /.modal-dialog -->
+<script type="text/javascript">
+  // Vista previa de los intereses por días (el cálculo definitivo se hace en el servidor al guardar)
+  (function () {
+    var balance = {{ (float) $accrued['balance'] }};
+    var annualRate = {{ (float) $loan->annual_interest_rate }};
+    var nextDue = moment('{{ \Carbon\Carbon::parse($next_due_date)->format('Y-m-d') }}', 'YYYY-MM-DD');
+
+    function refreshAccrued() {
+      var $form = $('#transaction_payment_add_form');
+      var paidOn = moment($form.find('#paid_on').val(), moment_date_format + ' ' + moment_time_format).startOf('day');
+      var days = paidOn.isValid() ? Math.max(0, nextDue.diff(paidOn, 'days')) : 0;
+      var interest = Math.round(balance * (annualRate / 100) / 360 * days * 100) / 100;
+      var capital = __read_number($form.find('input[name="amount"]')) - interest;
+      $form.find('#accrued_days').text(days);
+      $form.find('#accrued_interest').text(__number_f(interest));
+      $form.find('#accrued_capital').text(__number_f(capital));
+    }
+
+    $('#transaction_payment_add_form #paid_on').on('dp.change change', refreshAccrued);
+    $('#transaction_payment_add_form input[name="amount"]').on('change keyup', refreshAccrued);
+    refreshAccrued();
+  })();
+</script>

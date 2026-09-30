@@ -210,6 +210,32 @@ class TransactionUtil extends Util
         ];
     }
 
+    // Intereses de los días que faltan desde la fecha del pago a capital hasta el vencimiento de la
+    // próxima cuota pendiente (base 360 días). Se cobran antes de aplicar el pago a capital.
+    // Ej: saldo 34,191.82 al 20% anual, pago el 24/08 y próxima cuota el 14/09 => 21 días => 398.90
+    public function calcCapitalAccruedInterest(int $loanId, ?int $scheduleVersionId, $paidOn): array
+    {
+        $loan = Loan::findOrFail($loanId);
+        $nextPending = PaymentSchedule::query()
+            ->where('loan_id', $loanId)
+            ->where('schedule_version_id', $scheduleVersionId ?: null)
+            ->where('status', 'pending')
+            ->orderBy('id')
+            ->first();
+
+        if (! $nextPending) {
+            return ['days' => 0, 'interest' => 0.0, 'balance' => 0.0, 'next_date' => null];
+        }
+
+        $paidOn = \Carbon\Carbon::parse($paidOn)->startOfDay();
+        $nextDate = \Carbon\Carbon::parse($nextPending->sheduled_date)->startOfDay();
+        $days = max(0, $paidOn->diffInDays($nextDate, false));
+        $balance = (float) $nextPending->opening_balance;
+        $interest = round($balance * ($loan->annual_interest_rate / 100) / 360 * $days, 2);
+
+        return ['days' => $days, 'interest' => $interest, 'balance' => $balance, 'next_date' => $nextDate];
+    }
+
     private function calcPMT(float $principal, float $monthlyRate,int $n): float
     {
         if ($n <= 0) return 0.0;

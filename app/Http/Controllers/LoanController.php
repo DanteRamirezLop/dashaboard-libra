@@ -1417,7 +1417,10 @@ class LoanController extends Controller {
                         $amount_formated = $this->transactionUtil->num_f($amount);
                         $pending_count = $rows->where('status', 'pending')->count();
                         $current_installment = round((float) $nextPending->capital + (float) $nextPending->interests, 2);
-                        $view = view('loan.payment_capital')->with(compact('transaction','loan','amount','amount_formated','paid_on','payment_types','accounts','type','pending_count','current_installment'))->render();
+                        // Intereses de los días hasta la próxima cuota (se recalculan en el form al cambiar la fecha)
+                        $accrued = $this->transactionUtil->calcCapitalAccruedInterest($loan->id, $schedule_version_id, $paid_on);
+                        $next_due_date = $nextPending->sheduled_date;
+                        $view = view('loan.payment_capital')->with(compact('transaction','loan','amount','amount_formated','paid_on','payment_types','accounts','type','pending_count','current_installment','accrued','next_due_date'))->render();
                     }
 
                     $output = ['status' => 'due','view' => $view];
@@ -1462,7 +1465,9 @@ class LoanController extends Controller {
                         return; // no hay cuotas pendientes
                     }
 
-                    $amount = (float) $nextPending->opening_balance;
+                    // Se permite pagar el saldo más los intereses de los días hasta la próxima cuota
+                    $accrued = $this->transactionUtil->calcCapitalAccruedInterest($loan->id, $schedule_version_id, Carbon::now());
+                    $amount = round((float) $nextPending->opening_balance + $accrued['interest'], 2);
                     $amount_formated = $this->transactionUtil->num_f($amount);
                     $pending_count = $rows->where('status', 'pending')->count();
                     $current_installment = round((float) $nextPending->capital + (float) $nextPending->interests, 2);
@@ -1501,7 +1506,18 @@ class LoanController extends Controller {
             $moraAmount = (float) $this->transactionUtil->num_uf($request->input('mora_amount', 0));
             $targetCuotas = $request->filled('target_cuotas') ? (int) $request->input('target_cuotas') : null;
 
-            $result = $this->transactionUtil->simulateCapitalPaymentSchedule($loan->id, $schedule_version_id, $amount, $type_pay, $moraAmount, $targetCuotas);
+            // Igual que en el pago real: primero se descuentan los intereses de los días hasta la próxima cuota
+            $paid_on = $request->input('paid_on') ?: Carbon::now()->format('Y-m-d');
+            $accrued = ['days' => 0, 'interest' => 0.0];
+            if ($type_pay == 'parcial') {
+                $accrued = $this->transactionUtil->calcCapitalAccruedInterest($loan->id, $schedule_version_id, $paid_on);
+            }
+            $capitalAmount = round($amount - $accrued['interest'], 4);
+            if ($capitalAmount <= 0) {
+                return response()->json(['success' => false, 'msg' => 'El monto no cubre los intereses de '.$accrued['days'].' días ('.$this->transactionUtil->num_f($accrued['interest']).')']);
+            }
+
+            $result = $this->transactionUtil->simulateCapitalPaymentSchedule($loan->id, $schedule_version_id, $capitalAmount, $type_pay, $moraAmount, $targetCuotas);
 
             if (! $result['success']) {
                 return response()->json(['success' => false, 'msg' => $result['msg']]);
@@ -1518,6 +1534,8 @@ class LoanController extends Controller {
                 'target_cuotas' => $result['target_cuotas'],
                 'new_balance' => $result['new_balance'],
                 'loan_would_be_paid' => $result['loan_would_be_paid'],
+                'accrued' => $accrued,
+                'capital_amount' => $capitalAmount,
             ])->render();
 
             return response()->json(['success' => true, 'view' => $view]);

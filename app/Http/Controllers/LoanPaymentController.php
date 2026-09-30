@@ -201,14 +201,30 @@ class LoanPaymentController extends Controller
                 $inputs = $request->only(['amount', 'method', 'note', 'card_number', 'card_holder_name',
                     'card_transaction_number', 'card_type', 'card_month', 'card_year', 'card_security',
                     'cheque_number', 'bank_account_number', ]);
-                $note = 'Pago a capital. ';
-                $note .= $request->input('currency') !='Dolar' ? $request->input('amount_var').' '. $request->input('currency').' con tipo de cambio '. $request->input('exchange_rate').'. ' : '';
-                $note .= $request->input('note');
-
-                $inputs['note'] = $note;
                 $inputs['paid_on'] = $this->transactionUtil->uf_date($request->input('paid_on'), true);
                 $inputs['transaction_id'] = $transaction->id;
                 $inputs['amount'] = $this->transactionUtil->num_uf($inputs['amount']);
+
+                // Intereses de los días hasta la próxima cuota: se cobran primero y solo el resto se aplica a capital
+                $schedule_version_active = ScheduleVersion::where('loan_id', $request->input('loan_id'))->where('status','active')->first();
+                $accrued = ['days' => 0, 'interest' => 0.0];
+                if ($type_pay == 'parcial') {
+                    $accrued = $this->transactionUtil->calcCapitalAccruedInterest($request->input('loan_id'), $schedule_version_active->id ?? null, $inputs['paid_on']);
+                }
+                $accruedInterest = (float) $accrued['interest'];
+                $capitalAmount = round($inputs['amount'] - $accruedInterest, 4);
+                if ($capitalAmount <= 0) {
+                    $output = ['success' => false, 'msg' => 'El monto no cubre los intereses de '.$accrued['days'].' días ('.$this->transactionUtil->num_f($accruedInterest).')'];
+                    return redirect()->back()->with(['status' => $output]);
+                }
+
+                $note = 'Pago a capital. ';
+                if ($type_pay == 'parcial') {
+                    $note .= 'Intereses de '.$accrued['days'].' días: '.$this->transactionUtil->num_f($accruedInterest).'; capital aplicado: '.$this->transactionUtil->num_f($capitalAmount).'. ';
+                }
+                $note .= $request->input('currency') !='Dolar' ? $request->input('amount_var').' '. $request->input('currency').' con tipo de cambio '. $request->input('exchange_rate').'. ' : '';
+                $note .= $request->input('note');
+                $inputs['note'] = $note;
                 $inputs['created_by'] = auth()->user()->id;
                 $inputs['payment_for'] = $transaction->contact_id;
 
@@ -275,13 +291,13 @@ class LoanPaymentController extends Controller
 
                     $moraAmount = (float) $this->transactionUtil->num_uf($request->input('mora_amount', 0));
                     $targetCuotas = $request->filled('target_cuotas') ? (int) $request->input('target_cuotas') : null;
-                    $interestSaved =  $this->transactionUtil->regeneratePaymentSchedule($request->input('loan_id'),$schedule_version_current_id, $schedule_version_new->id, $inputs['amount'], $type_pay, $moraAmount, $targetCuotas);
+                    $interestSaved =  $this->transactionUtil->regeneratePaymentSchedule($request->input('loan_id'),$schedule_version_current_id, $schedule_version_new->id, $capitalAmount, $type_pay, $moraAmount, $targetCuotas);
                     $concept = ($type_pay == 'total') ? 'Pago capital total' : 'Pago capital parcial';
-                    
-                //REGISTRAR EL DESCUENTO EN LA TRANSACCION
+
+                //REGISTRAR EL DESCUENTO EN LA TRANSACCION (neto de los intereses de los días cobrados, que no estaban en el cronograma)
                 $transaction->discount_type = 'fixed';
-                $transaction->discount_amount =  $transaction->discount_amount +$interestSaved;
-                $transaction->final_total = $transaction->final_total - $interestSaved;
+                $transaction->discount_amount =  $transaction->discount_amount + $interestSaved - $accruedInterest;
+                $transaction->final_total = $transaction->final_total - $interestSaved + $accruedInterest;
                 $transaction->save();
                 //REGISTRAR LA APLICACION DEL PAGO A CAPITAL
                 $paymentApplication = PaymentApplication::create([
@@ -291,6 +307,7 @@ class LoanPaymentController extends Controller
                     'concept' => $concept,
                     'amount' => $inputs['amount'],
                     'amount_discounted' => $interestSaved, // El descuento es por pago adelantado o a capital
+                    'days_in_advance' => $accrued['days'], // Días de intereses cobrados antes de aplicar a capital
                     'applied_at' => Carbon::now(),
                 ]);
                 DB::commit();

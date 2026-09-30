@@ -23,6 +23,16 @@
             <th>Cuotas simuladas</th>
             <td>{{ $target_cuotas }} de {{ $pending_count }} pendientes</td>
           </tr>
+          @if($accrued['interest'] > 0)
+          <tr>
+            <th>Intereses de {{ $accrued['days'] }} días hasta la próxima cuota</th>
+            <td>@format_currency($accrued['interest'])</td>
+          </tr>
+          @endif
+          <tr>
+            <th>Monto aplicado a capital</th>
+            <td>@format_currency($capital_amount)</td>
+          </tr>
           <tr>
             <th>Nuevo saldo a financiar</th>
             <td>@format_currency($new_balance)</td>
