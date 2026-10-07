@@ -1,7 +1,7 @@
 <style>
 	@media print {
-		@page { margin: 0; }
-		body { margin: 1.6cm; }
+		@page { margin: 1.6cm 0; }
+		body { margin: 0 1.6cm; }
 	}
 </style>
 <!-- business information here -->
@@ -472,63 +472,8 @@
 </div>
 
 <div class="row">
-		<div class="col-xs-7">
-			<table  class="table table-responsive table-slim table-bordered">
-				<tbody>
-				<tr style="height: 18px;">
-					<td>
-						<div class="text-center"><strong>Términos y Condiciones</strong></div>
-					</td>
-				</tr>
-				<tr>
-				<td style="padding-left:10px">
-					<div style="font-size:10px">
-					    1.Condición de Venta: 
-					    @if(empty($receipt_details->selling_price_group_id))
-							Contado
-						@else
-							Crédito 
-						@endif
-						<br>
-						
-						
-    				    @if(empty($receipt_details->shipping_custom_field_1_value))
-    						2- No Incluye gastos de envío<br>
-						@else
-							2- Gastos de envío incluido<br>
-						@endif
-    					
-    					
-					</div>
-					
-					<div style="font-size:9px; margin-top:4px; margin-bottom:10px">
-					    <strong>INTERBANK SOLES</strong>  <br>     
-                        CTA: 731-3004014408  <br> 
-                        CCI: 003-731-003004014408-78 <br> 
-                        <strong>INTERBANK DOLARES</strong> <br> 
-                        CTA: 731-3004014415<br> 
-                        CCI: 003-731-003004014415-73<br> 
-                        <strong>BCP SOLES</strong><br> 
-                        Nro. 575-9967850-0-31<br> 
-                        CCI 00257500996785003197<br> 
-                        <strong>BCP DÓLARES</strong><br> 
-                        Nro. 575-9773535-1-63<br> 
-                        CCI 00257500977353516393
-					</div>
-					<div style="font-size:9px"> La aceptación del cliente (firmar a continuación):
-					</div>
-					<div style="margin-top:24px" ></div>
-					<div>
-						_______________________________________ <br>
-						<strong>Nombre:</strong> <span style="font-size:10px;">{{$receipt_details->customer_name}}</span>
-					</div>
-				</td>
-				</tr>
-				</tbody>
-			</>
-		</div>
 
-	<div class="col-xs-5">
+	<div class="col-xs-5 col-xs-offset-7">
 		<table class="table table-slim">
 			@if(!empty($receipt_details->payments))
 				@foreach($receipt_details->payments as $payment)
@@ -583,7 +528,7 @@
 	</div>
 
 
-	<div class="col-xs-5">
+	<div class="col-xs-5 col-xs-offset-7">
         <div class="table-responsive">
           	<table class="table table-slim">
 				<tbody>
@@ -745,7 +690,48 @@
 	    	<p>{!! nl2br($receipt_details->additional_notes) !!}</p>
 	    </div>
     @endif
-    
+
+</div>
+<div class="terminos-generales" style="clear: both; color: #000000 !important; margin-top: 20px; border: 1px solid #ddd; padding: 6px 10px; font-size: 10px; text-align: justify; page-break-inside: avoid; break-inside: avoid;">
+	<div class="text-center" style="margin-bottom: 6px; font-size: 14px;"><strong>Términos y Condiciones</strong></div>
+	<div><strong>1.</strong>  Condición de Venta: @if(empty($receipt_details->selling_price_group_id)) Contado @else Crédito @endif</div>
+	<div><strong>2.</strong>  @if(empty($receipt_details->shipping_custom_field_1_value)) No incluye gastos de envío. @else Gastos de envío incluidos. @endif</div>
+	<div><strong>3.</strong>  La disponibilidad de los productos se reconfirmará al recibir la orden de compra o el pago correspondiente.</div>
+	<div><strong>4.</strong>  Es responsabilidad exclusiva del comprador verificar que el número de parte, las medidas, el grado de filtración (micras) y las especificaciones técnicas coincidan con lo requerido.</div>
+	<div><strong>5.</strong>  Los filtros y elementos de desgaste rápido cuentan con una garantía limitada que cubre únicamente defectos de fabricación. No cubre el desgaste natural por operación ni el deterioro prematuro ocasionado por combustible o aceite contaminado.</div>
+	<div><strong>6.</strong>  Los componentes eléctricos (sensores, solenoides, bujías de precalentamiento, entre otros) no admiten cambio ni devolución una vez entregados.</div>
+	<div><strong>7.</strong>  Las devoluciones de repuestos mecánicos en stock por error del cliente solo se aceptarán dentro de los 7 días calendario siguientes a la entrega, siempre que el producto se encuentre sin uso y en su empaque original, y estarán sujetas a una penalidad del 10 % por reingreso al almacén.</div>
+
+	<table style="width: 100%; margin-top: 8px; font-size: 9px; text-align: left;">
+		<tr>
+			<td style="vertical-align: top;">
+				<strong>INTERBANK SOLES</strong><br>
+				CTA: 731-3004014408<br>
+				CCI: 003-731-003004014408-78
+			</td>
+			<td style="vertical-align: top;">
+				<strong>INTERBANK DOLARES</strong><br>
+				CTA: 731-3004014415<br>
+				CCI: 003-731-003004014415-73
+			</td>
+			<td style="vertical-align: top;">
+				<strong>BCP SOLES</strong><br>
+				Nro. 575-9967850-0-31<br>
+				CCI 00257500996785003197
+			</td>
+			<td style="vertical-align: top;">
+				<strong>BCP DÓLARES</strong><br>
+				Nro. 575-9773535-1-63<br>
+				CCI 00257500977353516393
+			</td>
+		</tr>
+	</table>
+
+	<div style="margin-top: 8px; font-size: 9px;">La aceptación del cliente (firmar a continuación):</div>
+	<div style="margin-top: 24px;">
+		_______________________________________ <br>
+		<strong>Nombre:</strong> {{$receipt_details->customer_name}}
+	</div>
 </div>
 
 <div class="row">
