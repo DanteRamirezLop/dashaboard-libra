@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard de Cotizaciones vs Ventas de Maquinaria — Libra International Perú</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+:root{--azul:#1F4E78;--azul2:#2E75B6;--rojo:#C00000;--ambar:#E6A100;--verde:#548235;--fondo:#F0F3F7;--card:#fff;--borde:#DCE4EC;--texto:#1a2733;--gris:#66788a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--fondo);color:var(--texto);padding-bottom:40px}
+header{background:linear-gradient(90deg,var(--azul),var(--azul2));color:#fff;padding:16px 28px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+header h1{font-size:19px;font-weight:600}
+header .sub{font-size:12px;opacity:.85}
+.wrap{max-width:1500px;margin:0 auto;padding:18px 22px}
+.filtros{display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--card);border:1px solid var(--borde);border-radius:10px;padding:12px 16px;margin-bottom:16px}
+.filtros label{font-size:11px;color:var(--gris);font-weight:600;text-transform:uppercase;display:block;margin-bottom:3px}
+.filtros select,.filtros input{padding:7px 10px;border:1px solid var(--borde);border-radius:7px;font-size:13px;background:#fff;min-width:150px}
+.filtros button{padding:8px 16px;border:none;border-radius:7px;background:var(--azul2);color:#fff;font-size:13px;cursor:pointer;align-self:flex-end}
+.filtros button:hover{background:var(--azul)}
+.filtros button:disabled{background:var(--gris);cursor:default;opacity:.7}
+.chip-info{font-size:12px;color:var(--gris);align-self:flex-end;padding-bottom:8px;margin-left:auto}
+.tabs{display:flex;gap:6px;margin-bottom:16px;border-bottom:2px solid var(--borde)}
+.tab-btn{padding:10px 20px;border:none;background:none;font-size:13.5px;font-weight:600;color:var(--gris);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
+.tab-btn:hover{color:var(--azul)}
+.tab-btn.activo{color:var(--azul);border-bottom-color:var(--azul2)}
+.tabpanel[hidden]{display:none}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--card);border:1px solid var(--borde);border-radius:10px;padding:13px 15px;border-top:3px solid var(--azul2)}
+.kpi .lbl{font-size:10.5px;color:var(--gris);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.kpi .val{font-size:22px;font-weight:700;color:var(--azul);margin-top:3px}
+.kpi .sub{font-size:13px;color:var(--gris);margin-top:4px}
+.kpi.rojo{border-top-color:var(--rojo)}.kpi.rojo .val{color:var(--rojo)}
+.kpi.verde{border-top-color:var(--verde)}.kpi.verde .val{color:var(--verde)}
+.kpi.ambar{border-top-color:var(--ambar)}.kpi.ambar .val{color:var(--ambar)}
+.grid{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:1000px){.grid2{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--borde);border-radius:10px;padding:14px 16px}
+.panel h3{font-size:13px;color:var(--azul);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px}
+.panel .hint{font-size:11px;color:var(--gris);margin-bottom:6px}
+.chart-box{position:relative;height:250px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{background:var(--azul);color:#fff;padding:8px 9px;text-align:left;cursor:pointer;user-select:none;white-space:nowrap;position:sticky;top:0}
+th:hover{background:var(--azul2)}
+td{padding:7px 9px;border-bottom:1px solid var(--borde);white-space:nowrap}
+tr:nth-child(even){background:#F5F8FB}
+tr:hover{background:#E9F1F9}
+.num{text-align:right}
+.sem{font-weight:700;font-size:11px;padding:3px 9px;border-radius:20px;display:inline-block}
+.s0{background:#C6EFCE;color:#006100}.s1{background:#FFEB9C;color:#9C6500}
+.s2{background:#FFC7CE;color:#9C0006}.s3{background:#C00000;color:#fff}
+.tCotiz{background:#FFEB9C;color:#9C6500}.tVenta{background:#C6EFCE;color:#006100}
+.tabla-scroll{max-height:520px;overflow:auto;border:1px solid var(--borde);border-radius:8px}
+.tabla-pivote tfoot th{position:sticky;bottom:0;top:auto;background:var(--azul);color:#fff;padding:8px 9px;text-align:right;white-space:nowrap}
+.tabla-pivote tfoot th:first-child{text-align:left}
+.tabla-pivote th,.tabla-pivote td{text-align:right}
+.tabla-pivote thead th:first-child,.tabla-pivote td:first-child{text-align:left}
+.nota{font-size:11px;color:var(--gris);margin-top:10px}
+.vcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.vcard{border:1px solid var(--borde);border-radius:10px;padding:12px 14px;background:#FBFDFF}
+.vcard h4{font-size:13px;color:var(--azul);margin-bottom:2px}
+.vcard .meta{font-size:11px;color:var(--gris);margin-bottom:8px}
+.vchips{display:flex;gap:6px;flex-wrap:wrap}
+.vchip{font-size:11px;font-weight:700;padding:4px 9px;border-radius:14px;cursor:pointer;border:2px solid transparent}
+.vchip:hover{filter:brightness(.95)}
+.vchip.activo{border-color:var(--azul)}
+.vchip.vacio{opacity:.35;cursor:default}
+.vchip.chipProd{background:#DCEBFB;color:var(--azul2)}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Dashboard de Cotizaciones vs Ventas de Maquinaria — Libra International Perú</h1>
+  <div class="sub" id="subInfo">Cargando datos…</div></div>
+</header>
+<div class="wrap">
+  <div id="errBox" style="display:none;background:#FFC7CE;color:#9C0006;border-radius:8px;padding:10px 16px;margin-bottom:16px;font-size:13px"></div>
+  <div class="tabs">
+    <button class="tab-btn activo" id="tabBtnMaq" onclick="switchTab('maq')">🚜 Venta de Maquinarias</button>
+    <button class="tab-btn" id="tabBtnCal" onclick="switchTab('cal')">📅 Calendario de ventas</button>
+    <button class="tab-btn" id="tabBtnRep" onclick="switchTab('rep')">🔧 Venta de Repuestos</button>
+    <button class="tab-btn" id="tabBtnCompras" onclick="switchTab('compras')">🛒 Compras de Maquinarias</button>
+  </div>
+  <div id="tabMaq" class="tabpanel">
+  <div class="filtros">
+    <div><label>Año</label><select id="fAnio">
+      <option value="2024">2024</option><option value="2025">2025</option>
+      <option value="2026" selected>2026</option><option value="">Todos los años juntos</option>
+    </select></div>
+    <div><label>Vendedor</label><select id="fVend"><option value="">Todos</option></select></div>
+    <div><label>Fuente de contacto</label><select id="fFuente"><option value="">Todas</option></select></div>
+    <div><label>Tipo</label><select id="fTipo"><option value="">Todos</option>
+      <option value="Cotización">Cotización</option><option value="Venta">Venta</option></select></div>
+    <div><label>Buscar cliente/máquina</label><input id="fBusca" type="text" placeholder="Nombre o producto..."></div>
+    <button onclick="resetF()">Limpiar filtros</button>
+    <button id="btnRefresh" onclick="cargarDatos()">↻ Actualizar datos</button>
+    <div class="chip-info" id="chipInfo"></div>
+  </div>
+  <div class="kpis">
+    <div class="kpi ambar"><div class="lbl">Cotizaciones <span id="lblAnioCotiz">2026</span></div><div class="val" id="kCotiz">–</div></div>
+    <div class="kpi ambar"><div class="lbl">Monto cotizado</div><div class="val" id="kMontoCotiz">–</div></div>
+    <div class="kpi verde"><div class="lbl">Ventas cerradas <span id="lblAnioVentas">2026</span></div><div class="val" id="kVentas">–</div></div>
+    <div class="kpi verde"><div class="lbl">Monto vendido</div><div class="val" id="kMontoVenta">–</div></div>
+    <div class="kpi verde"><div class="lbl">Monto recaudado</div><div class="val" id="kRecaudado">–</div></div>
+    <div class="kpi verde"><div class="lbl">% cobrado</div><div class="val" id="kPctCobrado">–</div></div>
+    <div class="kpi rojo"><div class="lbl">% conversión aprox.</div><div class="val" id="kConv">–</div></div>
+    <div class="kpi"><div class="lbl">Ticket promedio venta</div><div class="val" id="kTicket">–</div></div>
+    <div class="kpi"><div class="lbl">Ventas crédito Directo</div><div class="val" id="kCredito">–</div><div class="sub" id="kCreditoRec">–</div></div>
+    <div class="kpi"><div class="lbl">Ventas crédito 3ros</div><div class="val" id="kCredito3ros">–</div><div class="sub" id="kCredito3rosRec">–</div></div>
+    <div class="kpi"><div class="lbl">Venta Contado</div><div class="val" id="kContado">–</div><div class="sub" id="kContadoRec">–</div></div>
+  </div>
+  <div class="grid">
+    <div class="panel"><h3>Cotizaciones vs ventas por vendedor</h3><div class="hint">Clic en una barra para filtrar</div><div class="chart-box"><canvas id="chVend"></canvas></div></div>
+    <div class="grid2">
+      <div class="panel"><h3>Cotizaciones vs ventas leads (<span id="lblAnioLeads">2026</span>)</h3><div class="hint">Leads = fuente digital (Facebook, Instagram, TikTok, WhatsApp, Web de Libra International)</div><div class="chart-box"><canvas id="chLeads"></canvas></div></div>
+      <div class="panel"><h3>Top 10 máquinas más cotizadas</h3><div class="chart-box"><canvas id="chProd"></canvas></div></div>
+    </div>
+  </div>
+  <div class="panel" style="margin-bottom:16px">
+    <h3>Cotizaciones y ventas por vendedor</h3>
+    <div class="hint">Clic en un contador para filtrar por ese vendedor y tipo</div>
+    <div class="vcards" id="vendCards"></div>
+  </div>
+  <div class="panel" style="margin-bottom:16px">
+    <h3>Máquinas vendidas por vendedor</h3>
+    <div class="hint">Unidades vendidas por modelo de maquinaria para cada vendedor · Clic en un modelo para filtrar por él</div>
+    <div class="vcards" id="vendMaqCards"></div>
+  </div>
+  <div class="panel" style="margin-bottom:16px">
+    <h3>Calendario de ventas — monto vendido por vendedor y mes</h3>
+    <div class="hint">Monto vendido (S/.) por vendedor y mes, siempre de las ventas de <b>2026</b> (no cambia con el filtro de Año; sí respeta los filtros de vendedor, fuente y búsqueda). Incluye a todos los vendedores, aunque no tengan ventas (fila en 0). La fila "Total Libra" suma todos los vendedores de cada mes.</div>
+    <div class="tabla-scroll" style="max-height:600px"><table id="tablaCalVendMontoMaq" class="tabla-pivote">
+      <thead><tr id="theadCalVendMontoMaqRow"><th>Vendedor</th></tr></thead>
+      <tbody id="tbodyCalVendMontoMaq"></tbody>
+      <tfoot id="tfootCalVendMontoMaq"><tr><th>Total Libra</th></tr></tfoot>
+    </table></div>
+  </div>
+  <div class="panel" style="margin-bottom:16px">
+    <h3>Cotizaciones sin venta detectada del mismo cliente <span style="font-weight:400;color:var(--gris)">(top 20 por monto, para dar seguimiento)</span></h3>
+    <div class="hint">Cliente presente en cotizaciones <span id="lblAnioSeguimiento">2026</span> pero sin ninguna venta registrada a su nombre en el mismo período. No implica que la cotización siga vigente, solo que conviene revisarla.</div>
+    <div class="tabla-scroll"><table id="tablaSeguimiento">
+      <thead><tr><th>Días desde cotización</th><th>Fecha</th><th>Cliente</th><th>Vendedor</th><th>Máquina</th><th>Fuente</th><th class="num">Monto</th></tr></thead>
+      <tbody id="tbodySeguimiento"></tbody>
+    </table></div>
+  </div>
+  <div class="panel">
+    <h3>Detalle de cotizaciones y ventas <span style="font-weight:400;color:var(--gris)">(clic en encabezados para ordenar)</span></h3>
+    <div class="tabla-scroll"><table id="tabla">
+      <thead><tr>
+        <th data-k="tipo">Tipo</th><th data-k="fecha">Fecha</th><th data-k="cliente">Cliente</th>
+        <th data-k="vendedor">Vendedor</th><th data-k="producto">Máquina</th><th data-k="pago">Pago</th>
+        <th data-k="fuente">Fuente</th><th data-k="cantidad" class="num">Cant.</th>
+        <th data-k="monto" class="num">Monto</th><th data-k="recaudado" class="num">Recaudado</th><th data-k="estado">Estado venta</th>
+      </tr></thead><tbody id="tbody"></tbody>
+    </table></div>
+    <div class="nota">Fuente: módulo de préstamos/financiamiento de maquinaria (tabla interna de cotizaciones y ventas, ya acotada a la categoría "Maquinarias"), más las ventas de maquinaria pagadas por una financiera externa (columna "Pago" = Crédito 3ros; para nosotros son al contado y no pasan por el módulo de préstamos). "Cotización" = registro aún no aprobado como venta; "Venta" = todo registro con otro estado (aprobado, parcial, atrasado, pagado, etc.), sea al contado, a crédito, o crédito 3ros. Datos desde 2024, filtrables por año (<span id="lblAnioNota">2026</span> por defecto). Este archivo es de uso interno en oficina y no se publica en el servidor.</div>
+  </div>
+  </div>
+  <div id="tabCal" class="tabpanel" hidden>
+  <div class="panel">
+    <h3>Calendario de ventas — meses vs maquinaria</h3>
+    <div class="filtros" style="margin-bottom:12px">
+      <div><label>Año</label><select id="fAnioCal">
+        <option value="2024">2024</option><option value="2025">2025</option>
+        <option value="2026" selected>2026</option><option value="">Todos los años juntos</option>
+      </select></div>
+    </div>
+    <div class="hint">Cantidad vendida por modelo de maquinaria y mes, según las ventas de <span id="lblAnioCal">2026</span> (respeta también los filtros de vendedor, fuente y búsqueda de la pestaña Maquinaria). Filas ordenadas de mayor a menor total vendido.</div>
+    <div class="tabla-scroll" style="max-height:600px"><table id="tablaCal" class="tabla-pivote">
+      <thead><tr id="theadCalRow"><th>Mes</th></tr></thead>
+      <tbody id="tbodyCal"></tbody>
+      <tfoot id="tfootCal"><tr><th>Total</th></tr></tfoot>
+    </table></div>
+  </div>
+  <div class="panel" style="margin-top:16px">
+    <h3>Calendario de ventas — vendedores vs meses</h3>
+    <div class="hint">N° de ventas de maquinaria por vendedor y mes, según las ventas de <span id="lblAnioCalVend">2026</span> (respeta los mismos filtros de vendedor, fuente y búsqueda). Filas ordenadas de mayor a menor total de ventas.</div>
+    <div class="tabla-scroll" style="max-height:600px"><table id="tablaCalVend" class="tabla-pivote">
+      <thead><tr id="theadCalVendRow"><th>Vendedor</th></tr></thead>
+      <tbody id="tbodyCalVend"></tbody>
+      <tfoot id="tfootCalVend"><tr><th>Total</th></tr></tfoot>
+    </table></div>
+  </div>
+  <div class="panel" style="margin-top:16px">
+    <h3>Calendario de ventas — monto vendido por vendedor y mes</h3>
+    <div class="hint">Monto vendido (S/.) por vendedor y mes, siempre de las ventas de <b>2026</b> (no cambia con el filtro de Año de arriba; sí respeta los filtros de vendedor, fuente y búsqueda). La fila "Total Libra" suma todos los vendedores de cada mes.</div>
+    <div class="tabla-scroll" style="max-height:600px"><table id="tablaCalVendMonto" class="tabla-pivote">
+      <thead><tr id="theadCalVendMontoRow"><th>Vendedor</th></tr></thead>
+      <tbody id="tbodyCalVendMonto"></tbody>
+      <tfoot id="tfootCalVendMonto"><tr><th>Total Libra</th></tr></tfoot>
+    </table></div>
+  </div>
+  </div>
+  <div id="tabRep" class="tabpanel" hidden>
+  <div class="panel" style="margin-bottom:16px">
+    <h3>Cotizaciones y ventas por vendedor de repuestos</h3>
+    <div class="hint">Clic en un contador para filtrar la tabla de abajo por ese vendedor y tipo</div>
+    <div class="kpis" style="margin-bottom:12px">
+      <div class="kpi ambar"><div class="lbl">Cotizaciones</div><div class="val" id="repCotiz">–</div></div>
+      <div class="kpi ambar"><div class="lbl">Monto cotizado</div><div class="val" id="repMontoCotiz">–</div></div>
+      <div class="kpi verde"><div class="lbl">Ventas</div><div class="val" id="repVentas">–</div></div>
+      <div class="kpi verde"><div class="lbl">Monto vendido</div><div class="val" id="repMontoVenta">–</div></div>
+      <div class="kpi verde"><div class="lbl">Monto recaudado</div><div class="val" id="repRecaudado">–</div></div>
+    </div>
+    <h3 style="margin-top:4px">Top 10 productos más vendidos</h3>
+    <div class="chart-box" style="margin-bottom:12px"><canvas id="chProdRep"></canvas></div>
+    <div class="vcards" id="repVendCards" style="margin-bottom:12px"></div>
+    <div class="tabla-scroll"><table id="tablaRep">
+      <thead><tr><th>Tipo</th><th>Fecha</th><th>Cliente</th><th>Vendedor</th><th>Producto</th><th class="num">Cant.</th><th class="num">Monto</th><th class="num">Recaudado</th><th>Estado pago</th></tr></thead>
+      <tbody id="tbodyRep"></tbody>
+    </table></div>
+  </div>
+  </div>
+  <div id="tabCompras" class="tabpanel" hidden>
+  <div class="filtros">
+    <div><label>Año</label><select id="fAnioCompras">
+      <option value="2024">2024</option><option value="2025">2025</option>
+      <option value="2026" selected>2026</option><option value="">Todos los años juntos</option>
+    </select></div>
+    <div><label>Buscar proveedor/máquina</label><input id="fBuscaCompras" type="text" placeholder="Nombre o producto..."></div>
+    <button onclick="resetFCompras()">Limpiar filtros</button>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="lbl">Compras <span id="lblAnioCompras">2026</span></div><div class="val" id="kCompras">–</div></div>
+    <div class="kpi"><div class="lbl">Monto comprado</div><div class="val" id="kMontoCompras">–</div></div>
+    <div class="kpi verde"><div class="lbl">Monto pagado</div><div class="val" id="kPagadoCompras">–</div></div>
+    <div class="kpi verde"><div class="lbl">% pagado</div><div class="val" id="kPctPagadoCompras">–</div></div>
+  </div>
+  <div class="panel" style="margin-bottom:16px">
+    <h3>Compras de maquinaria por año</h3>
+    <div class="hint">Monto total comprado en cada año (no aplica el filtro de año de arriba, para poder comparar)</div>
+    <div class="chart-box"><canvas id="chComprasAnio"></canvas></div>
+  </div>
+  <div class="panel" style="margin-bottom:16px">
+    <h3>Compras de maquinaria por mes <span style="font-weight:400;color:var(--gris)">(Maquinaria vs meses del año)</span></h3>
+    <div class="hint">Cantidad comprada por modelo de maquinaria y mes, según las compras de <span id="lblAnioComprasMes">2026</span> (respeta los filtros de año y búsqueda de arriba). Filas ordenadas de mayor a menor total comprado.</div>
+    <div class="tabla-scroll" style="max-height:600px"><table id="tablaComprasMes" class="tabla-pivote">
+      <thead><tr id="theadComprasMesRow"><th>Maquinaria</th></tr></thead>
+      <tbody id="tbodyComprasMes"></tbody>
+      <tfoot id="tfootComprasMes"><tr><th>Total</th></tr></tfoot>
+    </table></div>
+  </div>
+  <div class="panel">
+    <h3>Detalle de compras de maquinaria <span style="font-weight:400;color:var(--gris)">(clic en encabezados para ordenar)</span></h3>
+    <div class="tabla-scroll"><table id="tablaCompras">
+      <thead><tr>
+        <th data-k="fecha">Fecha</th><th data-k="refNo">N° Doc.</th><th data-k="proveedor">Proveedor</th>
+        <th data-k="producto">Máquina</th><th data-k="cantidad" class="num">Cant.</th>
+        <th data-k="monto" class="num">Monto</th><th data-k="pagado" class="num">Pagado</th>
+        <th data-k="estado">Estado</th><th data-k="estadoPago">Estado pago</th>
+      </tr></thead><tbody id="tbodyCompras"></tbody>
+    </table></div>
+    <div class="nota">Fuente: compras registradas en el módulo de compras con el campo "Tipo" (custom_field_1) = "Maquinarias". Datos desde 2024, filtrables por año (<span id="lblAnioComprasNota">2026</span> por defecto). Este archivo es de uso interno en oficina y no se publica en el servidor.</div>
+  </div>
+  </div>
+</div>
+<script>
+const API_URL = 'http://127.0.0.1:8084/api/machinery';
+const API_URL_REPUESTOS = 'http://127.0.0.1:8084/api/repuestos';
+const API_TOKEN = 'SLFLZhHCfoJ13nrBRGA0YSAAoNhimv09oyl2ApjyZlAuEEUNQOvrnVZZYMFhlocu';
+let DATA = [];
+let DATA_REP = [];
+let DATA_COMPRAS = [];
+const FR = {vend:'', tipo:''};
+const FCP = {anio:'2026', busca:''};
+const fmt = n => n.toLocaleString('es-PE', {maximumFractionDigits: 0});
+const COLS_TIPO = {'Cotización':'#E6A100','Venta':'#548235'};
+const LEADS_FUENTES = ['Facebook', 'Instagram', 'TikTok', 'WhatsApp', 'Web de Libra International'];
+const VENDEDORES_EXCLUIDOS = ['Josser Olivos Vera', 'Rosa Dioses']; // Personal administrativo / vendedora exclusiva de repuestos (ver sección propia abajo), no vendedores de maquinaria
+const DL_VERT = {anchor:'end',align:'top',color:'#1a2733',font:{size:10,weight:'700'},formatter:v=>v>0?v:''};
+const DL_HORIZ = {anchor:'end',align:'end',color:'#1a2733',font:{size:10,weight:'700'},formatter:v=>v>0?v:''};
+Chart.register(ChartDataLabels);
+let sortK = 'fecha', sortDir = -1;
+const F = {vend:'', fuente:'', tipo:'', busca:'', anio:'2026'};
+let vends = [], fuentes = [];
+const matchFuente = d => !F.fuente || (F.fuente==='Leads' ? LEADS_FUENTES.includes(d.fuente) : d.fuente===F.fuente);
+const matchAnio = d => !F.anio || d.fecha.slice(0,4)===F.anio;
+const labelAnio = () => F.anio || 'todos los años';
+function actualizarLabelsAnio(){
+  [lblAnioCotiz, lblAnioVentas, lblAnioLeads, lblAnioSeguimiento, lblAnioNota, lblAnioCal, lblAnioCalVend].forEach(el => el.textContent = labelAnio());
+}
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+function celdaColor(rgb){
+  return (v, max) => {
+    if(!v) return '';
+    const pct = v/max;
+    const alpha = (0.15 + pct*0.75).toFixed(2);
+    return `background:rgba(${rgb},${alpha});color:${pct>0.55?'#fff':'#1a2733'};font-weight:700`;
+  };
+}
+const celdaEstiloVerde = celdaColor('84,130,53');
+const celdaEstiloAzul = celdaColor('46,117,182');
+function pivotMensual(ven, campo, valorFn, colorFn, theadEl, tbodyEl, tfootEl, etiquetaCol, fmtFn = v=>v||'', footLabel='Total', ordenClaves=null, incluirVacios=false){
+  const totales = {};
+  const matriz = {};
+  ven.forEach(d=>{
+    const mes = +d.fecha.slice(5,7) - 1; // evita el corrimiento de mes por zona horaria de new Date(d.fecha).getMonth()
+    const key = d[campo];
+    const val = valorFn(d);
+    matriz[mes] = matriz[mes] || {};
+    matriz[mes][key] = (matriz[mes][key]||0) + val;
+    totales[key] = (totales[key]||0) + val;
+  });
+  const claves = ordenClaves
+    ? (incluirVacios ? ordenClaves : ordenClaves.filter(k => k in totales))
+    : Object.entries(totales).sort((a,b)=>b[1]-a[1]).map(t=>t[0]);
+  const max = Math.max(1, ...Object.values(totales));
+  theadEl.innerHTML = `<th>${etiquetaCol}</th>` + MESES.map(m=>`<th>${m.slice(0,3)}</th>`).join('') + '<th>Total</th>';
+  tbodyEl.innerHTML = claves.map(k=>{
+    const celdas = MESES.map((_, idx)=>{
+      const v = (matriz[idx] && matriz[idx][k]) || 0;
+      return `<td class="num" style="${colorFn(v,max)}">${fmtFn(v)}</td>`;
+    }).join('');
+    return `<tr><td title="${k}">${k}</td>${celdas}<td class="num" style="font-weight:700">${fmtFn(totales[k]||0)}</td></tr>`;
+  }).join('');
+  const totalesPorMes = MESES.map((_, idx)=> claves.reduce((a,k)=>a+((matriz[idx] && matriz[idx][k])||0),0));
+  const totalGeneral = claves.reduce((a,k)=>a+(totales[k]||0),0);
+  tfootEl.innerHTML = `<tr><th>${footLabel}</th>` + totalesPorMes.map(t=>`<th>${fmtFn(t)}</th>`).join('') + `<th>${fmtFn(totalGeneral)}</th></tr>`;
+}
+function calendario(){
+  const filtrosComunes = d => matchFuente(d) &&
+    (!F.vend || d.vendedor===F.vend) &&
+    (!F.busca || d.cliente.toLowerCase().includes(F.busca) || d.producto.toLowerCase().includes(F.busca));
+  const ven = DATA.filter(d => d.tipo==='Venta' && matchAnio(d) && filtrosComunes(d));
+  const ven2026 = DATA.filter(d => d.tipo==='Venta' && d.fecha.slice(0,4)==='2026' && filtrosComunes(d));
+  // orden único de vendedores (por monto vendido 2026) para que las dos tablas de vendedor vs mes coincidan en el orden de filas
+  const montoPorVend = {};
+  ven2026.forEach(d=>{ montoPorVend[d.vendedor] = (montoPorVend[d.vendedor]||0) + (d.monto||0); });
+  const ordenVend = [...new Set([...ven2026, ...ven].map(d=>d.vendedor))]
+    .sort((a,b) => (montoPorVend[b]||0) - (montoPorVend[a]||0));
+  // igual que ordenVend, pero completado con todos los vendedores aunque no tengan ninguna venta (para la copia de la pestaña Maquinaria)
+  const todosVend = F.vend ? [F.vend] : vends;
+  const ordenVendCompleto = [...ordenVend, ...todosVend.filter(v=>!ordenVend.includes(v))];
+  pivotMensual(ven, 'producto', d=>d.cantidad||0, celdaEstiloVerde, theadCalRow, tbodyCal, tfootCal, 'Maquinaria');
+  pivotMensual(ven, 'vendedor', ()=>1, celdaEstiloAzul, theadCalVendRow, tbodyCalVend, tfootCalVend, 'Vendedor', v=>v||'', 'Total', ordenVend);
+  pivotMensual(ven2026, 'vendedor', d=>Math.round(d.monto||0), celdaEstiloVerde, theadCalVendMontoRow, tbodyCalVendMonto, tfootCalVendMonto, 'Vendedor', v=>fmt(v||0), 'Total Libra', ordenVend);
+  pivotMensual(ven2026, 'vendedor', d=>Math.round(d.monto||0), celdaEstiloVerde, theadCalVendMontoMaqRow, tbodyCalVendMontoMaq, tfootCalVendMontoMaq, 'Vendedor', v=>fmt(v||0), 'Total Libra', ordenVendCompleto, true);
+}
+
+function filtrar(){
+  return DATA.filter(d =>
+    (!F.vend || d.vendedor===F.vend) && matchFuente(d) && matchAnio(d) &&
+    (!F.tipo || d.tipo===F.tipo) &&
+    (!F.busca || d.cliente.toLowerCase().includes(F.busca) || d.producto.toLowerCase().includes(F.busca)));
+}
+function kpis(rows){
+  const cot = rows.filter(d=>d.tipo==='Cotización');
+  const ven = rows.filter(d=>d.tipo==='Venta');
+  const montoCot = cot.reduce((a,d)=>a+d.monto,0);
+  const montoVen = ven.reduce((a,d)=>a+d.monto,0);
+  const recaudado = ven.reduce((a,d)=>a+(d.recaudado||0),0);
+  kCotiz.textContent = cot.length;
+  kMontoCotiz.textContent = fmt(montoCot);
+  kVentas.textContent = ven.length;
+  kMontoVenta.textContent = fmt(montoVen);
+  kRecaudado.textContent = fmt(recaudado);
+  kPctCobrado.textContent = montoVen ? (recaudado/montoVen*100).toFixed(1)+'%' : '0%';
+  kConv.textContent = (cot.length+ven.length) ? (ven.length/(cot.length+ven.length)*100).toFixed(1)+'%' : '0%';
+  kTicket.textContent = ven.length ? fmt(montoVen/ven.length) : '0';
+  const venCredito = ven.filter(d=>d.pago==='Crédito');
+  const venCredito3ros = ven.filter(d=>d.pago==='Crédito 3ros');
+  const venContado = ven.filter(d=>d.pago==='Contado');
+  const recCredito = venCredito.reduce((a,d)=>a+(d.recaudado||0),0);
+  const recCredito3ros = venCredito3ros.reduce((a,d)=>a+(d.recaudado||0),0);
+  const recContado = venContado.reduce((a,d)=>a+(d.recaudado||0),0);
+  kCredito.textContent = ven.length ? `${venCredito.length} (${(venCredito.length/ven.length*100).toFixed(1)}%)` : '0 (0%)';
+  kCredito3ros.textContent = ven.length ? `${venCredito3ros.length} (${(venCredito3ros.length/ven.length*100).toFixed(1)}%)` : '0 (0%)';
+  kContado.textContent = ven.length ? `${venContado.length} (${(venContado.length/ven.length*100).toFixed(1)}%)` : '0 (0%)';
+  kCreditoRec.textContent = 'Recaudado: ' + fmt(recCredito);
+  kCredito3rosRec.textContent = 'Recaudado: ' + fmt(recCredito3ros);
+  kContadoRec.textContent = 'Recaudado: ' + fmt(recContado);
+  chipInfo.textContent = rows.length + ' de ' + DATA.length + ' registros mostrados';
+}
+function tabla(rows){
+  rows = [...rows].sort((a,b)=>{
+    const x=a[sortK], y=b[sortK];
+    return (typeof x==='string' ? x.localeCompare(y) : x-y)*sortDir;
+  });
+  tbody.innerHTML = rows.map(d=>{
+    const cls = d.tipo==='Cotización' ? 'tCotiz' : 'tVenta';
+    return `<tr><td><span class="sem ${cls}">${d.tipo}</span></td><td>${d.fecha}</td><td title="${d.cliente}">${d.cliente}</td>
+    <td>${d.vendedor}</td><td title="${d.producto}">${d.producto}</td><td>${d.pago}</td><td>${d.fuente}</td>
+    <td class="num">${d.cantidad}</td><td class="num">${fmt(d.monto)}</td><td class="num">${d.recaudado!=null?fmt(d.recaudado):'–'}</td><td>${d.estado||'–'}</td></tr>`;
+  }).join('');
+}
+let sortKC = 'fecha', sortDirC = -1;
+function comprasFiltrar(){
+  const busca = FCP.busca.toLowerCase();
+  return DATA_COMPRAS.filter(d =>
+    (!FCP.anio || d.fecha.slice(0,4)===FCP.anio) &&
+    (!busca || d.proveedor.toLowerCase().includes(busca) || d.producto.toLowerCase().includes(busca)));
+}
+function resetFCompras(){
+  FCP.anio='2026'; FCP.busca='';
+  fAnioCompras.value='2026'; fBuscaCompras.value='';
+  renderCompras();
+}
+function tablaCompras(rows){
+  rows = [...rows].sort((a,b)=>{
+    const x=a[sortKC], y=b[sortKC];
+    return (typeof x==='string' ? x.localeCompare(y) : x-y)*sortDirC;
+  });
+  tbodyCompras.innerHTML = rows.map(d=>`<tr><td>${d.fecha}</td><td>${d.refNo||'–'}</td><td title="${d.proveedor}">${d.proveedor}</td>
+    <td title="${d.producto}">${d.producto}</td><td class="num">${d.cantidad}</td><td class="num">${fmt(d.monto)}</td>
+    <td class="num">${fmt(d.pagado)}</td><td>${d.estado||'–'}</td><td>${d.estadoPago||'–'}</td></tr>`).join('');
+}
+let cComprasAnio;
+function chartComprasAnio(){
+  const anios = [...new Set(DATA_COMPRAS.map(d=>d.fecha.slice(0,4)))].sort();
+  cComprasAnio.data.labels = anios;
+  cComprasAnio.data.datasets[0].data = anios.map(a=>DATA_COMPRAS.filter(d=>d.fecha.slice(0,4)===a).reduce((s,d)=>s+d.monto,0));
+  cComprasAnio.update();
+}
+function renderCompras(){
+  const rows = comprasFiltrar();
+  const label = FCP.anio || 'todos los años';
+  [lblAnioCompras, lblAnioComprasNota, lblAnioComprasMes].forEach(el => el.textContent = label);
+  const monto = rows.reduce((a,d)=>a+d.monto,0);
+  const pagado = rows.reduce((a,d)=>a+d.pagado,0);
+  kCompras.textContent = rows.length;
+  kMontoCompras.textContent = fmt(monto);
+  kPagadoCompras.textContent = fmt(pagado);
+  kPctPagadoCompras.textContent = monto ? (pagado/monto*100).toFixed(1)+'%' : '0%';
+  tablaCompras(rows);
+  chartComprasAnio();
+  pivotMensual(rows, 'producto', d=>d.cantidad||0, celdaEstiloAzul, theadComprasMesRow, tbodyComprasMes, tfootComprasMes, 'Maquinaria');
+}
+document.querySelectorAll('#tablaCompras th').forEach(th=>th.onclick=()=>{
+  const k = th.dataset.k;
+  if(sortKC===k) sortDirC*=-1; else {sortKC=k; sortDirC=-1;}
+  renderCompras();
+});
+fAnioCompras.onchange = e=>{FCP.anio=e.target.value; renderCompras()};
+fBuscaCompras.oninput = e=>{FCP.busca=e.target.value; renderCompras()};
+let cVend, cLeads, cProd, cProdRep;
+function charts(rows){
+  cVend.data.labels = vends;
+  cVend.data.datasets[0].data = vends.map(v=>rows.filter(d=>d.vendedor===v && d.tipo==='Cotización').length);
+  cVend.data.datasets[1].data = vends.map(v=>rows.filter(d=>d.vendedor===v && d.tipo==='Venta').length);
+  cVend.update();
+
+  const esLead = d => LEADS_FUENTES.includes(d.fuente);
+  const grupos = ['Leads (digital)', 'Contacto directo del vendedor'];
+  cLeads.data.datasets[0].data = grupos.map(g=>rows.filter(d=>d.tipo==='Cotización' && esLead(d)===(g==='Leads (digital)')).length);
+  cLeads.data.datasets[1].data = grupos.map(g=>rows.filter(d=>d.tipo==='Venta' && esLead(d)===(g==='Leads (digital)')).length);
+  cLeads.update();
+
+  const prodCounts = {};
+  rows.filter(d=>d.tipo==='Cotización').forEach(d=>{ prodCounts[d.producto] = (prodCounts[d.producto]||0)+1; });
+  const top = Object.entries(prodCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  cProd.data.labels = top.map(t=>t[0]);
+  cProd.data.datasets[0].data = top.map(t=>t[1]);
+  cProd.update();
+}
+function vendCards(){
+  const base = DATA.filter(d => matchFuente(d) && matchAnio(d) && (!F.busca || d.cliente.toLowerCase().includes(F.busca) || d.producto.toLowerCase().includes(F.busca)));
+  vendCards.el = vendCards.el || document.getElementById('vendCards');
+  vendCards.el.innerHTML = vends.map(v=>{
+    const rs = base.filter(d=>d.vendedor===v);
+    const cot = rs.filter(d=>d.tipo==='Cotización').length;
+    const ventaRows = rs.filter(d=>d.tipo==='Venta');
+    const ven = ventaRows.length;
+    const ventaLeads = ventaRows.filter(d=>LEADS_FUENTES.includes(d.fuente)).length;
+    const ventaDirecto = ven - ventaLeads;
+    const ventaDesglose = ven ? ` <b style="font-size:13px;color:var(--texto)">(Directo: ${ventaDirecto} · Leads: ${ventaLeads})</b>` : '';
+    const conv = (cot+ven) ? (ven/(cot+ven)*100).toFixed(1) : '0.0';
+    const chip = (tipo, n) => {
+      const act = (F.vend===v && F.tipo===tipo) ? ' activo' : '';
+      const vac = n===0 ? ' vacio' : '';
+      const cls = tipo==='Cotización' ? 'tCotiz' : 'tVenta';
+      return `<span class="vchip ${cls}${act}${vac}" onclick="chipClick('${v.replace(/'/g,"\\'")}','${tipo}',${n})">${tipo}: ${n}</span>`;
+    };
+    return `<div class="vcard"><h4>${v}</h4>
+      <div class="meta">${cot} cotizaciones · ${ven} ventas${ventaDesglose} · <b style="color:var(--rojo)">${conv}%</b> conversión</div>
+      <div class="vchips">${chip('Cotización',cot)}${chip('Venta',ven)}</div></div>`;
+  }).join('');
+}
+function vendMaqCards(){
+  const base = DATA.filter(d => d.tipo==='Venta' && matchFuente(d) && matchAnio(d) &&
+    (!F.vend || d.vendedor===F.vend) &&
+    (!F.busca || d.cliente.toLowerCase().includes(F.busca) || d.producto.toLowerCase().includes(F.busca)));
+  vendMaqCards.el = vendMaqCards.el || document.getElementById('vendMaqCards');
+  vendMaqCards.el.innerHTML = vends.map(v=>{
+    const rs = base.filter(d=>d.vendedor===v);
+    const totalUnidades = rs.reduce((a,d)=>a+(d.cantidad||0),0);
+    const conteos = {};
+    rs.forEach(d=>{ conteos[d.producto] = (conteos[d.producto]||0) + (d.cantidad||0); });
+    const productos = Object.entries(conteos).sort((a,b)=>b[1]-a[1]);
+    const chips = productos.length ? productos.map(([p,n])=>{
+      const act = F.busca===p.toLowerCase() ? ' activo' : '';
+      const nombre = p.length>26 ? p.slice(0,25)+'…' : p;
+      return `<span class="vchip chipProd${act}" title="${p}" onclick="chipProdClick('${p.replace(/'/g,"\\'")}')">${nombre}: ${n}</span>`;
+    }).join('') : '<span class="vchip vacio">Sin ventas</span>';
+    return `<div class="vcard"><h4>${v}</h4>
+      <div class="meta">${rs.length} ventas · ${totalUnidades} unidades vendidas</div>
+      <div class="vchips">${chips}</div></div>`;
+  }).join('');
+}
+function chipProdClick(p){
+  const val = p.toLowerCase();
+  if(F.busca===val){ F.busca=''; fBusca.value=''; }
+  else { F.busca=val; fBusca.value=p; }
+  render();
+}
+function chipClick(v, tipo, n){
+  if(!n) return;
+  if(F.vend===v && F.tipo===tipo){ F.vend=''; F.tipo=''; }
+  else { F.vend=v; F.tipo=tipo; }
+  fVend.value=F.vend; fTipo.value=F.tipo;
+  render();
+}
+function seguimiento(){
+  const base = DATA.filter(matchAnio);
+  const cotBase = base.filter(d=>d.tipo==='Cotización');
+  const clientesConVenta = new Set(base.filter(d=>d.tipo==='Venta').map(d=>d.cliente.toLowerCase().trim()));
+  const hoy = new Date();
+  const sinVenta = cotBase.filter(d=>!clientesConVenta.has(d.cliente.toLowerCase().trim()))
+    .map(d=>({...d, dias: Math.floor((hoy - new Date(d.fecha))/86400000)}))
+    .sort((a,b)=>b.monto-a.monto)
+    .slice(0,20);
+  tbodySeguimiento.innerHTML = sinVenta.map(d=>{
+    const cls = d.dias>60?'s3':d.dias>30?'s2':d.dias>7?'s1':'s0';
+    return `<tr><td><span class="sem ${cls}">${d.dias} días</span></td><td>${d.fecha}</td><td title="${d.cliente}">${d.cliente}</td>
+    <td>${d.vendedor}</td><td title="${d.producto}">${d.producto}</td><td>${d.fuente}</td><td class="num">${fmt(d.monto)}</td></tr>`;
+  }).join('');
+}
+function render(){
+  const rows = filtrar();
+  actualizarLabelsAnio();
+  kpis(rows); tabla(rows); charts(rows); vendCards(); vendMaqCards(); seguimiento(); calendario();
+}
+function repFiltrar(){
+  return DATA_REP.filter(d => (!FR.vend || d.vendedor===FR.vend) && (!FR.tipo || d.tipo===FR.tipo));
+}
+function repChipClick(v, tipo, n){
+  if(!n) return;
+  if(FR.vend===v && FR.tipo===tipo){ FR.vend=''; FR.tipo=''; }
+  else { FR.vend=v; FR.tipo=tipo; }
+  renderRep();
+}
+function renderRep(){
+  const rows = repFiltrar();
+  const cot = rows.filter(d=>d.tipo==='Cotización');
+  const ven = rows.filter(d=>d.tipo==='Venta');
+  const montoCot = cot.reduce((a,d)=>a+d.monto,0);
+  const montoVen = ven.reduce((a,d)=>a+d.monto,0);
+  const recaudado = ven.reduce((a,d)=>a+(d.recaudado||0),0);
+  repCotiz.textContent = cot.length;
+  repMontoCotiz.textContent = fmt(montoCot);
+  repVentas.textContent = ven.length;
+  repMontoVenta.textContent = fmt(montoVen);
+  repRecaudado.textContent = fmt(recaudado);
+
+  const ventProdCounts = {};
+  ven.forEach(d=>{ ventProdCounts[d.producto] = (ventProdCounts[d.producto]||0) + (d.cantidad||0); });
+  const topVentProd = Object.entries(ventProdCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  cProdRep.data.labels = topVentProd.map(t=>t[0]);
+  cProdRep.data.datasets[0].data = topVentProd.map(t=>t[1]);
+  cProdRep.update();
+
+  const vendsRep = [...new Set(DATA_REP.map(d=>d.vendedor))].sort();
+  repVendCards.innerHTML = vendsRep.length ? vendsRep.map(v=>{
+    const rs = DATA_REP.filter(d=>d.vendedor===v);
+    const cotN = rs.filter(d=>d.tipo==='Cotización').length;
+    const venRows = rs.filter(d=>d.tipo==='Venta');
+    const venN = venRows.length;
+    const montoV = venRows.reduce((a,d)=>a+d.monto,0);
+    const conv = (cotN+venN) ? (venN/(cotN+venN)*100).toFixed(1) : '0.0';
+    const chip = (tipo, n) => {
+      const act = (FR.vend===v && FR.tipo===tipo) ? ' activo' : '';
+      const vac = n===0 ? ' vacio' : '';
+      const cls = tipo==='Cotización' ? 'tCotiz' : 'tVenta';
+      return `<span class="vchip ${cls}${act}${vac}" onclick="repChipClick('${v.replace(/'/g,"\\'")}','${tipo}',${n})">${tipo}: ${n}</span>`;
+    };
+    return `<div class="vcard"><h4>${v}</h4>
+      <div class="meta">${cotN} cotizaciones · ${venN} ventas <b style="font-size:13px;color:var(--texto)">(${fmt(montoV)})</b> · <b style="color:var(--rojo)">${conv}%</b> conversión</div>
+      <div class="vchips">${chip('Cotización',cotN)}${chip('Venta',venN)}</div></div>`;
+  }).join('') : '<div class="hint">Sin usuarios con el rol "vendedor de repuestos" o sin registros en 2026.</div>';
+
+  const sorted = [...rows].sort((a,b)=> new Date(b.fecha)-new Date(a.fecha));
+  tbodyRep.innerHTML = sorted.map(d=>{
+    const cls = d.tipo==='Cotización' ? 'tCotiz' : 'tVenta';
+    return `<tr><td><span class="sem ${cls}">${d.tipo}</span></td><td>${d.fecha}</td><td title="${d.cliente}">${d.cliente}</td>
+    <td>${d.vendedor}</td><td title="${d.producto}">${d.producto}</td>
+    <td class="num">${d.cantidad}</td><td class="num">${fmt(d.monto)}</td><td class="num">${d.recaudado!=null?fmt(d.recaudado):'–'}</td><td>${d.estado||'–'}</td></tr>`;
+  }).join('');
+}
+function switchTab(name){
+  const tabs = {maq: tabMaq, rep: tabRep, cal: tabCal, compras: tabCompras};
+  const btns = {maq: tabBtnMaq, rep: tabBtnRep, cal: tabBtnCal, compras: tabBtnCompras};
+  Object.keys(tabs).forEach(k=>{
+    tabs[k].hidden = k !== name;
+    btns[k].classList.toggle('activo', k === name);
+  });
+}
+function resetF(){
+  F.vend=F.fuente=F.tipo=F.busca='';
+  F.anio='2026';
+  fVend.value=fFuente.value=fTipo.value=fBusca.value='';
+  fAnio.value=fAnioCal.value='2026';
+  render();
+}
+fAnio.onchange = e=>{F.anio=e.target.value; fAnioCal.value=F.anio; render()};
+fAnioCal.onchange = e=>{F.anio=e.target.value; fAnio.value=F.anio; render()};
+fVend.onchange = e=>{F.vend=e.target.value; render()};
+fFuente.onchange = e=>{F.fuente=e.target.value; render()};
+fTipo.onchange = e=>{F.tipo=e.target.value; render()};
+fBusca.oninput = e=>{F.busca=e.target.value.toLowerCase(); render()};
+document.querySelectorAll('#tabla th').forEach(th=>th.onclick=()=>{
+  const k = th.dataset.k;
+  if(sortK===k) sortDir*=-1; else {sortK=k; sortDir=-1;}
+  render();
+});
+// Acorta el nombre en el eje; el tooltip sigue mostrando el nombre completo
+function LABEL_CORTO(v){ const l=this.getLabelForValue(v); return l.length>28?l.slice(0,27)+'…':l; }
+function init(){
+vends = [...new Set(DATA.map(d=>d.vendedor))].sort();
+fuentes = [...new Set(DATA.map(d=>d.fuente))].sort();
+fVend.length = 1; vends.forEach(v => fVend.add(new Option(v, v)));
+fFuente.length = 1; fFuente.add(new Option('Leads (digital)', 'Leads')); fuentes.forEach(s => fFuente.add(new Option(s, s)));
+Chart.defaults.font.family = "'Segoe UI',Arial";
+if (cVend) { cVend.destroy(); cLeads.destroy(); cProd.destroy(); cProdRep.destroy(); cComprasAnio.destroy(); }
+cVend = new Chart(chVend, {type:'bar',
+  data:{labels:[],datasets:[
+    {label:'Cotizaciones',data:[],backgroundColor:COLS_TIPO['Cotización'],borderRadius:4},
+    {label:'Ventas',data:[],backgroundColor:COLS_TIPO['Venta'],borderRadius:4}]},
+  options:{maintainAspectRatio:false,plugins:{legend:{position:'top'},datalabels:DL_VERT},scales:{y:{ticks:{stepSize:1},grace:'10%'}},
+    onClick:(e,el)=>{if(el.length){const v=vends[el[0].index];F.vend=F.vend===v?'':v;fVend.value=F.vend;render();}}}});
+cLeads = new Chart(chLeads, {type:'bar',
+  data:{labels:['Leads (digital)','Contacto directo del vendedor'],datasets:[
+    {label:'Cotizaciones',data:[],backgroundColor:COLS_TIPO['Cotización'],borderRadius:4},
+    {label:'Ventas',data:[],backgroundColor:COLS_TIPO['Venta'],borderRadius:4}]},
+  options:{maintainAspectRatio:false,plugins:{legend:{position:'top'},datalabels:DL_VERT},scales:{y:{ticks:{stepSize:1},grace:'10%'}}}});
+cProd = new Chart(chProd, {type:'bar',
+  data:{labels:[],datasets:[{data:[],backgroundColor:'#2E75B6',borderRadius:4}]},
+  options:{indexAxis:'y',maintainAspectRatio:false,layout:{padding:{right:28}},plugins:{legend:{display:false},datalabels:DL_HORIZ},scales:{x:{ticks:{stepSize:1},grace:'10%'},y:{ticks:{callback:LABEL_CORTO}}}}});
+cProdRep = new Chart(chProdRep, {type:'bar',
+  data:{labels:[],datasets:[{data:[],backgroundColor:'#2E75B6',borderRadius:4}]},
+  options:{indexAxis:'y',maintainAspectRatio:false,layout:{padding:{right:28}},plugins:{legend:{display:false},datalabels:DL_HORIZ},scales:{x:{ticks:{stepSize:1},grace:'10%'},y:{ticks:{callback:LABEL_CORTO}}}}});
+cComprasAnio = new Chart(chComprasAnio, {type:'bar',
+  data:{labels:[],datasets:[{label:'Monto comprado',data:[],backgroundColor:'#1F4E78',borderRadius:4}]},
+  options:{maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:{...DL_VERT,formatter:v=>v>0?fmt(v):''}},scales:{y:{grace:'10%'}}}});
+render();
+renderRep();
+renderCompras();
+}
+
+async function cargarDatos(){
+  btnRefresh.disabled = true;
+  btnRefresh.textContent = 'Actualizando…';
+  try {
+    const [res, resRep] = await Promise.all([
+      fetch(API_URL, {headers: {'Authorization': `Bearer ${API_TOKEN}`, 'Accept': 'application/json'}}),
+      fetch(API_URL_REPUESTOS, {headers: {'Authorization': `Bearer ${API_TOKEN}`, 'Accept': 'application/json'}})
+    ]);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    if (!resRep.ok) throw new Error('HTTP ' + resRep.status + ' (repuestos)');
+    const data = await res.json();
+    const dataRep = await resRep.json();
+    const cot = (data.cotizaciones || []).map(d => ({...d, tipo:'Cotización', estado:null, recaudado:null}));
+    const ven = (data.ventas || []).map(d => ({...d, tipo:'Venta'}));
+    const todos = [...cot, ...ven];
+    DATA = todos.filter(d => !VENDEDORES_EXCLUIDOS.includes(d.vendedor));
+    DATA_COMPRAS = data.compras || [];
+    const cotRep = (dataRep.cotizaciones || []).map(d => ({...d, tipo:'Cotización', estado:null, recaudado:null}));
+    const venRep = (dataRep.ventas || []).map(d => ({...d, tipo:'Venta'}));
+    DATA_REP = [...cotRep, ...venRep];
+    const p = data.period || {};
+    errBox.style.display = 'none';
+    subInfo.textContent = `Datos al ${new Date().toLocaleDateString('es-PE',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})} · Periodo disponible: ${p.from || ''} al ${p.to || ''} · Filtro de año: ${labelAnio()}`;
+    init();
+  } catch (err) {
+    errBox.style.display = 'block';
+    errBox.textContent = 'No se pudieron cargar los datos del dashboard: ' + err.message;
+    subInfo.textContent = 'Error al cargar datos';
+  } finally {
+    btnRefresh.disabled = false;
+    btnRefresh.textContent = '↻ Actualizar datos';
+  }
+}
+cargarDatos();
+</script>
+</body>
+</html>

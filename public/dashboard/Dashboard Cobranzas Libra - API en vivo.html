@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard de Cobranzas — Libra International Perú</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--azul:#1F4E78;--azul2:#2E75B6;--rojo:#C00000;--ambar:#E6A100;--verde:#548235;--fondo:#F0F3F7;--card:#fff;--borde:#DCE4EC;--texto:#1a2733;--gris:#66788a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--fondo);color:var(--texto);padding-bottom:40px}
+header{background:linear-gradient(90deg,var(--azul),var(--azul2));color:#fff;padding:16px 28px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+header h1{font-size:19px;font-weight:600}
+header .sub{font-size:12px;opacity:.85}
+.wrap{max-width:1500px;margin:0 auto;padding:18px 22px}
+.filtros{display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--card);border:1px solid var(--borde);border-radius:10px;padding:12px 16px;margin-bottom:16px}
+.filtros label{font-size:11px;color:var(--gris);font-weight:600;text-transform:uppercase;display:block;margin-bottom:3px}
+.filtros select,.filtros input{padding:7px 10px;border:1px solid var(--borde);border-radius:7px;font-size:13px;background:#fff;min-width:150px}
+.filtros button{padding:8px 16px;border:none;border-radius:7px;background:var(--azul2);color:#fff;font-size:13px;cursor:pointer;align-self:flex-end}
+.filtros button:hover{background:var(--azul)}
+.chip-info{font-size:12px;color:var(--gris);align-self:flex-end;padding-bottom:8px;margin-left:auto}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--card);border:1px solid var(--borde);border-radius:10px;padding:13px 15px;border-top:3px solid var(--azul2)}
+.kpi .lbl{font-size:10.5px;color:var(--gris);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.kpi .val{font-size:22px;font-weight:700;color:var(--azul);margin-top:3px}
+.kpi.rojo{border-top-color:var(--rojo)}.kpi.rojo .val{color:var(--rojo)}
+.kpi.verde{border-top-color:var(--verde)}.kpi.verde .val{color:var(--verde)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+@media(max-width:1000px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--borde);border-radius:10px;padding:14px 16px}
+.panel h3{font-size:13px;color:var(--azul);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px}
+.panel .hint{font-size:11px;color:var(--gris);margin-bottom:6px}
+.chart-box{position:relative;height:250px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{background:var(--azul);color:#fff;padding:8px 9px;text-align:left;cursor:pointer;user-select:none;white-space:nowrap;position:sticky;top:0}
+th:hover{background:var(--azul2)}
+td{padding:7px 9px;border-bottom:1px solid var(--borde);white-space:nowrap}
+tr:nth-child(even){background:#F5F8FB}
+tr:hover{background:#E9F1F9}
+.num{text-align:right}
+.sem{font-weight:700;font-size:11px;padding:3px 9px;border-radius:20px;display:inline-block}
+.s0{background:#C6EFCE;color:#006100}.s1{background:#FFEB9C;color:#9C6500}
+.s2{background:#FFC7CE;color:#9C0006}.s3{background:#C00000;color:#fff}
+.tabla-scroll{max-height:520px;overflow:auto;border:1px solid var(--borde);border-radius:8px}
+.nota{font-size:11px;color:var(--gris);margin-top:10px}
+.bar-pct{background:#E3EAF2;border-radius:4px;height:9px;width:80px;display:inline-block;vertical-align:middle;margin-left:6px}
+.bar-pct i{display:block;height:100%;border-radius:4px;background:var(--verde)}
+.vcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.vcard{border:1px solid var(--borde);border-radius:10px;padding:12px 14px;background:#FBFDFF}
+.vcard h4{font-size:13px;color:var(--azul);margin-bottom:2px}
+.vcard .meta{font-size:11px;color:var(--gris);margin-bottom:8px}
+.vchips{display:flex;gap:6px;flex-wrap:wrap}
+.vchip{font-size:11px;font-weight:700;padding:4px 9px;border-radius:14px;cursor:pointer;border:2px solid transparent}
+.vchip:hover{filter:brightness(.95)}
+.vchip.activo{border-color:var(--azul)}
+.vchip.vacio{opacity:.35;cursor:default}
+.gest-btn{padding:4px 10px;border:none;border-radius:6px;background:#2E75B6;color:#fff;font-size:11.5px;cursor:pointer}
+.gest-btn:hover{background:#1F4E78}
+.gest-btn.sec{background:#8896a6}
+.gest-tel{width:120px;padding:4px 6px;border:1px solid var(--borde);border-radius:5px;font-size:12px}
+.gest-form{background:#F4F8FC;border:1px solid #C9D6E3}
+.gest-form td{padding:10px}
+.gest-form input,.gest-form select,.gest-form textarea{padding:6px 8px;border:1px solid var(--borde);border-radius:6px;font-size:12.5px;margin:2px 4px 2px 0}
+.gest-hist{background:#FBFDFF}
+.gest-hist td{font-size:12px;color:#33475b}
+.sim-box{display:flex;gap:18px;align-items:center;background:#F4F8FC;border:1px solid #C9D6E3;border-radius:9px;padding:12px 16px;margin-bottom:12px;flex-wrap:wrap}
+.sim-box label{font-size:11px;color:var(--gris);font-weight:700;text-transform:uppercase;display:block;margin-bottom:3px}
+.sim-box input[type=number]{width:90px;padding:7px 9px;border:1px solid var(--borde);border-radius:7px;font-size:15px;font-weight:700;color:var(--azul)}
+.sim-res{font-size:13px;line-height:1.6}
+.sim-res b{font-size:19px;color:var(--rojo)}
+.sim-ok{color:var(--verde);font-weight:700}
+.prio{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.p1{background:#C6EFCE;color:#006100}.p2{background:#FFEB9C;color:#9C6500}.p3{background:#FFC7CE;color:#9C0006}
+.dias-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.dcard{border:1px solid var(--borde);border-radius:9px;background:#FBFDFF;overflow:hidden}
+.dcard .dhead{background:var(--azul);color:#fff;padding:6px 10px;font-size:12px;font-weight:700;display:flex;justify-content:space-between}
+.dcard.hoy .dhead{background:var(--verde)}
+.dcard.pasado .dhead{background:#8896a6}
+.dcard ul{list-style:none;padding:8px 10px;margin:0;max-height:150px;overflow:auto}
+.dcard li{font-size:11.5px;padding:3px 0;border-bottom:1px solid #EEF3F8;display:flex;justify-content:space-between;gap:6px}
+.dcard li:last-child{border-bottom:none}
+.dcard li b{color:var(--azul);white-space:nowrap}
+.acc-tag{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:10px;background:#E3EAF2;color:#1F4E78;margin-right:6px}
+@media print{
+  body.solo-avances .panel{display:none}
+  body.solo-avances #panelAv{display:block}
+  body.solo-avances .kpis:not(#avKpis){display:none}
+  body.solo-avances .grid:has(#chVend),body.solo-avances .grid:has(#chHist){display:none}
+  body.solo-avances header{display:block}
+  body.solo-informe .panel{display:none}
+  body.solo-informe .panel:has(#infKpis){display:block}
+  body.solo-informe .kpis:not(#infKpis){display:none}
+  body.solo-informe header{display:block}
+  body.solo-informe .grid:has(#chVend),body.solo-informe .grid:has(#chHist){display:none}
+  @page{size:A4 landscape;margin:10mm}
+  body{background:#fff;padding:0}
+  header{padding:10px 14px}
+  header h1{font-size:15px}
+  .filtros,.gest-btn,#diagBox,button{display:none !important}
+  .chip-info{display:none}
+  .wrap{max-width:none;padding:8px}
+  .panel{break-inside:avoid;page-break-inside:avoid;border:1px solid #ccc;margin-bottom:10px}
+  .grid{grid-template-columns:1fr 1fr}
+  .chart-box{height:210px !important}
+  .tabla-scroll{max-height:none !important;overflow:visible !important}
+  thead{display:table-header-group}
+  tr{break-inside:avoid;page-break-inside:avoid}
+  .kpis{grid-template-columns:repeat(6,1fr)}
+  .kpi .val{font-size:16px}
+  .dias-grid{grid-template-columns:repeat(4,1fr)}
+  .dcard ul{max-height:none;overflow:visible}
+  input,select{border:none !important;background:transparent !important;padding:0 !important}
+  *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
+  .no-print{display:none !important}
+  .solo-print{display:block !important}
+}
+.solo-print{display:none}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Dashboard de Cobranzas — Libra International Perú</h1>
+  <div class="sub" id="subInfo">Cargando datos del ERP…</div></div>
+</header>
+<div class="wrap">
+  <div id="errBox" style="display:none;background:#FDECEA;border:1px solid #C00000;color:#9C0006;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px"></div>
+  <div class="filtros">
+    <div><label>Vendedor</label><select id="fVend"><option value="">Todos</option></select></div>
+    <div><label>Semáforo</label><select id="fSem"><option value="">Todos</option>
+      <option>AL DÍA</option><option>1-30 DÍAS</option><option>31-90 DÍAS</option><option>+90 DÍAS</option></select></div>
+    <div><label>Estado</label><select id="fEst"><option value="">Todos</option>
+      <option>Atrasado</option><option>Parcial</option><option>Pagado</option></select></div>
+    <div><label>Buscar cliente</label><input id="fBusca" type="text" placeholder="Nombre del cliente..."></div>
+    <button onclick="resetF()">Limpiar filtros</button>
+    <button style="background:#548235" onclick="cargarDatos()">↻ Actualizar datos</button>
+    <button style="background:#C00000" onclick="descargarPDF()">⬇ Descargar PDF</button>
+    <button style="background:#8896a6" onclick="diagBox.style.display = diagBox.style.display==='none'?'block':'none'">ⓘ Estado de los datos</button>
+    <button style="background:#8896a6" onclick="localStorage.removeItem('libra_api_token');location.reload()">Cambiar token</button>
+    <div class="chip-info" id="chipInfo"></div>
+  </div>
+  <div id="diagBox" class="panel" style="display:none;margin-bottom:16px"></div>
+  <div class="kpis">
+    <div class="kpi"><div class="lbl">Préstamos</div><div class="val" id="kN">–</div></div>
+    <div class="kpi"><div class="lbl">Venta total</div><div class="val" id="kVenta">–</div></div>
+    <div class="kpi"><div class="lbl">Pagado</div><div class="val" id="kPag">–</div></div>
+    <div class="kpi rojo"><div class="lbl">Vencido (sin mora)</div><div class="val" id="kVenc">–</div></div>
+    <div class="kpi rojo"><div class="lbl">Mora</div><div class="val" id="kMoraS">–</div></div>
+    <div class="kpi rojo"><div class="lbl">Vencido + mora</div><div class="val" id="kVM">–</div></div>
+    <div class="kpi"><div class="lbl">Por cobrar</div><div class="val" id="kSaldo">–</div></div>
+    <div class="kpi rojo"><div class="lbl">% morosidad</div><div class="val" id="kMora">–</div></div>
+    <div class="kpi verde"><div class="lbl">% avance cobranza</div><div class="val" id="kAvance">–</div></div>
+    <div class="kpi verde"><div class="lbl">Cobrado este mes</div><div class="val" id="kCob">–</div></div>
+    <div class="kpi rojo"><div class="lbl">Días atraso promedio</div><div class="val" id="kDiasProm">–</div></div>
+    <div class="kpi rojo"><div class="lbl">Riesgo en top 5 deudores</div><div class="val" id="kTop5">–</div></div>
+  </div>
+  <div class="grid">
+    <div class="panel"><h3>Vencido y mora por vendedor</h3><div class="hint">Clic en una barra para filtrar</div><div class="chart-box"><canvas id="chVend"></canvas></div></div>
+    <div class="panel"><h3>Saldo por cobrar según semáforo</h3><div class="hint">Clic en un segmento para filtrar</div><div class="chart-box"><canvas id="chSem"></canvas></div></div>
+    <div class="panel"><h3>Composición de la venta por vendedor (%)</h3><div class="hint">Pagado vs vencido+mora vs por vencer — vista del reporte del gerente comercial</div><div class="chart-box"><canvas id="chComp"></canvas></div></div>
+    <div class="panel"><h3>Top 10 deudores por monto vencido</h3><div class="chart-box"><canvas id="chTop"></canvas></div></div>
+    <div class="panel"><h3>Proyección de cobranza mensual — dos proyecciones</h3><div class="hint">De lo programado en cada mes, qué % viene de clientes al día (azul, cobro normal) y qué % de clientes ya morosos (ámbar, cobro en riesgo). Pasa el cursor para ver los montos.</div><div class="chart-box"><canvas id="chProy"></canvas></div></div>
+    <div class="panel"><h3>Cobros por día (últimos 60 días con pagos)</h3><div class="chart-box"><canvas id="chPagos"></canvas></div></div>
+  </div>
+  <div class="grid">
+    <div class="panel"><h3>Vence este mes por cliente</h3>
+      <div class="hint">Lo que toca recaudar este mes (cuota del mes, sin contar deuda atrasada; si la API no envía fechas de cuota, se asume una cuota por préstamo activo) · Total: <b id="totMes">–</b></div>
+      <div class="tabla-scroll" style="max-height:260px"><table>
+        <thead><tr><th>Cliente</th><th>Vendedor</th><th>Fecha</th><th class="num">Cuota del mes</th></tr></thead>
+        <tbody id="tbodyMes"></tbody></table></div></div>
+    <div class="panel"><h3>Clientes con más de un mes de atraso</h3>
+      <div class="hint">2 o más letras vencidas (+30 días) — proyección de recuperación · Total: <b id="totLetras" style="color:var(--rojo)">–</b></div>
+      <div class="tabla-scroll" style="max-height:260px"><table>
+        <thead><tr><th>Cliente</th><th>Vendedor</th><th class="num">Letras</th><th class="num">Vencido+Mora</th><th class="num">Días</th></tr></thead>
+        <tbody id="tbodyLetras"></tbody></table></div></div>
+  </div>
+  <div class="grid">
+    <div class="panel"><h3>Cobranza mensual histórica (todo el historial de la API)</h3><div class="hint">Total realmente cobrado cada mes</div><div class="chart-box"><canvas id="chHist"></canvas></div></div>
+    <div class="panel"><h3>Pagos por método</h3><div class="hint" id="hintMet">—</div><div class="chart-box"><canvas id="chMet"></canvas></div></div>
+    <div class="panel" style="grid-column:1/-1"><h3>Días sin pagar — clientes con deuda vencida</h3>
+      <div class="hint">Cuánto tiempo lleva cada deudor sin registrar un solo pago (según el historial de la API)</div>
+      <div class="tabla-scroll" style="max-height:260px"><table>
+        <thead><tr><th>Cliente</th><th>Vendedor</th><th class="num">Vencido+Mora</th><th>Último pago</th><th class="num">Días sin pagar</th></tr></thead>
+        <tbody id="tbodySinPago"></tbody></table></div></div>
+  </div>
+  <div class="panel" style="margin-bottom:16px">
+    <h3>Cobranza mensual 2026 (enero a diciembre)</h3>
+    <div class="hint">El gráfico muestra la meta programada según el cronograma del ERP; la tabla compara, mes a mes (enero a diciembre), lo realmente cobrado este año y el año anterior contra la meta de este año (responde al filtro de vendedor).</div>
+    <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:14px;align-items:start">
+      <div class="chart-box" style="height:280px"><canvas id="chAno"></canvas></div>
+      <div class="tabla-scroll" style="max-height:280px"><table>
+        <thead id="theadAno"></thead>
+        <tbody id="tbodyAno"></tbody></table></div>
+    </div>
+  </div>
+  <div class="panel" style="margin-bottom:16px">
+    <h3>Semáforo por vendedor</h3>
+    <div class="hint">Clic en un contador para filtrar por ese vendedor y tramo</div>
+    <div class="vcards" id="vendCards"></div>
+  </div>
+  <div class="panel" style="margin-bottom:16px">
+    <h3>Informe mensual de cobranza</h3>
+    <div class="hint no-print" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <span>Mes:</span><select id="infMes" onchange="renderInf()" style="padding:6px 9px;border:1px solid var(--borde);border-radius:7px;min-width:150px"></select>
+      <button class="gest-btn" onclick="expInfCSV()">⬇ Descargar pagos del mes (Excel)</button>
+      <button class="gest-btn sec" onclick="imprimirInf()">🖨 Informe del mes en PDF</button>
+      <button class="gest-btn" style="background:#548235" onclick="imprimirAvances()">🏆 Informe de avances del mes</button>
+      <span id="infSub" style="color:var(--gris)"></span>
+    </div>
+    <div class="solo-print" id="infTitulo" style="font-size:13px;color:#66788a;margin-bottom:8px"></div>
+    <div class="kpis" style="margin-bottom:12px" id="infKpis"></div>
+    <div class="grid" style="margin-bottom:0">
+      <div><div class="hint"><b>Cobrado por vendedor</b></div>
+        <div class="tabla-scroll" style="max-height:240px"><table>
+          <thead><tr><th>Vendedor</th><th class="num">Cobrado</th><th class="num">Pagos</th><th class="num">% del total</th></tr></thead>
+          <tbody id="infVend"></tbody></table></div></div>
+      <div><div class="hint"><b>Detalle de pagos del mes</b></div>
+        <div class="tabla-scroll" style="max-height:240px"><table>
+          <thead><tr><th>Fecha</th><th>Cliente</th><th>Método</th><th class="num">Monto</th></tr></thead>
+          <tbody id="infPagos"></tbody></table></div></div>
+    </div>
+  </div>
+  <div class="panel" id="panelAv" style="margin-bottom:16px;border-top:3px solid #548235">
+    <h3 style="color:#548235">🏆 Avances y logros de la cobranza — <span id="avMes"></span></h3>
+    <div class="hint" id="avSub"></div>
+    <div class="kpis" style="margin-bottom:12px" id="avKpis"></div>
+    <div class="grid" style="margin-bottom:12px">
+      <div><div class="hint"><b>Clientes que más aportaron este mes</b></div>
+        <div class="tabla-scroll" style="max-height:250px"><table>
+          <thead><tr><th class="num">#</th><th>Cliente</th><th>Vendedor</th><th class="num">Pagado en el mes</th><th class="num">N° pagos</th></tr></thead>
+          <tbody id="avTop"></tbody></table></div></div>
+      <div><div class="hint"><b>Recaudación por vendedor</b></div>
+        <div class="tabla-scroll" style="max-height:250px"><table>
+          <thead><tr><th class="num">#</th><th>Vendedor</th><th class="num">Cobrado</th><th class="num">Pagos</th><th class="num">Participación</th></tr></thead>
+          <tbody id="avVend"></tbody></table></div></div>
+    </div>
+    <div id="avRecu"></div>
+    <div class="nota">Informe de avances: resume los logros de cobranza del mes seleccionado. El detalle completo de la cartera está en las demás secciones del tablero.</div>
+  </div>
+  <div class="panel" style="margin-bottom:16px">
+    <h3>Simulador: ¿cuánto cobrar para bajar la morosidad?</h3>
+    <div class="hint">Fija tu meta y te dice cuánto hay que recuperar y a quiénes llamar primero. Responde a los filtros.</div>
+    <div class="sim-box">
+      <div><label>Morosidad actual</label><div style="font-size:19px;font-weight:700;color:var(--rojo)" id="simAct">–</div></div>
+      <div><label>Meta %</label><input type="number" id="simMeta" value="25" min="0" max="100" step="0.5" oninput="renderSim()"></div>
+      <div><label>Hay que cobrar</label><div class="sim-res" id="simMonto">–</div></div>
+      <div class="sim-res" id="simTexto" style="flex:1;min-width:260px"></div>
+    </div>
+    <div class="tabla-scroll" style="max-height:340px"><table>
+      <thead><tr><th class="num">#</th><th>Cliente</th><th>Vendedor</th><th>Teléfono</th><th class="num">Vencido+Mora</th><th class="num">% del vencido</th><th class="num">Días sin pagar</th><th>Prioridad</th><th class="num">Acumulado</th></tr></thead>
+      <tbody id="tbodySim"></tbody></table></div>
+    <div class="nota" id="simNota"></div>
+  </div>
+  <div class="panel" style="margin-bottom:16px">
+    <h3>Calendario de vencimientos — qué día paga cada cliente</h3>
+    <div class="hint">Día del mes en que vence la cuota de cada cliente. Verde = hoy · Gris = ya pasó este mes · Azul = por venir. <span id="hintCal"></span></div>
+    <div class="dias-grid" id="calDias"></div>
+  </div>
+  <div class="panel" style="margin-bottom:16px">
+    <h3>Gestión de cobranza por cliente</h3>
+    <div class="hint" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <span>Registra llamadas, visitas y compromisos por cliente. Teléfono editable (clic y escribe).</span>
+      <button class="gest-btn sec" onclick="expGest()">⬇ Exportar acciones</button>
+      <button class="gest-btn sec" onclick="impFile.click()">⬆ Importar acciones</button>
+      <input type="file" id="impFile" accept=".json" style="display:none" onchange="impGest(this)">
+      <span id="gestEstado" style="color:var(--gris)"></span>
+    </div>
+    <div class="tabla-scroll" style="max-height:420px"><table>
+      <thead><tr><th>Cliente</th><th>Vendedor</th><th>Teléfono</th><th class="num">Día pago</th><th class="num">Deuda vencida</th><th>Última acción</th><th class="num">N°</th><th></th></tr></thead>
+      <tbody id="tbodyGest"></tbody></table></div>
+  </div>
+  <div class="panel">
+    <h3>Detalle de deudores <span style="font-weight:400;color:var(--gris)">(clic en encabezados para ordenar)</span>
+      <button class="gest-btn sec" style="float:right" onclick="expCSV()">⬇ Exportar a Excel</button></h3>
+    <div class="tabla-scroll"><table id="tabla">
+      <thead><tr>
+        <th data-k="vend">Vendedor</th><th data-k="cliente">Cliente</th><th data-k="estado">Estado</th>
+        <th data-k="venta" class="num">Venta</th><th data-k="pagado" class="num">Pagado</th>
+        <th data-k="pctPag" class="num">% pagado</th><th data-k="saldo" class="num">Saldo</th>
+        <th data-k="vencido" class="num">Vencido</th><th data-k="mora" class="num">Mora</th><th data-k="vm" class="num">Vencido+Mora</th><th data-k="cuota" class="num">Cuota mens.</th>
+        <th data-k="proxVenc">Próx. cuota</th><th data-k="finPlazo">Fin préstamo</th><th data-k="letras" class="num">Letras venc.</th><th data-k="dias" class="num">Días atraso</th><th data-k="bucket">Semáforo</th>
+      </tr></thead><tbody id="tbody"></tbody>
+    </table></div>
+    <div class="nota">Días de atraso calculados con las fechas de vencimiento del ERP. Fuente: exports del ERP Libra. La proyección mensual distribuye el "por vencer" de cada préstamo en sus meses restantes de cronograma; el "cobrado real" solo cubre el período del informe de pagos (23 Jun - 14 Jul).</div>
+  </div>
+  <div class="solo-print" style="margin-top:10px;font-size:10px;color:#66788a;text-align:center">
+    Libra International Perú — Reporte de cobranzas generado desde el dashboard · <span id="pieFecha"></span>
+  </div>
+</div>
+<script>
+const API_URL = 'https://panel.librainternational.com.pe/api/ping';
+let API_TOKEN = localStorage.getItem('libra_api_token') || '';
+let DATA = [];
+let PAGOS = [];
+const fmt = n => n.toLocaleString('es-PE', {maximumFractionDigits: 0});
+const COLS = {'AL DÍA':'#548235','1-30 DÍAS':'#E6A100','31-90 DÍAS':'#E05A5A','+90 DÍAS':'#C00000'};
+let sortK = 'dias', sortDir = -1;
+const F = {vend:'', sem:'', est:'', busca:''};
+
+let vends = [];
+
+function filtrar(){
+  return DATA.filter(d =>
+    (!F.vend || d.vend===F.vend) && (!F.sem || d.bucket===F.sem) &&
+    (!F.est || d.estado===F.est) &&
+    (!F.busca || d.cliente.toLowerCase().includes(F.busca)));
+}
+function kpis(rows){
+  const s = (k)=>rows.reduce((a,d)=>a+d[k],0);
+  kN.textContent = rows.length;
+  kVenta.textContent = fmt(s('venta'));
+  kPag.textContent = fmt(s('pagado'));
+  kVenc.textContent = fmt(s('vencido'));
+  kMoraS.textContent = fmt(s('mora'));
+  kVM.textContent = fmt(s('vm'));
+  kAvance.textContent = s('venta') ? (s('pagado')/s('venta')*100).toFixed(1)+'%' : '0%';
+  kSaldo.textContent = fmt(s('saldo'));
+  const _mor = s('saldo') ? s('vm')/s('saldo')*100 : 0;
+  kMora.textContent = _mor.toFixed(1)+'%';
+  kMora.title = _mor>100 ? 'Supera 100% porque la mora acumulada hace que lo vencido sea mayor que el saldo registrado por el ERP' : 'Vencido+Mora ÷ Total por cobrar';
+  const clientes = new Set(rows.map(r=>r.cliente));
+  const mesAct = _hoy.getFullYear()+'-'+String(_hoy.getMonth()+1).padStart(2,'0');
+  const cob = PAGOS.filter(p=>p.cuota && p.fecha.slice(0,7)===mesAct && ((!F.vend && !F.sem && !F.est && !F.busca) || clientes.has(p.cliente))).reduce((a,p)=>a+p.monto,0);
+  kCob.textContent = fmt(cob);
+  const vmT = s('vm');
+  kDiasProm.textContent = vmT ? Math.round(rows.reduce((a,d)=>a+d.dias*d.vm,0)/vmT)+' días' : '0 días';
+  const top5 = [...rows].sort((a,b)=>b.vm-a.vm).slice(0,5).reduce((a,d)=>a+d.vm,0);
+  kTop5.textContent = vmT ? (top5/vmT*100).toFixed(0)+'%' : '0%';
+  chipInfo.textContent = rows.length + ' de ' + DATA.length + ' préstamos mostrados';
+}
+function tabla(rows){
+  const _dv = s => { const m=String(s||'').match(/^(\d{2})\/(\d{2})\/(\d{4})$/); return m? +(m[3]+m[2]+m[1]) : 0; };
+  rows = [...rows].sort((a,b)=>{
+    let x=a[sortK], y=b[sortK];
+    if(sortK==='proxVenc'||sortK==='finPlazo'){ x=_dv(x); y=_dv(y); }
+    return (typeof x==='string' ? x.localeCompare(y) : x-y)*sortDir;
+  });
+  tbody.innerHTML = rows.map(d=>{
+    const cls = d.bucket==='AL DÍA'?'s0':d.bucket==='1-30 DÍAS'?'s1':d.bucket==='31-90 DÍAS'?'s2':'s3';
+    return `<tr><td>${d.vend}</td><td title="${d.maq}">${d.cliente}</td><td>${d.estado}</td>
+    <td class="num">${fmt(d.venta)}</td><td class="num">${fmt(d.pagado)}</td>
+    <td class="num">${d.pctPag}%<span class="bar-pct"><i style="width:${Math.min(d.pctPag,100)}%"></i></span></td>
+    <td class="num">${fmt(d.saldo)}</td><td class="num">${fmt(d.vencido)}</td><td class="num">${fmt(d.mora)}</td><td class="num" style="color:${d.vm>0?'#C00000':'#548235'};font-weight:600">${fmt(d.vm)}</td>
+    <td class="num">${fmt(d.cuota)}</td><td>${d.proxVenc||'—'}</td><td>${d.finPlazo||'—'}</td><td class="num">${d.letras}</td><td class="num">${d.dias}</td>
+    <td><span class="sem ${cls}">${d.bucket}</span></td></tr>`;
+  }).join('');
+}
+let cVend, cSem, cTop, cPagos;
+function charts(rows){
+  cVend.data.labels = vends;
+  cVend.data.datasets[0].data = vends.map(v=>rows.filter(d=>d.vend===v).reduce((a,d)=>a+d.vencido,0));
+  cVend.data.datasets[1].data = vends.map(v=>rows.filter(d=>d.vend===v).reduce((a,d)=>a+d.mora,0));
+  cVend.update();
+  const buckets = Object.keys(COLS);
+  cSem.data.datasets[0].data = buckets.map(b=>rows.filter(d=>d.bucket===b).reduce((a,d)=>a+d.saldo,0));
+  cSem.update();
+  const comp = vends.map(v=>{
+    const rs = rows.filter(d=>d.vend===v);
+    const venta = rs.reduce((a,d)=>a+d.venta,0);
+    return {p: venta?rs.reduce((a,d)=>a+d.pagado,0)/venta*100:0,
+            vm: venta?rs.reduce((a,d)=>a+d.vm,0)/venta*100:0,
+            pv: venta?rs.reduce((a,d)=>a+d.porVencer,0)/venta*100:0};
+  });
+  cComp.data.labels = vends;
+  cComp.data.datasets[0].data = comp.map(c=>c.p);
+  cComp.data.datasets[1].data = comp.map(c=>c.vm);
+  cComp.data.datasets[2].data = comp.map(c=>c.pv);
+  cComp.update();
+  // proyeccion mensual
+  const MAXM = Math.min(24, Math.max(1, ...rows.map(d=>d.proxM+d.nFut)));
+  const MESN = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const m0 = _hoy.getFullYear()*12+_hoy.getMonth();
+  const labelsM = [], esperado = new Array(MAXM).fill(0), atrasado = new Array(MAXM).fill(0), cobrado = new Array(MAXM).fill(0);
+  for(let i=0;i<MAXM;i++){ const a=Math.floor((m0+i)/12), m=(m0+i)%12; labelsM.push(MESN[m]+' '+String(a).slice(2)); }
+  const esperadoMor = new Array(MAXM).fill(0);
+  rows.forEach(d=>{ if(d.nFut>0){ let rem=d.porVencer; const dest=(d.dias>30)?esperadoMor:esperado; for(let i=0;i<d.nFut&&rem>0;i++){ const idx=d.proxM+i; const amt=(i===d.nFut-1)?rem:Math.min(d.cuota,rem); if(idx<MAXM) dest[idx]+=amt; rem-=amt; } } });
+  cProy.data.labels = labelsM;
+  cProy.$rawOK = esperado.map(v=>Math.round(v));
+  cProy.$rawMor = esperadoMor.map(v=>Math.round(v));
+  cProy.data.datasets[0].data = esperado.map((v,i)=>{ const tot=v+esperadoMor[i]; return tot? +(v/tot*100).toFixed(1):0; });
+  cProy.data.datasets[1].data = esperadoMor.map((v,i)=>{ const tot=v+esperado[i]; return tot? +(v/tot*100).toFixed(1):0; });
+  cProy.update();
+  const top = [...rows].sort((a,b)=>b.vm-a.vm).slice(0,10);
+  cTop.data.labels = top.map(d=>d.cliente.length>26?d.cliente.slice(0,25)+'…':d.cliente);
+  cTop.data.datasets[0].data = top.map(d=>d.vm);
+  cTop.data.datasets[0].backgroundColor = top.map(d=>COLS[d.bucket]);
+  cTop.update();
+}
+function vendCards(){
+  const base = DATA.filter(d => d.saldo>0 &&
+    (!F.est || d.estado===F.est) && (!F.busca || d.cliente.toLowerCase().includes(F.busca)));
+  const CLS = {'AL DÍA':'s0','1-30 DÍAS':'s1','31-90 DÍAS':'s2','+90 DÍAS':'s3'};
+  vendCards.el = vendCards.el || document.getElementById('vendCards');
+  vendCards.el.innerHTML = vends.map(v=>{
+    const rs = base.filter(d=>d.vend===v);
+    const saldo = rs.reduce((a,d)=>a+d.saldo,0), vm = rs.reduce((a,d)=>a+d.vm,0);
+    const vmTot = base.reduce((a,d)=>a+d.vm,0);
+    const share = vmTot ? (vm/vmTot*100).toFixed(1) : '0.0';
+    const chips = Object.keys(CLS).map(b=>{
+      const nCount = rs.filter(d=>d.bucket===b).length;
+      const act = (F.vend===v && F.sem===b) ? ' activo' : '';
+      const vac = nCount===0 ? ' vacio' : '';
+      return `<span class="vchip ${CLS[b]}${act}${vac}" onclick="chipClick('${v.replace(/'/g,"\\'")}','${b}',${nCount})">${b}: ${nCount}</span>`;
+    }).join('');
+    return `<div class="vcard"><h4>${v}</h4>
+      <div class="meta">${rs.length} deudores · Saldo ${fmt(saldo)} · Vencido+mora <b style="color:var(--rojo)">${fmt(vm)}</b> · <b style="color:var(--rojo)">${share}%</b> del vencido total</div>
+      <div class="vchips">${chips}</div></div>`;
+  }).join('');
+}
+function chipClick(v, b, nCount){
+  if(!nCount) return;
+  if(F.vend===v && F.sem===b){ F.vend=''; F.sem=''; }
+  else { F.vend=v; F.sem=b; }
+  fVend.value=F.vend; fSem.value=F.sem;
+  render();
+}
+function tablasMes(rows){
+  const mes = rows.filter(d=>d.venceMes>0).sort((a,b)=>b.venceMes-a.venceMes);
+  tbodyMes.innerHTML = mes.map(d=>`<tr><td title="${d.maq}">${d.cliente.length>38?d.cliente.slice(0,37)+'…':d.cliente}</td><td>${d.vend}</td><td>${d.proxVenc||'—'}</td><td class="num"><b>${fmt(d.venceMes)}</b></td></tr>`).join('') || '<tr><td colspan="4" style="color:var(--gris)">Sin cuotas este mes con los filtros actuales</td></tr>';
+  totMes.textContent = fmt(mes.reduce((a,d)=>a+d.venceMes,0));
+  const le = rows.filter(d=>d.vm>0 && d.dias>30).sort((a,b)=>b.vm-a.vm);
+  tbodyLetras.innerHTML = le.map(d=>`<tr><td title="${d.maq}">${d.cliente.length>38?d.cliente.slice(0,37)+'…':d.cliente}</td><td>${d.vend}</td><td class="num">${d.letras}</td><td class="num" style="color:var(--rojo);font-weight:600">${fmt(d.vm)}</td><td class="num">${d.dias}</td></tr>`).join('') || '<tr><td colspan="5" style="color:var(--gris)">Sin letras vencidas</td></tr>';
+  totLetras.textContent = fmt(le.reduce((a,d)=>a+d.vm,0));
+}
+let META26 = {};
+function seccionAno(rows){
+  const metaM = new Array(12).fill(0);
+  for(const [v,arr] of Object.entries(META26)){ if(!F.vend || v===F.vend) arr.forEach((x,i)=>metaM[i]+=x); }
+  const anioAct = _hoy.getFullYear();
+  const anioAnt = anioAct - 1;
+  const clientes = new Set(rows.map(d=>d.cliente));
+  const pagosF = PAGOS.filter(p=>(!F.vend && !F.sem && !F.est && !F.busca) ? true : clientes.has(p.cliente));
+  const realKey = {};
+  pagosF.forEach(p=>{ const k=p.fecha.slice(0,7); realKey[k]=(realKey[k]||0)+p.monto; });
+  const MESL = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SETIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+  const filas = MESL.map((label,m)=>({
+    label,
+    real: realKey[anioAct+'-'+String(m+1).padStart(2,'0')]||0,
+    realAnt: realKey[anioAnt+'-'+String(m+1).padStart(2,'0')]||0,
+    meta: metaM[m]
+  }));
+  theadAno.innerHTML = `<tr><th rowspan="2" style="vertical-align:middle">Mes</th>`
+    + `<th colspan="2" style="text-align:center">Annual Real</th>`
+    + `<th rowspan="2" class="num" style="vertical-align:middle;background:#DCE4EC;color:#1a2733">Meta ${anioAct}</th></tr>`
+    + `<tr><th class="num" style="top:31px">${anioAct}</th><th class="num" style="top:31px">${anioAnt}</th></tr>`;
+  tbodyAno.innerHTML = filas.map(f=>
+    `<tr><td><b>${f.label}</b></td>`
+    + `<td class="num"${f.real?' style="color:#548235;font-weight:700"':''}>${f.real?fmt(f.real):'—'}</td>`
+    + `<td class="num"${f.realAnt?' style="color:#548235;font-weight:700"':''}>${f.realAnt?fmt(f.realAnt):'—'}</td>`
+    + `<td class="num" style="background:#EEF1F5">${f.meta?fmt(f.meta):'—'}</td></tr>`).join('')
+    + `<tr style="background:#DDEBF7;font-weight:700"><td>Total</td>`
+    + `<td class="num">${fmt(filas.reduce((a,f)=>a+f.real,0))}</td>`
+    + `<td class="num">${fmt(filas.reduce((a,f)=>a+f.realAnt,0))}</td>`
+    + `<td class="num">${fmt(filas.reduce((a,f)=>a+f.meta,0))}</td></tr>`;
+  cAno.data.datasets[0].label = 'Meta programada '+anioAct;
+  cAno.data.datasets[0].data = metaM.map(v=>Math.round(v));
+  cAno.data.datasets[1].label = 'Recaudado '+anioAct;
+  cAno.data.datasets[1].data = filas.map(f=>Math.round(f.real));
+  cAno.update();
+}
+function statsApi(rows){
+  const clientes = new Set(rows.map(d=>d.cliente));
+  const pagosF = PAGOS.filter(p=>(!F.vend && !F.sem && !F.est && !F.busca) ? true : clientes.has(p.cliente));
+  // cobranza por mes
+  const porMes = {};
+  pagosF.forEach(p=>{ const k=p.fecha.slice(0,7); if(k.length===7) porMes[k]=(porMes[k]||0)+p.monto; });
+  const meses = Object.keys(porMes).sort();
+  cHist.data.labels = meses.map(k=>k.slice(5)+'/'+k.slice(2,4));
+  cHist.data.datasets[0].data = meses.map(k=>Math.round(porMes[k]));
+  cHist.update();
+  // metodos
+  const porMet = {};
+  pagosF.forEach(p=>{ const m=p.metodo||'Otro'; porMet[m]=(porMet[m]||0)+p.monto; });
+  const mets = Object.keys(porMet);
+  cMet.data.labels = mets;
+  cMet.data.datasets[0].data = mets.map(m=>Math.round(porMet[m]));
+  cMet.update();
+  hintMet.textContent = pagosF.length + ' pagos · ticket promedio ' + fmt(pagosF.length?pagosF.reduce((a,p)=>a+p.monto,0)/pagosF.length:0);
+  // dias sin pagar
+  const ultPago = {};
+  PAGOS.forEach(p=>{ if(!ultPago[p.cliente] || p.fecha>ultPago[p.cliente]) ultPago[p.cliente]=p.fecha; });
+  const morosos = rows.filter(d=>d.vm>0);
+  const porCli = {};
+  morosos.forEach(d=>{ const c=porCli[d.cliente]||(porCli[d.cliente]={vend:d.vend,vm:0}); c.vm+=d.vm; });
+  const filas = Object.entries(porCli).map(([cli,c])=>{
+    const up = ultPago[cli]||'';
+    const dias = up ? Math.round((_hoy-new Date(up))/864e5) : null;
+    return {cli, vend:c.vend, vm:c.vm, up, dias};
+  }).sort((a,b)=>(b.dias??9999)-(a.dias??9999));
+  // cobros por dia (ultimos 60 dias)
+  const diasP = [...new Set(pagosF.map(p=>p.fecha))].sort().slice(-60);
+  cPagos.data.labels = diasP.map(d=>d.slice(8)+'/'+d.slice(5,7));
+  cPagos.data.datasets[0].data = diasP.map(d=>Math.round(pagosF.filter(p=>p.fecha===d).reduce((a,p)=>a+p.monto,0)));
+  cPagos.update();
+  tbodySinPago.innerHTML = filas.map(f=>`<tr><td>${f.cli.length>44?f.cli.slice(0,43)+'…':f.cli}</td><td>${f.vend}</td><td class="num" style="color:var(--rojo);font-weight:600">${fmt(f.vm)}</td><td>${f.up?f.up.split('-').reverse().join('/'):'sin pagos en el historial'}</td><td class="num"><b>${f.dias??'—'}</b></td></tr>`).join('') || '<tr><td colspan="5" style="color:var(--gris)">Sin deudores con los filtros actuales</td></tr>';
+}
+// ================= GESTION DE COBRANZA =================
+const GEST_URL = API_URL.replace('/ping','/gestiones');
+let GEST = {}; try { GEST = JSON.parse(localStorage.getItem('libra_gest')||'{}'); } catch(e){}
+let gestRemoto = false, gestExp = null, gestClis = [];
+function gcli(c){ const g = GEST[c] || (GEST[c] = {tel:'', acc:[]}); if(g.dia===undefined) g.dia=''; return g; }
+async function gestSync(push){
+  try {
+    if(push){
+      const r = await fetch(GEST_URL, {method:'POST', headers:{'Authorization':`Bearer ${API_TOKEN}`,'Content-Type':'application/json'}, body: JSON.stringify(GEST)});
+      gestRemoto = r.ok;
+    } else {
+      const r = await fetch(GEST_URL, {headers:{'Authorization':`Bearer ${API_TOKEN}`}});
+      if(r.ok){ const rem = await r.json(); if(rem && typeof rem==='object'){ mergeGest(rem); gestRemoto = true; } }
+    }
+  } catch(e){ gestRemoto = false; }
+  gestEstado.textContent = gestRemoto ? '✓ Sincronizado con el ERP (todo el equipo ve lo mismo)' : 'Guardado solo en esta computadora — usa Exportar/Importar para compartir';
+}
+function mergeGest(otro){
+  for(const [cli, g] of Object.entries(otro)){
+    const mio = gcli(cli);
+    if(g.tel && !mio.tel) mio.tel = g.tel;
+    const ids = new Set(mio.acc.map(a=>a.id));
+    (g.acc||[]).forEach(a=>{ if(!ids.has(a.id)) mio.acc.push(a); });
+    mio.acc.sort((a,b)=>b.id-a.id);
+  }
+}
+function saveGest(){ localStorage.setItem('libra_gest', JSON.stringify(GEST)); gestSync(true); }
+function setTel(i, val){ gcli(gestClis[i]).tel = val.trim(); saveGest(); }
+function setDia(i, val){ const n = parseInt(val); gcli(gestClis[i]).dia = (n>=1 && n<=31) ? n : ''; saveGest(); render(); }
+function expandir(i){ gestExp = (gestExp===gestClis[i]) ? null : gestClis[i]; render(); }
+function addAcc(i){
+  const cli = gestClis[i];
+  const nota = gNota.value.trim();
+  if(!nota){ alert('Escribe una nota de la acción.'); return; }
+  const resp = gResp.value.trim();
+  if(resp) localStorage.setItem('libra_usuario', resp);
+  gcli(cli).acc.unshift({id: Date.now(), f: (()=>{const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');})(), tipo: gTipo.value, nota, resp,
+    compM: parseFloat(gCompM.value)||0, compF: gCompF.value||''});
+  saveGest(); render();
+}
+function delAcc(i, id){
+  if(!confirm('¿Eliminar esta acción?')) return;
+  const g = gcli(gestClis[i]); g.acc = g.acc.filter(a=>a.id!==id); saveGest(); render();
+}
+function expGest(){
+  const blob = new Blob([JSON.stringify(GEST, null, 1)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'acciones_cobranza_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+}
+function impGest(inp){
+  const fr = new FileReader();
+  fr.onload = () => { try { mergeGest(JSON.parse(fr.result)); saveGest(); render(); alert('Acciones importadas y combinadas.'); } catch(e){ alert('Archivo no válido.'); } };
+  if(inp.files[0]) fr.readAsText(inp.files[0]);
+  inp.value='';
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+function renderGest(rows){
+  const porCli = {};
+  rows.filter(d=>d.saldo>0).forEach(d=>{ const c = porCli[d.cliente] || (porCli[d.cliente]={vend:d.vend, vm:0}); c.vm += d.vm; });
+  gestClis = Object.keys(porCli).sort((a,b)=>porCli[b].vm-porCli[a].vm);
+  const usuario = localStorage.getItem('libra_usuario')||'';
+  tbodyGest.innerHTML = gestClis.map((cli,i)=>{
+    const g = GEST[cli]||{tel:'',acc:[]};
+    const ult = g.acc[0];
+    let html = `<tr>
+      <td><b>${esc(cli.length>40?cli.slice(0,39)+'…':cli)}</b></td>
+      <td>${esc(porCli[cli].vend)}</td>
+      <td><input class="gest-tel" value="${esc(g.tel)}" placeholder="teléfono…" onchange="setTel(${i}, this.value)"></td>
+      <td class="num"><input class="gest-tel" style="width:52px;text-align:center" value="${g.dia||''}" placeholder="día" title="Día del mes en que paga (1-31)" onchange="setDia(${i}, this.value)"></td>
+      <td class="num" style="color:${porCli[cli].vm>0?'#C00000':'#548235'};font-weight:600">${fmt(porCli[cli].vm)}</td>
+      <td>${ult ? `<span class="acc-tag">${esc(ult.tipo)}</span>${esc(ult.f.split('-').reverse().join('/'))} · ${esc(ult.nota.length>45?ult.nota.slice(0,44)+'…':ult.nota)}` : '<span style="color:var(--gris)">sin gestiones</span>'}</td>
+      <td class="num">${g.acc.length}</td>
+      <td><button class="gest-btn" onclick="expandir(${i})">${gestExp===cli?'Cerrar':'Ver / Agregar'}</button></td>
+    </tr>`;
+    if(gestExp===cli){
+      html += `<tr class="gest-form"><td colspan="8">
+        <b style="color:var(--azul);font-size:12px">Nueva acción:</b><br>
+        <select id="gTipo"><option>Llamada</option><option>WhatsApp</option><option>Visita</option><option>Correo</option><option>Carta / Notarial</option><option>Acuerdo de pago</option><option>Otro</option></select>
+        <input id="gNota" placeholder="¿Qué se habló / acordó?" style="width:34%">
+        <input id="gResp" placeholder="¿Quién la hizo?" value="${esc(usuario)}" style="width:12%">
+        <input id="gCompM" type="number" placeholder="Compromiso $" style="width:11%">
+        <input id="gCompF" type="date" title="Fecha compromiso">
+        <button class="gest-btn" onclick="addAcc(${i})">Guardar</button>
+      </td></tr>`;
+      html += g.acc.map(a=>`<tr class="gest-hist"><td colspan="8">
+        <span class="acc-tag">${esc(a.tipo)}</span> <b>${esc(a.f.split('-').reverse().join('/'))}</b>
+        ${a.resp?' · por '+esc(a.resp):''} — ${esc(a.nota)}
+        ${a.compM?` · <b style="color:#548235">compromiso ${fmt(a.compM)}${a.compF?' para el '+esc(a.compF.split('-').reverse().join('/')):''}</b>`:''}
+        <a href="#" onclick="delAcc(${gestClis.indexOf(cli)}, ${a.id});return false" style="color:#C00000;float:right;font-size:11px">eliminar</a>
+      </td></tr>`).join('');
+    }
+    return html;
+  }).join('') || '<tr><td colspan="8" style="color:var(--gris)">Sin clientes con los filtros actuales</td></tr>';
+}
+function renderCal(rows){
+  const act = rows.filter(d=>d.saldo>0).map(d=>{
+    const manual = (GEST[d.cliente]||{}).dia;
+    return Object.assign({}, d, {diaVenc: d.diaVenc || manual || null});
+  }).filter(d=>d.diaVenc);
+  const sinDia = rows.filter(d=>d.saldo>0).length - act.length;
+  const hoyD = _hoy.getDate();
+  const porDia = {};
+  act.forEach(d=>{ (porDia[d.diaVenc] = porDia[d.diaVenc] || []).push(d); });
+  const dias = Object.keys(porDia).map(Number).sort((a,b)=>a-b);
+  hintCal.innerHTML = act.length
+    ? `${act.length} préstamos en ${dias.length} días distintos.` + (act.some(d=>d.diaOrigen==='atraso')?' Días deducidos de los días de atraso del ERP.':'') + (sinDia?` <b style="color:#C00000">${sinDia} sin día asignado</b> — escríbelo en la columna "Día pago" de la sección de abajo.`:'')
+    : `<b style="color:#C00000">La API no envía fechas de vencimiento.</b> Escribe el día de pago de cada cliente en la columna "Día pago" de la sección "Gestión de cobranza" y aparecerán aquí.`;
+  calDias.innerHTML = dias.map(dia=>{
+    const items = porDia[dia].sort((a,b)=>b.cuota-a.cuota);
+    const tot = items.reduce((a,d)=>a+d.cuota,0);
+    const cls = dia===hoyD ? ' hoy' : (dia<hoyD ? ' pasado' : '');
+    return `<div class="dcard${cls}">
+      <div class="dhead"><span>Día ${dia}</span><span>${fmt(tot)}</span></div>
+      <ul>${items.map(d=>`<li title="${esc(d.cliente)} — ${esc(d.maq||'')}"><span>${esc(d.cliente.length>22?d.cliente.slice(0,21)+'…':d.cliente)}</span><b>${fmt(d.cuota)}</b></li>`).join('')}</ul>
+    </div>`;
+  }).join('') || '<div style="color:var(--gris);font-size:12px">Aún no hay días de pago registrados. Usa la columna "Día pago" en la sección de abajo.</div>';
+}
+let SIMROWS = [];
+function renderSim(){
+  const rows = SIMROWS;
+  const V = rows.reduce((a,d)=>a+d.vm,0);
+  const S = rows.reduce((a,d)=>a+d.saldo,0);
+  const actual = S ? V/S*100 : 0;
+  simAct.textContent = actual.toFixed(1)+'%';
+  const meta = Math.max(0, Math.min(100, parseFloat(simMeta.value)||0)) / 100;
+  let x = (meta>=1) ? 0 : (V - meta*S)/(1-meta);
+  if(x < 0) x = 0;
+  const ultPago = {};
+  PAGOS.forEach(p=>{ if(!ultPago[p.cliente] || p.fecha>ultPago[p.cliente]) ultPago[p.cliente]=p.fecha; });
+  const porCli = {};
+  rows.filter(d=>d.vm>0).forEach(d=>{
+    const c = porCli[d.cliente] || (porCli[d.cliente] = {vend:d.vend, vm:0, pv:0});
+    c.vm += d.vm; c.pv += d.porVencer;
+  });
+  const lista = Object.entries(porCli).map(([cli,c])=>{
+    const g = GEST[cli] || {};
+    const up = ultPago[cli] || '';
+    const sinPagar = up ? Math.round((_hoy-new Date(up))/864e5) : null;
+    const compromiso = (g.acc||[]).some(a=>a.compM>0);
+    let score = 0;
+    if(sinPagar===null) score += 3; else if(sinPagar>180) score += 3; else if(sinPagar>90) score += 2; else if(sinPagar>45) score += 1;
+    if(c.pv <= 0.005) score += 2;
+    if(compromiso) score -= 1;
+    const prio = score<=1 ? {t:'Alta - gestión normal',c:'p1'} : score<=3 ? {t:'Media - insistir',c:'p2'} : {t:'Difícil - acción legal',c:'p3'};
+    return {cli, vend:c.vend, vm:c.vm, sinPagar, prio, tel:(g.tel||''), score};
+  }).sort((a,b)=> (a.score-b.score) || (b.vm-a.vm));
+  let acum = 0, alcanzado = false, nNec = 0;
+  const filas = lista.map((f,i)=>{
+    acum += f.vm;
+    const llega = !alcanzado && acum >= x && x > 0;
+    if(llega){ alcanzado = true; nNec = i+1; }
+    return `<tr${llega?' style="border-bottom:2px solid #548235"':''}>
+      <td class="num">${i+1}</td>
+      <td><b>${esc(f.cli.length>36?f.cli.slice(0,35)+'…':f.cli)}</b></td>
+      <td>${esc(f.vend)}</td>
+      <td>${f.tel?esc(f.tel):'<span style="color:var(--gris)">—</span>'}</td>
+      <td class="num" style="color:var(--rojo);font-weight:600">${fmt(f.vm)}</td>
+      <td class="num">${V?(f.vm/V*100).toFixed(1):0}%</td>
+      <td class="num">${f.sinPagar===null?'nunca':f.sinPagar}</td>
+      <td><span class="prio ${f.prio.c}">${f.prio.t}</span></td>
+      <td class="num" style="color:${acum>=x?'#548235':'var(--gris)'}">${fmt(acum)}</td></tr>`;
+  }).join('');
+  tbodySim.innerHTML = filas || '<tr><td colspan="9" style="color:var(--gris)">Sin deudores con los filtros actuales</td></tr>';
+  if(x<=0){
+    simMonto.innerHTML = '<span class="sim-ok">Ya cumples la meta</span>';
+    simTexto.innerHTML = `Con ${actual.toFixed(1)}% ya estás en o por debajo de ${(meta*100).toFixed(1)}%. Baja la meta para ver un nuevo objetivo.`;
+  } else {
+    simMonto.innerHTML = '<b>'+fmt(x)+'</b>';
+    const pctV = V ? (x/V*100).toFixed(0) : 0;
+    simTexto.innerHTML = `Es el ${pctV}% de tu vencido total (${fmt(V)}). Cobrando a los <b style="font-size:15px;color:var(--azul)">${nNec||lista.length}</b> primeros clientes de la lista llegas a la meta.`
+      + (alcanzado?'':' <span style="color:#C00000">Ni cobrando a todos se alcanza: la meta es demasiado exigente.</span>');
+  }
+  simNota.textContent = 'Prioridad estimada con: días sin registrar pago, si aún le quedan cuotas por vencer y si tiene compromiso de pago anotado en la bitácora. La lista va de lo más cobrable a lo más difícil; la línea verde marca dónde alcanzas la meta.';
+}
+function expCSV(){
+  const rows = filtrar();
+  const cols = [['vend','Vendedor'],['cliente','Cliente'],['maq','Maquinaria'],['estado','Estado'],
+    ['venta','Venta'],['pagado','Pagado'],['pctPag','% pagado'],['saldo','Saldo'],['vencido','Vencido'],
+    ['mora','Mora'],['vm','Vencido+Mora'],['cuota','Cuota mensual'],['proxVenc','Prox. cuota'],
+    ['finPlazo','Fin prestamo'],['letras','Letras vencidas'],['dias','Dias atraso'],['bucket','Semaforo']];
+  const q = v => '"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const csv = [cols.map(c=>q(c[1])).join(';')]
+    .concat(rows.map(d=>cols.map(c=>{
+      const v = d[c[0]];
+      return typeof v==='number' ? q(v.toFixed(2).replace('.',',')) : q(v);
+    }).join(';'))).join('\r\n');
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'cobranzas_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+function renderDiag(){
+  if(!window.$diag) return;
+  const e = window.$diagExtra;
+  diagBox.innerHTML = '<h3>Estado de los datos que envía la API</h3>'
+    + `<div class="hint">${e.prestamos} préstamos · ${e.pagos} pagos desde ${e.desde}</div>`
+    + '<table style="width:auto"><thead><tr><th>Campo</th><th class="num">Cobertura</th><th>Para qué sirve</th></tr></thead><tbody>'
+    + window.$diag.map(c=>`<tr><td>${c.n}</td><td class="num"><b style="color:${c.pct>=90?'#548235':c.pct>0?'#E6A100':'#C00000'}">${c.pct}%</b></td><td style="color:var(--gris)">${c.u}</td></tr>`).join('')
+    + '</tbody></table>'
+    + `<div class="nota">Campos recibidos: ${esc(e.campos)}</div>`;
+}
+function descargarPDF(){
+  const abierto = gestExp; gestExp = null;   // cerrar formularios abiertos
+  pieFecha.textContent = new Date().toLocaleString('es-PE');
+  render();
+  setTimeout(()=>{ window.print(); gestExp = abierto; render(); }, 400);
+}
+function mesNom(k){
+  const M=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return M[+k.slice(5,7)-1]+' '+k.slice(0,4);
+}
+function infDatos(){
+  const k = (infMes.value)||'';
+  const vendDe = {}; DATA.forEach(d=>{ vendDe[d.cliente] = d.vend; });
+  const pagos = PAGOS.filter(p=>p.fecha.slice(0,7)===k && (!F.vend || vendDe[p.cliente]===F.vend))
+                     .sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  return {k, pagos, vendDe};
+}
+function renderInf(){
+  if(!infMes.options.length) return;
+  const {k, pagos, vendDe} = infDatos();
+  const total = pagos.reduce((a,p)=>a+p.monto,0);
+  const clientes = new Set(pagos.map(p=>p.cliente));
+  let meta = 0;
+  if(k.slice(0,4)==='2026'){
+    const mi = +k.slice(5,7)-1;
+    for(const [v,arr] of Object.entries(META26)){ if(!F.vend || v===F.vend) meta += arr[mi]||0; }
+  }
+  const pct = meta ? total/meta*100 : null;
+  // avance de cobranza de la cartera mostrada
+  const rows = filtrar();
+  const venta = rows.reduce((a,d)=>a+d.venta,0), pagado = rows.reduce((a,d)=>a+d.pagado,0);
+  infKpis.innerHTML = [
+    ['Cobrado en el mes', fmt(total), 'verde'],
+    ['Meta del mes', meta?fmt(meta):'—', ''],
+    ['% de cumplimiento', pct===null?'—':pct.toFixed(0)+'%', pct===null?'':(pct>=100?'verde':'rojo')],
+    ['N° de pagos', pagos.length, ''],
+    ['Clientes que pagaron', clientes.size, ''],
+    ['Ticket promedio', fmt(pagos.length?total/pagos.length:0), ''],
+    ['Avance de cobranza', venta?(pagado/venta*100).toFixed(1)+'%':'—', ''],
+  ].map(([l,v,c])=>`<div class="kpi ${c}"><div class="lbl">${l}</div><div class="val">${v}</div></div>`).join('');
+  const dsts = [...new Set(pagos.map(p=>p.fecha))];
+  const y = +k.slice(0,4), mm = +k.slice(5,7);
+  const diasMes = new Date(y, mm, 0).getDate();
+  const transc = (y===_hoy.getFullYear() && mm===_hoy.getMonth()+1) ? _hoy.getDate() : diasMes;
+  infSub.textContent = `Cobros en ${dsts.length} de ${transc} días transcurridos (${transc-dsts.length} sin ningún pago)`;
+  infTitulo.textContent = `Informe de ${mesNom(k)}${F.vend?' — '+F.vend:''} · generado ${new Date().toLocaleString('es-PE')}`;
+  const pv = {};
+  pagos.forEach(p=>{ const v = vendDe[p.cliente]||'Sin vendedor'; const o = pv[v]||(pv[v]={m:0,n:0}); o.m+=p.monto; o.n++; });
+  infVend.innerHTML = (Object.entries(pv).sort((a,b)=>b[1].m-a[1].m).map(([v,o])=>
+    `<tr><td><b>${esc(v)}</b></td><td class="num">${fmt(o.m)}</td><td class="num">${o.n}</td><td class="num">${total?(o.m/total*100).toFixed(1):0}%</td></tr>`).join('')
+    + (pagos.length?`<tr style="background:#DDEBF7;font-weight:700"><td>TOTAL</td><td class="num">${fmt(total)}</td><td class="num">${pagos.length}</td><td class="num">100%</td></tr>`:''))
+    || '<tr><td colspan="4" style="color:var(--gris)">Sin pagos en este mes</td></tr>';
+  infPagos.innerHTML = pagos.map(p=>
+    `<tr><td>${esc(p.fecha.split('-').reverse().join('/'))}</td><td>${esc(p.cliente.length>30?p.cliente.slice(0,29)+'…':p.cliente)}</td><td>${esc(p.metodo||'—')}</td><td class="num"><b>${fmt(p.monto)}</b></td></tr>`).join('')
+    || '<tr><td colspan="4" style="color:var(--gris)">Sin pagos en este mes</td></tr>';
+}
+function expInfCSV(){
+  const {k, pagos, vendDe} = infDatos();
+  const q = v => '"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const L = [['INFORME DE COBRANZA '+mesNom(k).toUpperCase()].map(q).join(';'), ''];
+  L.push(['Fecha','Cliente','Vendedor','Metodo','Monto'].map(q).join(';'));
+  pagos.forEach(p=>L.push([p.fecha.split('-').reverse().join('/'), p.cliente, vendDe[p.cliente]||'', p.metodo, p.monto.toFixed(2).replace('.',',')].map(q).join(';')));
+  const total = pagos.reduce((a,p)=>a+p.monto,0);
+  L.push(['','','','TOTAL COBRADO', total.toFixed(2).replace('.',',')].map(q).join(';'));
+  L.push('');
+  L.push(['RESUMEN POR VENDEDOR'].map(q).join(';'));
+  L.push(['Vendedor','Cobrado','Pagos','% del total'].map(q).join(';'));
+  const pv = {};
+  pagos.forEach(p=>{ const v = vendDe[p.cliente]||'Sin vendedor'; const o = pv[v]||(pv[v]={m:0,n:0}); o.m+=p.monto; o.n++; });
+  Object.entries(pv).sort((a,b)=>b[1].m-a[1].m).forEach(([v,o])=>
+    L.push([v, o.m.toFixed(2).replace('.',','), o.n, (total?o.m/total*100:0).toFixed(1)+'%'].map(q).join(';')));
+  L.push('');
+  L.push(['AVANCE DE LA CARTERA AL CIERRE'].map(q).join(';'));
+  const rows = filtrar();
+  const g = (f)=>rows.reduce((a,d)=>a+d[f],0);
+  [['Prestamos', rows.length],['Venta total', g('venta')],['Total pagado', g('pagado')],
+   ['Por cobrar', g('saldo')],['Vencido', g('vencido')],['Mora', g('mora')],['Vencido+Mora', g('vm')],
+   ['% morosidad', (g('saldo')?g('vm')/g('saldo')*100:0).toFixed(1)+'%'],
+   ['% avance cobranza', (g('venta')?g('pagado')/g('venta')*100:0).toFixed(1)+'%']]
+   .forEach(([n,v])=>L.push([n, typeof v==='number'? v.toFixed(2).replace('.',',') : v].map(q).join(';')));
+  const blob = new Blob(['﻿'+L.join('\r\n')], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'informe_cobranza_'+k+'.csv';
+  a.click();
+}
+function imprimirInf(){
+  document.body.classList.add('solo-informe');
+  setTimeout(()=>{ window.print(); document.body.classList.remove('solo-informe'); }, 300);
+}
+function initMeses(){
+  const meses = [...new Set(PAGOS.map(p=>p.fecha.slice(0,7)))].filter(x=>x.length===7).sort().reverse();
+  const actual = _hoy.getFullYear()+'-'+String(_hoy.getMonth()+1).padStart(2,'0');
+  if(!meses.includes(actual)) meses.unshift(actual);
+  infMes.innerHTML = meses.map(k=>`<option value="${k}">${mesNom(k)}</option>`).join('');
+  infMes.value = actual;
+}
+function renderAv(){
+  if(!infMes.options.length) return;
+  const {k, pagos, vendDe} = infDatos();
+  const total = pagos.reduce((a,p)=>a+p.monto,0);
+  const clientes = new Set(pagos.map(p=>p.cliente));
+  avMes.textContent = mesNom(k).toUpperCase() + (F.vend? ' · '+F.vend : '');
+  // meta y cumplimiento
+  let meta = 0;
+  if(k.slice(0,4)==='2026'){
+    const mi = +k.slice(5,7)-1;
+    for(const [v,arr] of Object.entries(META26)){ if(!F.vend || v===F.vend) meta += arr[mi]||0; }
+  }
+  const pct = meta ? total/meta*100 : null;
+  // mejor dia
+  const porDia = {};
+  pagos.forEach(p=>{ porDia[p.fecha]=(porDia[p.fecha]||0)+p.monto; });
+  const mejor = Object.entries(porDia).sort((a,b)=>b[1]-a[1])[0];
+  // pago individual mas alto
+  const mayor = pagos.slice().sort((a,b)=>b.monto-a.monto)[0];
+  // prestamos ya cancelados y cartera al dia
+  const rows = filtrar();
+  const cancelados = rows.filter(d=>d.saldo<=0.005 || d.estado==='Pagado').length;
+  const alDia = rows.filter(d=>d.saldo>0 && d.dias===0).length;
+  const venta = rows.reduce((a,d)=>a+d.venta,0), pagado = rows.reduce((a,d)=>a+d.pagado,0);
+  avKpis.innerHTML = [
+    ['Cobrado en el mes', fmt(total), 'verde'],
+    ['% de la meta alcanzado', pct===null?'—':pct.toFixed(0)+'%', 'verde'],
+    ['Pagos recibidos', pagos.length, ''],
+    ['Clientes que pagaron', clientes.size, 'verde'],
+    ['Pago promedio', fmt(pagos.length?total/pagos.length:0), ''],
+    ['Mejor día del mes', mejor? fmt(mejor[1]) : '—', 'verde'],
+    ['Préstamos cancelados', cancelados, 'verde'],
+    ['Avance total de cobranza', venta?(pagado/venta*100).toFixed(1)+'%':'—', 'verde'],
+  ].map(([l,v,c])=>`<div class="kpi ${c}"><div class="lbl">${l}</div><div class="val">${v}</div></div>`).join('');
+  const _y=+k.slice(0,4), _m=+k.slice(5,7);
+  const _dm = new Date(_y,_m,0).getDate();
+  const _tr = (_y===_hoy.getFullYear() && _m===_hoy.getMonth()+1) ? _hoy.getDate() : _dm;
+  avSub.innerHTML = `Recaudación en ${Object.keys(porDia).length} de ${_tr} días`
+    + (mejor? ` · mejor jornada: <b>${esc(mejor[0].split('-').reverse().join('/'))}</b> con ${fmt(mejor[1])}` : '')
+    + (mayor? ` · pago individual más alto: <b>${fmt(mayor.monto)}</b> de ${esc(mayor.cliente)}` : '')
+    + ` · ${alDia} clientes al día en su cronograma`;
+  // top clientes
+  const pc = {};
+  pagos.forEach(p=>{ const o = pc[p.cliente]||(pc[p.cliente]={m:0,n:0}); o.m+=p.monto; o.n++; });
+  avTop.innerHTML = Object.entries(pc).sort((a,b)=>b[1].m-a[1].m).slice(0,12).map(([c,o],i)=>
+    `<tr><td class="num">${i+1}</td><td><b>${esc(c.length>32?c.slice(0,31)+'…':c)}</b></td><td>${esc(vendDe[c]||'—')}</td><td class="num" style="color:#548235;font-weight:700">${fmt(o.m)}</td><td class="num">${o.n}</td></tr>`).join('')
+    || '<tr><td colspan="5" style="color:var(--gris)">Sin pagos en este mes</td></tr>';
+  // vendedores
+  const pv = {};
+  pagos.forEach(p=>{ const v = vendDe[p.cliente]||'Sin vendedor'; const o = pv[v]||(pv[v]={m:0,n:0}); o.m+=p.monto; o.n++; });
+  avVend.innerHTML = Object.entries(pv).sort((a,b)=>b[1].m-a[1].m).map(([v,o],i)=>
+    `<tr><td class="num">${i+1}</td><td><b>${esc(v)}</b></td><td class="num" style="color:#548235;font-weight:700">${fmt(o.m)}</td><td class="num">${o.n}</td><td class="num">${total?(o.m/total*100).toFixed(1):0}%</td></tr>`).join('')
+    || '<tr><td colspan="5" style="color:var(--gris)">Sin pagos en este mes</td></tr>';
+  // recuperaciones: clientes que volvieron a pagar tras una pausa larga
+  const ini = k+'-01';
+  const recu = [];
+  Object.keys(pc).forEach(cli=>{
+    const prev = PAGOS.filter(p=>p.cliente===cli && p.fecha < ini).map(p=>p.fecha).sort().pop();
+    const first = pagos.filter(p=>p.cliente===cli).map(p=>p.fecha).sort()[0];
+    if(!prev){ recu.push({cli, txt:'primer pago registrado', m:pc[cli].m}); return; }
+    const gap = Math.round((new Date(first)-new Date(prev))/864e5);
+    if(gap>=45) recu.push({cli, txt:`retomó pagos tras ${gap} días`, m:pc[cli].m});
+  });
+  recu.sort((a,b)=>b.m-a.m);
+  avRecu.innerHTML = recu.length
+    ? `<div class="hint"><b>Recuperaciones destacadas del mes</b></div><div style="display:flex;gap:8px;flex-wrap:wrap">`
+      + recu.map(r=>`<span style="background:#C6EFCE;color:#006100;font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:14px">${esc(r.cli.length>30?r.cli.slice(0,29)+'…':r.cli)} · ${fmt(r.m)} <span style="font-weight:400">(${r.txt})</span></span>`).join('')
+      + '</div>'
+    : '';
+}
+function imprimirAvances(){
+  document.body.classList.add('solo-avances');
+  setTimeout(()=>{ window.print(); document.body.classList.remove('solo-avances'); }, 300);
+}
+function render(){
+  const rows = filtrar();
+  SIMROWS = rows;  kpis(rows); tabla(rows); charts(rows); vendCards(); tablasMes(rows); seccionAno(rows); statsApi(rows); renderGest(rows); renderCal(rows); renderSim(); renderDiag(); renderInf(); renderAv();
+}
+function resetF(){
+  F.vend=F.sem=F.est=F.busca='';
+  fVend.value=fSem.value=fEst.value=fBusca.value='';
+  render();
+}
+fVend.onchange = e=>{F.vend=e.target.value; render()};
+fSem.onchange = e=>{F.sem=e.target.value; render()};
+fEst.onchange = e=>{F.est=e.target.value; render()};
+fBusca.oninput = e=>{F.busca=e.target.value.toLowerCase(); render()};
+document.querySelectorAll('th').forEach(th=>th.onclick=()=>{
+  const k = th.dataset.k;
+  if(sortK===k) sortDir*=-1; else {sortK=k; sortDir=-1;}
+  render();
+});
+Chart.defaults.font.family = "'Segoe UI',Arial";
+cVend = new Chart(chVend, {type:'bar',
+  data:{labels:[],datasets:[{label:'Vencido',data:[],backgroundColor:'#2E75B6',borderRadius:4},{label:'Mora',data:[],backgroundColor:'#C00000',borderRadius:4}]},
+  options:{maintainAspectRatio:false,plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}},scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:v=>fmt(v)}}},
+    onClick:(e,el)=>{if(el.length){const v=vends[el[0].index];F.vend=F.vend===v?'':v;fVend.value=F.vend;render();}}}});
+cSem = new Chart(chSem, {type:'doughnut',
+  data:{labels:Object.keys(COLS),datasets:[{data:[],backgroundColor:Object.values(COLS)}]},
+  options:{maintainAspectRatio:false,plugins:{legend:{position:'right'},tooltip:{callbacks:{label:c=>c.label+': '+fmt(c.raw)}}},
+    onClick:(e,el)=>{if(el.length){const b=Object.keys(COLS)[el[0].index];F.sem=F.sem===b?'':b;fSem.value=F.sem;render();}}}});
+cTop = new Chart(chTop, {type:'bar',
+  data:{labels:[],datasets:[{data:[],borderRadius:4}]},
+  options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}},
+    scales:{x:{ticks:{callback:v=>fmt(v)}}}}});
+let cComp = new Chart(chComp, {type:'bar',
+  data:{labels:[],datasets:[
+    {label:'% pagado',data:[],backgroundColor:'#548235',borderRadius:3},
+    {label:'% vencido+mora',data:[],backgroundColor:'#C00000',borderRadius:3},
+    {label:'% por vencer',data:[],backgroundColor:'#2E75B6',borderRadius:3}]},
+  options:{indexAxis:'y',maintainAspectRatio:false,
+    plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(1)+'%'}}},
+    scales:{x:{stacked:true,max:100,ticks:{callback:v=>v+'%'}},y:{stacked:true}},
+    onClick:(e,el)=>{if(el.length){const v=vends[el[0].index];F.vend=F.vend===v?'':v;fVend.value=F.vend;render();}}}});
+let cProy = new Chart(chProy, {type:'bar',
+  data:{labels:[],datasets:[
+    {label:'% clientes al día',data:[],backgroundColor:'#2E75B6',borderRadius:3},
+    {label:'% clientes morosos (+30d)',data:[],backgroundColor:'#E6A100',borderRadius:3}]},
+  options:{maintainAspectRatio:false,
+    plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>{
+      const raw = c.datasetIndex===0 ? cProy.$rawOK[c.dataIndex] : cProy.$rawMor[c.dataIndex];
+      return c.dataset.label+': '+c.raw+'% ('+fmt(raw||0)+')';
+    }}}},
+    scales:{x:{stacked:true},y:{stacked:true,max:100,ticks:{callback:v=>v+'%'}}}}});
+let cAno = new Chart(chAno, {type:'bar',
+  data:{labels:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],datasets:[
+    {label:'Meta programada',data:[],backgroundColor:'#2E75B6',borderRadius:3},
+    {label:'Recaudado',data:[],backgroundColor:'#548235',borderRadius:3}]},
+  options:{maintainAspectRatio:false,
+    plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}},
+    scales:{y:{ticks:{callback:v=>fmt(v)}}}}});
+let cHist = new Chart(chHist, {type:'bar',
+  data:{labels:[],datasets:[{data:[],backgroundColor:'#548235',borderRadius:3}]},
+  options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}},
+    scales:{y:{ticks:{callback:v=>fmt(v)}}}}});
+let cMet = new Chart(chMet, {type:'doughnut',
+  data:{labels:[],datasets:[{data:[],backgroundColor:['#2E75B6','#548235','#E6A100','#C00000','#8064A2']}]},
+  options:{maintainAspectRatio:false,plugins:{legend:{position:'right'},tooltip:{callbacks:{label:c=>c.label+': '+fmt(c.raw)}}}}});
+cPagos = new Chart(chPagos, {type:'bar',
+  data:{labels:[],datasets:[{data:[],backgroundColor:'#548235',borderRadius:4}]},
+  options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}},
+    scales:{y:{ticks:{callback:v=>fmt(v)}}}}});
+const _hoy = new Date();
+function parseF(s){
+  if(!s) return null;
+  s = String(s).trim();
+  let m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if(m) return new Date(+m[1], +m[2]-1, +m[3]);
+  m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if(m) return new Date(+m[3], +m[2]-1, +m[1]);
+  return null;
+}
+function addM(d, n){ const x = new Date(d); x.setMonth(x.getMonth()+n); return x; }
+function fmtF(d){ return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
+function enriquecer(){
+  const nowIdx = _hoy.getFullYear()*12 + _hoy.getMonth();
+  META26 = {};
+  DATA.forEach((d, _i)=>{
+    const diasApi = (+d.dias>0) ? +d.dias : null; // días de atraso que envía el ERP
+    d.venta=+d.venta||0; d.pagado=+d.pagado||0; d.vencido=+d.vencido||0; d.mora=+d.mora||0;
+    d.vm = (d.vm!=null)? +d.vm : d.vencido+d.mora;
+    d.porVencer=+d.porVencer||0;
+    d.saldo = (d.saldo!=null)? +d.saldo : d.vm+d.porVencer;
+    d.cuotas = +d.cuotas||0;
+    const montoMes = +(d.montoMes ?? d.monto_mes ?? d.monto_a_pagar_mes ?? 0);
+    d.cuota = montoMes>0.005 ? montoMes : (+d.cuota>0 ? +d.cuota : (d.cuotas ? d.venta/d.cuotas : 0));
+    const fecC = parseF(d.fecha_vencimiento_cuota ?? d.fechaVencCuota ?? d.proxVenc);
+    const finP = parseF(d.fecha_fin ?? d.finPlazo ?? d.fechaFin);
+    const crea = parseF(d.creacion ?? d.crea ?? d.created_at);
+    d.letras = (d.cuota>0.005 && d.vencido>0.005) ? Math.max(1, Math.round(d.vencido/d.cuota)) : 0;
+    if(d.letras && (fecC || finP)){
+      const base = fecC ? addM(fecC, -d.letras) : addM(finP, -(d.letras-1));
+      d.dias = Math.max(1, Math.round((_hoy-base)/864e5));
+    } else if(d.cuota>0.005 && d.vencido>0.005){
+      d.dias = Math.round(d.vencido/d.cuota*30);
+    } else d.dias = 0;
+    d.bucket = d.dias===0 ? 'AL DÍA' : d.dias<=30 ? '1-30 DÍAS' : d.dias<=90 ? '31-90 DÍAS' : '+90 DÍAS';
+    if(d.porVencer>0.005 && d.cuota>0.005){
+      d.nFut = Math.max(1, Math.round(d.porVencer/d.cuota));
+      d.proxM = fecC ? Math.max(0, fecC.getFullYear()*12+fecC.getMonth()-nowIdx) : 0;
+    } else { d.nFut=0; d.proxM=0; }
+    if(fecC){
+      d.venceMes = (fecC.getFullYear()===_hoy.getFullYear() && fecC.getMonth()===_hoy.getMonth() && d.porVencer>0.005) ? d.cuota : 0;
+    } else {
+      d.venceMes = (d.porVencer>0.005) ? Math.min(d.cuota, d.porVencer) : 0; // sin fechas de la API: se asume una cuota por mes
+    }
+    d.proxVenc = fecC ? fmtF(fecC) : '';
+    if(fecC) d.diaVenc = fecC.getDate();
+    else if(diasApi){ const f = new Date(_hoy); f.setDate(f.getDate()-diasApi); d.diaVenc = f.getDate(); d.diaOrigen='atraso'; }
+    else if(crea) d.diaVenc = crea.getDate();
+    else d.diaVenc = null;
+    d.finPlazo = finP ? fmtF(finP) : '';
+    d.pctPag = d.venta ? +(d.pagado/d.venta*100).toFixed(1) : 0;
+    d.pctVenc = d.saldo ? +(d.vm/d.saldo*100).toFixed(1) : 0;
+    d.vin = d.vin || d.codigo_vin || ('prestamo-'+_i); // sin VIN de la API, cada préstamo = una máquina
+    // meta 2026 por vendedor
+    if(d.cuotas && d.cuota>0.005){
+      const arr = META26[d.vend] || (META26[d.vend] = new Array(12).fill(0));
+      // ancla del cronograma: fecha fin real > fecha creacion > estimado (ultima cuota = mes actual + cuotas futuras)
+      const finIdx = finP ? (finP.getFullYear()*12+finP.getMonth())
+                   : crea ? (crea.getFullYear()*12+crea.getMonth()+d.cuotas)
+                   : (nowIdx + d.nFut);
+      for(let k=0;k<d.cuotas;k++){
+        const mIdx = finIdx - k;
+        if(Math.floor(mIdx/12)===2026) arr[mIdx%12]+=d.cuota;
+      }
+    }
+  });
+  // ---- diagnóstico de campos recibidos ----
+  const tot = DATA.length || 1;
+  const cob = (fns) => Math.round(DATA.filter(d=>fns.some(f=>d[f]!=null && d[f]!=='' )).length / tot * 100);
+  const campos = [
+    ['Código VIN', ['vin','codigo_vin'], 'Identifica cada máquina'],
+    ['Fecha de creación', ['creacion','crea','created_at'], 'Antigüedad y cronograma'],
+    ['Fecha vencimiento cuota', ['fecha_vencimiento_cuota','fechaVencCuota','proxVenc'], 'Días de atraso exactos, calendario y "vence este mes"'],
+    ['Monto de la cuota del mes', ['monto_mes','montoMes','monto_a_pagar_mes'], 'Cuota exacta (si no, se divide venta ÷ cuotas)'],
+    ['Fecha fin del préstamo', ['fecha_fin','finPlazo','fechaFin'], 'Proyección 2026 real'],
+    ['Teléfono del cliente', ['telefono','tel','celular','phone'], 'Evita escribirlos a mano'],
+    ['Documento (RUC/DNI)', ['documento','ruc','dni','num_documento'], 'Identificación del cliente'],
+  ];
+  window.$diag = campos.map(([n,f,u])=>({n, u, pct: cob(f)}));
+  window.$diagExtra = {prestamos: DATA.length, pagos: PAGOS.length,
+    desde: PAGOS.length? PAGOS.map(p=>p.fecha).sort()[0] : '—',
+    campos: Object.keys(DATA[0]||{}).join(', ')};
+  // teléfonos que vengan de la API se cargan en la bitácora si está vacía
+  DATA.forEach(d=>{
+    const tel = d.telefono || d.tel || d.celular || d.phone;
+    if(tel){ const g = gcli(d.cliente); if(!g.tel) g.tel = String(tel); }
+  });
+  vends = [...new Set(DATA.map(d=>d.vend))].sort();
+  fVend.length = 1;
+  vends.forEach(v => fVend.add(new Option(v, v)));
+}
+async function cargarDatos(){
+  if(!API_TOKEN){
+    API_TOKEN = (prompt('Ingresa el token de la API del ERP (solo la primera vez en esta computadora):')||'').trim();
+    if(API_TOKEN) localStorage.setItem('libra_api_token', API_TOKEN);
+    else { errBox.style.display='block'; errBox.textContent='Sin token no se pueden cargar los datos. Recarga la página para intentarlo de nuevo.'; subInfo.textContent='Falta el token de la API'; return; }
+  }
+  try {
+    const res = await fetch(`${API_URL}?days=3650`, {
+      headers: {'Authorization': `Bearer ${API_TOKEN}`, 'Accept': 'application/json'}
+    });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    DATA = data.loans || data.prestamos || [];
+    PAGOS = (data.pagos || data.payments || []).map(p=>({fecha:String(p.fecha||p.fecha_pago||'').slice(0,10).replace(/\//g,'-'), monto:+p.monto||0, cliente:p.cliente||'', metodo:p.metodo||'', cuota:!!p.cuota}));
+    enriquecer();
+    initMeses();
+    gestSync(false);
+    const p = data.period || {};
+    subInfo.textContent = `Datos en vivo del ERP · actualizado ${new Date().toLocaleString('es-PE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} · montos en USD · Pagos: ${p.from||'histórico completo'} al ${p.to||'hoy'} · Días de atraso ${DATA.some(d=>d.proxVenc)?'según fechas del ERP':'estimados'}`;
+    render();
+  } catch(err){
+    errBox.style.display='block';
+    const auth = String(err.message).includes('401') || String(err.message).includes('403');
+    errBox.innerHTML = (auth ? 'El ERP rechazó el token.' : 'No se pudieron cargar los datos del ERP: ' + err.message + '.')
+      + ' <a href="#" onclick="localStorage.removeItem(\'libra_api_token\');location.reload();return false" style="color:#9C0006;font-weight:700;text-decoration:underline">Ingresar token de nuevo</a>';
+    subInfo.textContent='Error al cargar datos';
+  }
+}
+cargarDatos();
+</script>
+</body>
+</html>

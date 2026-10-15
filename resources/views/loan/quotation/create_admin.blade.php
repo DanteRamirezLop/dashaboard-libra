@@ -263,7 +263,8 @@
                     <div class="form-group col-sm-12">
                         {!! Form::label('allow_decimal', 'Tasa de interés anual' . ':*') !!} 
                         <select name="annual_interest_rate" id="annual_interest_rate" class="form-control" required>
-                            <option value="0" selected disabled>@lang('messages.please_select' )</option>
+                            <option value="" selected disabled>@lang('messages.please_select' )</option>
+                            <option value="0">0% (Sin intereses)</option>
                             <option value="20">20%</option>
                             <option value="19">19%</option>
                             <option value="18">18%</option>
