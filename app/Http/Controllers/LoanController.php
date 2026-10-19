@@ -370,6 +370,15 @@ class LoanController extends Controller {
                 // -------------------- Tipo de prestamo --------------------
                 $type = $request->input('type') ? $request->input('type') : 'sale';
                 // -------------------- Validaciones de meses --------------------
+                if ($number_month < 1 || $number_month > 100
+                    || ($type_initial == 2 && ($mounth_fracction_initial < 1 || $mounth_fracction_initial > 100))) {
+                    return [
+                        'redirect' => redirect('loans')->with('status', [
+                            'success' => false,
+                            'msg' => 'EL PRESTAMO NO SE CREO: las cuotas y los meses a fraccionar deben estar entre 1 y 100.'
+                        ])
+                    ];
+                }
                 if ($number_month < $mounth_fracction_initial
                     || $number_month < $option_gps || $number_month < $option_seguro) {
                     return [

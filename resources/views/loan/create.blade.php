@@ -166,8 +166,8 @@
                             <div class="col-md-4">
                                 <div class="form-group col-sm-12">
                                     {!! Form::label('mounth_fracction', 'Meses a fraccionar' . ':*') !!} 
-                                    <select name="mounth_fracction" id="mounth_fracction" class="form-control" required>
-                                        <option value="0" selected disabled>@lang('messages.please_select' )</option>
+                                    <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" name="mounth_fracction" id="mounth_fracction" list="mounth_fracction_list" class="form-control" maxlength="3" placeholder="Seleccione o escriba (1-100)" required>
+                                    <datalist id="mounth_fracction_list">
                                         <option value="1">1 meses</option>
                                         <option value="2">2 meses</option>
                                         <option value="3">3 meses</option>
@@ -181,7 +181,7 @@
                                         <option value="11">11 meses</option>
                                         <option value="12">12 meses</option>
                                         <option value="18">18 meses</option>
-                                    </select>
+                                    </datalist>
                                 </div>
                             </div>
                         </div>
@@ -193,8 +193,8 @@
                     <div class="col-md-3">
                         <div class="form-group col-sm-12">
                             {!! Form::label('allow_decimal', 'Cuotas' . ':*') !!} 
-                            <select name="number_month" id="number_month" class="form-control" required>
-                                <option value="0" selected disabled>@lang('messages.please_select' )</option>
+                            <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" name="number_month" id="number_month" list="number_month_list" class="form-control" maxlength="3" placeholder="Seleccione o escriba (1-100)" required>
+                            <datalist id="number_month_list">
                                 <option value="6">6 meses</option>
                                 <option value="10">10 meses</option>
                                 <option value="12">12 meses</option>
@@ -208,7 +208,7 @@
                                 <option value="32">32 meses</option>
                                 <option value="36">36 meses</option>
                                 <option value="38">38 meses</option>
-                            </select>
+                            </datalist>
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -227,6 +227,7 @@
                                 <option value="12">12%</option>
                                 <option value="11">11%</option>
                                 <option value="10">10%</option>
+                                <option value="9">9%</option>
                             </select>
                         </div>
                     </div>
@@ -405,13 +406,23 @@
             return val <= meses;
         }, "No puede ser mayor al número de cuotas del préstamo.");
 
+        // Cuotas y meses a fraccionar: se elige de la lista o se escribe un entero del 1 al 100
+        $.validator.addMethod("rangoMeses", function(value, element) {
+            if (!value) return true;
+            return /^\d+$/.test(value) && parseInt(value) >= 1 && parseInt(value) <= 100;
+        }, "Ingrese un número de meses entre 1 y 100.");
+
         $('form#cotizar_add_form').validate({
 
             rules: {
+                number_month: {
+                    rangoMeses: true
+                },
                 product_id: {
                     tieneGPS: true,
                 },
                 mounth_fracction: {
+                    rangoMeses: true,
                     menorOIgualQue:  "mounth_fracction"
                 },
 
@@ -596,7 +607,7 @@
                 calcularSeguro();
             });
 
-            $('#number_month').on('change', function() {
+            $('#number_month').on('change input', function() {
                 filtrarOpcionesGpsSeguro();
             });
 
