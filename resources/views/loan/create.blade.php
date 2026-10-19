@@ -166,22 +166,27 @@
                             <div class="col-md-4">
                                 <div class="form-group col-sm-12">
                                     {!! Form::label('mounth_fracction', 'Meses a fraccionar' . ':*') !!} 
-                                    <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" name="mounth_fracction" id="mounth_fracction" list="mounth_fracction_list" class="form-control" maxlength="3" placeholder="Seleccione o escriba (1-100)" required>
-                                    <datalist id="mounth_fracction_list">
-                                        <option value="1">1 meses</option>
-                                        <option value="2">2 meses</option>
-                                        <option value="3">3 meses</option>
-                                        <option value="4">4 meses</option>
-                                        <option value="5">5 meses</option>
-                                        <option value="6">6 meses</option>
-                                        <option value="7">7 meses</option>
-                                        <option value="8">8 meses</option>
-                                        <option value="9">9 meses</option>
-                                        <option value="10">10 meses</option>
-                                        <option value="11">11 meses</option>
-                                        <option value="12">12 meses</option>
-                                        <option value="18">18 meses</option>
-                                    </datalist>
+                                    <div class="input-group combo-select">
+                                        <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" name="mounth_fracction" id="mounth_fracction" class="form-control" maxlength="3" placeholder="Seleccione o escriba (1-100)" required>
+                                        <span class="input-group-btn">
+                                            <button type="button" class="btn btn-default combo-select-toggle" tabindex="-1"><span class="caret"></span></button>
+                                        </span>
+                                        <ul class="dropdown-menu combo-select-menu">
+                                            <li><a href="#" data-value="1">1 meses</a></li>
+                                            <li><a href="#" data-value="2">2 meses</a></li>
+                                            <li><a href="#" data-value="3">3 meses</a></li>
+                                            <li><a href="#" data-value="4">4 meses</a></li>
+                                            <li><a href="#" data-value="5">5 meses</a></li>
+                                            <li><a href="#" data-value="6">6 meses</a></li>
+                                            <li><a href="#" data-value="7">7 meses</a></li>
+                                            <li><a href="#" data-value="8">8 meses</a></li>
+                                            <li><a href="#" data-value="9">9 meses</a></li>
+                                            <li><a href="#" data-value="10">10 meses</a></li>
+                                            <li><a href="#" data-value="11">11 meses</a></li>
+                                            <li><a href="#" data-value="12">12 meses</a></li>
+                                            <li><a href="#" data-value="18">18 meses</a></li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -193,42 +198,52 @@
                     <div class="col-md-3">
                         <div class="form-group col-sm-12">
                             {!! Form::label('allow_decimal', 'Cuotas' . ':*') !!} 
-                            <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" name="number_month" id="number_month" list="number_month_list" class="form-control" maxlength="3" placeholder="Seleccione o escriba (1-100)" required>
-                            <datalist id="number_month_list">
-                                <option value="6">6 meses</option>
-                                <option value="10">10 meses</option>
-                                <option value="12">12 meses</option>
-                                <option value="14">14 meses</option>
-                                <option value="16">16 meses</option>
-                                <option value="18">18 meses</option>
-                                <option value="20">20 meses</option>
-                                <option value="22">22 meses</option>
-                                <option value="24">24 meses</option>
-                                <option value="30">30 meses</option>
-                                <option value="32">32 meses</option>
-                                <option value="36">36 meses</option>
-                                <option value="38">38 meses</option>
-                            </datalist>
+                            <div class="input-group combo-select">
+                                <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" name="number_month" id="number_month" class="form-control" maxlength="3" placeholder="Seleccione o escriba (1-100)" required>
+                                <span class="input-group-btn">
+                                    <button type="button" class="btn btn-default combo-select-toggle" tabindex="-1"><span class="caret"></span></button>
+                                </span>
+                                <ul class="dropdown-menu combo-select-menu">
+                                    <li><a href="#" data-value="6">6 meses</a></li>
+                                    <li><a href="#" data-value="10">10 meses</a></li>
+                                    <li><a href="#" data-value="12">12 meses</a></li>
+                                    <li><a href="#" data-value="14">14 meses</a></li>
+                                    <li><a href="#" data-value="16">16 meses</a></li>
+                                    <li><a href="#" data-value="18">18 meses</a></li>
+                                    <li><a href="#" data-value="20">20 meses</a></li>
+                                    <li><a href="#" data-value="22">22 meses</a></li>
+                                    <li><a href="#" data-value="24">24 meses</a></li>
+                                    <li><a href="#" data-value="30">30 meses</a></li>
+                                    <li><a href="#" data-value="32">32 meses</a></li>
+                                    <li><a href="#" data-value="36">36 meses</a></li>
+                                    <li><a href="#" data-value="38">38 meses</a></li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="form-group col-sm-12">
                             {!! Form::label('allow_decimal', 'Tasa de interés anual' . ':*') !!} 
-                            <select name="multiplayer" id="multiplayer" class="form-control" required>
-                                <option value="0" selected disabled>@lang('messages.please_select' )</option>
-                                <option value="20">20%</option>
-                                <option value="19">19%</option>
-                                <option value="18">18%</option>
-                                <option value="17">17%</option>
-                                <option value="16">16%</option>
-                                <option value="15">15%</option>
-                                <option value="14">14%</option>
-                                <option value="13">13%</option>
-                                <option value="12">12%</option>
-                                <option value="11">11%</option>
-                                <option value="10">10%</option>
-                                <option value="9">9%</option>
-                            </select>
+                            <div class="input-group combo-select">
+                                <input type="text" inputmode="decimal" autocomplete="off" name="multiplayer" id="multiplayer" class="form-control" maxlength="6" placeholder="Seleccione o escriba (1-100)" required>
+                                <span class="input-group-btn">
+                                    <button type="button" class="btn btn-default combo-select-toggle" tabindex="-1"><span class="caret"></span></button>
+                                </span>
+                                <ul class="dropdown-menu combo-select-menu">
+                                    <li><a href="#" data-value="20">20%</a></li>
+                                    <li><a href="#" data-value="19">19%</a></li>
+                                    <li><a href="#" data-value="18">18%</a></li>
+                                    <li><a href="#" data-value="17">17%</a></li>
+                                    <li><a href="#" data-value="16">16%</a></li>
+                                    <li><a href="#" data-value="15">15%</a></li>
+                                    <li><a href="#" data-value="14">14%</a></li>
+                                    <li><a href="#" data-value="13">13%</a></li>
+                                    <li><a href="#" data-value="12">12%</a></li>
+                                    <li><a href="#" data-value="11">11%</a></li>
+                                    <li><a href="#" data-value="10">10%</a></li>
+                                    <li><a href="#" data-value="9">9%</a></li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-3">  
@@ -375,6 +390,16 @@
 </section>
 <!-- /.content -->
 @stop
+@section('css')
+<style>
+    .combo-select { position: relative; }
+    .combo-select .combo-select-toggle { height: 34px; }
+    .combo-select-menu { width: 100%; max-height: 240px; overflow-y: auto; margin-top: 2px; }
+    .combo-select-menu > li > a { padding: 6px 12px; }
+    .combo-select-menu > li.active > a,
+    .combo-select-menu > li.active > a:hover { background-color: #3c8dbc; color: #fff; }
+</style>
+@endsection
 @section('javascript')
     <script src="{{ asset('js/pos.js')}}"></script>
     <script type="text/javascript">
@@ -412,11 +437,20 @@
             return /^\d+$/.test(value) && parseInt(value) >= 1 && parseInt(value) <= 100;
         }, "Ingrese un número de meses entre 1 y 100.");
 
+        // Tasa de interés anual: se elige de la lista o se escribe del 1% al 100% (hasta 2 decimales)
+        $.validator.addMethod("rangoTasa", function(value, element) {
+            if (!value) return true;
+            return /^\d+(\.\d{1,2})?$/.test(value) && parseFloat(value) >= 1 && parseFloat(value) <= 100;
+        }, "Ingrese una tasa entre 1% y 100% (hasta 2 decimales).");
+
         $('form#cotizar_add_form').validate({
 
             rules: {
                 number_month: {
                     rangoMeses: true
+                },
+                multiplayer: {
+                    rangoTasa: true
                 },
                 product_id: {
                     tieneGPS: true,
@@ -435,7 +469,9 @@
             },
 
             errorPlacement: function(error, element) {
-                if (element.parent('.iradio_square-blue').length) {
+                if (element.parent('.combo-select').length) {
+                    error.insertAfter(element.parent());
+                } else if (element.parent('.iradio_square-blue').length) {
                     error.insertAfter($(".radio_btns"));
                 } else if (element.hasClass('status')) {
                     error.insertAfter(element.parent());
@@ -447,6 +483,64 @@
                 form.submit();
             }
         });
+
+        // Combo (input + lista): permite elegir una opción o escribir un valor libre
+        (function() {
+            function cerrar($combo) {
+                $combo.removeClass('open');
+            }
+            function abrir($combo) {
+                $('.combo-select.open').not($combo).removeClass('open');
+                $combo.addClass('open');
+            }
+            function filtrar($combo, mostrarTodo) {
+                var texto = $.trim($combo.find('input').val());
+                var $items = $combo.find('.combo-select-menu li');
+                $items.each(function() {
+                    var valor = String($(this).find('a').data('value'));
+                    $(this).toggle(mostrarTodo || texto === '' || valor.indexOf(texto) === 0)
+                        .toggleClass('active', valor === texto);
+                });
+                if (!$items.filter(':visible').length) cerrar($combo);
+            }
+
+            $('.combo-select input').on('focus click', function(e) {
+                e.stopPropagation();
+                var $combo = $(this).closest('.combo-select');
+                abrir($combo);
+                filtrar($combo, true);
+            }).on('input', function() {
+                var $combo = $(this).closest('.combo-select');
+                abrir($combo);
+                filtrar($combo, false);
+            }).on('keydown', function(e) {
+                if (e.key === 'Escape' || e.key === 'Tab') cerrar($(this).closest('.combo-select'));
+            });
+
+            $('.combo-select-toggle').on('click', function(e) {
+                e.stopPropagation();
+                var $combo = $(this).closest('.combo-select');
+                if ($combo.hasClass('open')) {
+                    cerrar($combo);
+                } else {
+                    $combo.find('input').trigger('focus');
+                }
+            });
+
+            $('.combo-select-menu').on('click', 'a', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var $combo = $(this).closest('.combo-select');
+                var $input = $combo.find('input');
+                $input.val($(this).data('value')).trigger('change');
+                $input.valid();
+                cerrar($combo);
+            });
+
+            $(document).on('click', function() {
+                $('.combo-select.open').removeClass('open');
+            });
+        })();
 
         $(document).ready(function() {
             $('input[type=radio][name=type_initial]').on('ifChecked', function(){
