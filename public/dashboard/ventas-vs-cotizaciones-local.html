@@ -110,6 +110,7 @@ tr:hover{background:#E9F1F9}
     <div class="kpi"><div class="lbl">Ventas crédito Directo</div><div class="val" id="kCredito">–</div><div class="sub" id="kCreditoRec">–</div></div>
     <div class="kpi"><div class="lbl">Ventas crédito 3ros</div><div class="val" id="kCredito3ros">–</div><div class="sub" id="kCredito3rosRec">–</div></div>
     <div class="kpi"><div class="lbl">Venta Contado</div><div class="val" id="kContado">–</div><div class="sub" id="kContadoRec">–</div></div>
+    <div class="kpi"><div class="lbl">Ventas alquiler venta</div><div class="val" id="kAlquilerVenta">–</div><div class="sub" id="kAlquilerVentaRec">–</div></div>
   </div>
   <div class="grid">
     <div class="panel"><h3>Cotizaciones vs ventas por vendedor</h3><div class="hint">Clic en una barra para filtrar</div><div class="chart-box"><canvas id="chVend"></canvas></div></div>
@@ -141,7 +142,7 @@ tr:hover{background:#E9F1F9}
     <h3>Cotizaciones sin venta detectada del mismo cliente <span style="font-weight:400;color:var(--gris)">(top 20 por monto, para dar seguimiento)</span></h3>
     <div class="hint">Cliente presente en cotizaciones <span id="lblAnioSeguimiento">2026</span> pero sin ninguna venta registrada a su nombre en el mismo período. No implica que la cotización siga vigente, solo que conviene revisarla.</div>
     <div class="tabla-scroll"><table id="tablaSeguimiento">
-      <thead><tr><th>Días desde cotización</th><th>Fecha</th><th>Cliente</th><th>Vendedor</th><th>Máquina</th><th>Fuente</th><th class="num">Monto</th></tr></thead>
+      <thead><tr><th>Días desde cotización</th><th>Fecha</th><th>Cliente</th><th>Teléfono</th><th>Vendedor</th><th>Máquina</th><th>Fuente</th><th class="num">Monto</th></tr></thead>
       <tbody id="tbodySeguimiento"></tbody>
     </table></div>
   </div>
@@ -155,7 +156,7 @@ tr:hover{background:#E9F1F9}
         <th data-k="monto" class="num">Monto</th><th data-k="recaudado" class="num">Recaudado</th><th data-k="estado">Estado venta</th>
       </tr></thead><tbody id="tbody"></tbody>
     </table></div>
-    <div class="nota">Fuente: módulo de préstamos/financiamiento de maquinaria (tabla interna de cotizaciones y ventas, ya acotada a la categoría "Maquinarias"), más las ventas de maquinaria pagadas por una financiera externa (columna "Pago" = Crédito 3ros; para nosotros son al contado y no pasan por el módulo de préstamos). "Cotización" = registro aún no aprobado como venta; "Venta" = todo registro con otro estado (aprobado, parcial, atrasado, pagado, etc.), sea al contado, a crédito, o crédito 3ros. Datos desde 2024, filtrables por año (<span id="lblAnioNota">2026</span> por defecto). Este archivo es de uso interno en oficina y no se publica en el servidor.</div>
+    <div class="nota">Fuente: módulo de préstamos/financiamiento de maquinaria (tabla interna de cotizaciones y ventas, ya acotada a la categoría "Maquinarias"), más las ventas de maquinaria pagadas por una financiera externa (columna "Pago" = Crédito 3ros; para nosotros son al contado y no pasan por el módulo de préstamos). "Cotización" = registro aún no aprobado como venta; "Venta" = todo registro con otro estado (aprobado, parcial, atrasado, pagado, etc.), sea al contado, a crédito, crédito 3ros o alquiler venta. Datos desde 2024, filtrables por año (<span id="lblAnioNota">2026</span> por defecto). Este archivo es de uso interno en oficina y no se publica en el servidor.</div>
   </div>
   </div>
   <div id="tabCal" class="tabpanel" hidden>
@@ -362,15 +363,19 @@ function kpis(rows){
   const venCredito = ven.filter(d=>d.pago==='Crédito');
   const venCredito3ros = ven.filter(d=>d.pago==='Crédito 3ros');
   const venContado = ven.filter(d=>d.pago==='Contado');
+  const venAlquilerVenta = ven.filter(d=>d.pago==='Alquiler venta');
   const recCredito = venCredito.reduce((a,d)=>a+(d.recaudado||0),0);
   const recCredito3ros = venCredito3ros.reduce((a,d)=>a+(d.recaudado||0),0);
   const recContado = venContado.reduce((a,d)=>a+(d.recaudado||0),0);
+  const recAlquilerVenta = venAlquilerVenta.reduce((a,d)=>a+(d.recaudado||0),0);
   kCredito.textContent = ven.length ? `${venCredito.length} (${(venCredito.length/ven.length*100).toFixed(1)}%)` : '0 (0%)';
   kCredito3ros.textContent = ven.length ? `${venCredito3ros.length} (${(venCredito3ros.length/ven.length*100).toFixed(1)}%)` : '0 (0%)';
   kContado.textContent = ven.length ? `${venContado.length} (${(venContado.length/ven.length*100).toFixed(1)}%)` : '0 (0%)';
+  kAlquilerVenta.textContent = ven.length ? `${venAlquilerVenta.length} (${(venAlquilerVenta.length/ven.length*100).toFixed(1)}%)` : '0 (0%)';
   kCreditoRec.textContent = 'Recaudado: ' + fmt(recCredito);
   kCredito3rosRec.textContent = 'Recaudado: ' + fmt(recCredito3ros);
   kContadoRec.textContent = 'Recaudado: ' + fmt(recContado);
+  kAlquilerVentaRec.textContent = 'Recaudado: ' + fmt(recAlquilerVenta);
   chipInfo.textContent = rows.length + ' de ' + DATA.length + ' registros mostrados';
 }
 function tabla(rows){
@@ -523,7 +528,7 @@ function seguimiento(){
   tbodySeguimiento.innerHTML = sinVenta.map(d=>{
     const cls = d.dias>60?'s3':d.dias>30?'s2':d.dias>7?'s1':'s0';
     return `<tr><td><span class="sem ${cls}">${d.dias} días</span></td><td>${d.fecha}</td><td title="${d.cliente}">${d.cliente}</td>
-    <td>${d.vendedor}</td><td title="${d.producto}">${d.producto}</td><td>${d.fuente}</td><td class="num">${fmt(d.monto)}</td></tr>`;
+    <td>${d.telefono||'—'}</td><td>${d.vendedor}</td><td title="${d.producto}">${d.producto}</td><td>${d.fuente}</td><td class="num">${fmt(d.monto)}</td></tr>`;
   }).join('');
 }
 function render(){

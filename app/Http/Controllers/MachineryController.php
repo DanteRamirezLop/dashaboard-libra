@@ -41,9 +41,10 @@ class MachineryController extends Controller
 
         $rows = Loan::where('business_id', $businessId)
             ->whereBetween('date', [$from, $to])
+            ->with('contact:id,mobile,alternate_number,landline')
             ->orderBy('date')
             ->get([
-                'id', 'status', 'date', 'customer_name', 'waiter', 'product_name',
+                'id', 'customer_id', 'status', 'type', 'date', 'customer_name', 'waiter', 'product_name',
                 'type_quotation', 'product_price', 'quantity', 'contact_source', 'transaction_id',
             ]);
 
@@ -252,13 +253,25 @@ class MachineryController extends Controller
             'id' => $row->id,
             'fecha' => $row->date,
             'cliente' => $row->customer_name ?: 'Sin nombre',
+            'telefono' => optional($row->contact)->mobile ?: (optional($row->contact)->alternate_number ?: optional($row->contact)->landline),
             'vendedor' => trim((string) $row->waiter) ?: 'Sin asignar',
             'producto' => $row->product_name ?: 'Sin especificar',
-            'pago' => (int) $row->type_quotation === 2 ? 'Crédito' : 'Contado',
+            'pago' => $this->pagoLabel($row),
             'cantidad' => (int) ($row->quantity ?: 1),
             'monto' => (float) $row->product_price,
             'fuente' => $this->fuenteLabel($row->contact_source),
         ];
+    }
+
+    // Alquiler-venta (loans.type = 'rent-sale') se separa de crédito directo
+    // aunque también se registre con type_quotation = 2.
+    protected function pagoLabel($row)
+    {
+        if ($row->type === 'rent-sale') {
+            return 'Alquiler venta';
+        }
+
+        return (int) $row->type_quotation === 2 ? 'Crédito' : 'Contado';
     }
 
     protected function estadoLabel($status)
