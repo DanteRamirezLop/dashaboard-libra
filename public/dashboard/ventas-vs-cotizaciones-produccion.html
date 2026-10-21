@@ -170,7 +170,7 @@ tr:hover{background:#E9F1F9}
     <h3>Detalle de cotizaciones y ventas <span style="font-weight:400;color:var(--gris)">(clic en encabezados para ordenar)</span></h3>
     <div class="tabla-scroll"><table id="tabla">
       <thead><tr>
-        <th data-k="tipo">Tipo</th><th data-k="fecha">Fecha</th><th data-k="cliente">Cliente</th>
+        <th data-k="tipo">Tipo</th><th data-k="fecha">Fecha</th><th data-k="cliente">Cliente</th><th data-k="telefono">Teléfono</th>
         <th data-k="vendedor">Vendedor</th><th data-k="producto">Máquina</th><th data-k="pago">Pago</th>
         <th data-k="fuente">Fuente</th><th data-k="cantidad" class="num">Cant.</th>
         <th data-k="monto" class="num">Monto</th><th data-k="recaudado" class="num">Recaudado</th><th data-k="estado">Estado venta</th>
@@ -443,12 +443,12 @@ function kpis(rows){
 function tabla(rows){
   rows = [...rows].sort((a,b)=>{
     const x=a[sortK], y=b[sortK];
-    return (typeof x==='string' ? x.localeCompare(y) : x-y)*sortDir;
+    return (typeof x==='string' || typeof y==='string' ? String(x??'').localeCompare(String(y??'')) : x-y)*sortDir;
   });
   tbody.innerHTML = rows.map(d=>{
     const cls = d.tipo==='Cotización' ? 'tCotiz' : 'tVenta';
     return `<tr><td><span class="sem ${cls}">${d.tipo}</span></td><td>${d.fecha}</td><td title="${d.cliente}">${d.cliente}</td>
-    <td>${d.vendedor}</td><td title="${d.producto}">${d.producto}</td><td>${d.pago}</td><td>${d.fuente}</td>
+    <td>${d.telefono||'—'}</td><td>${d.vendedor}</td><td title="${d.producto}">${d.producto}</td><td>${d.pago}</td><td>${d.fuente}</td>
     <td class="num">${d.cantidad}</td><td class="num">${fmt(d.monto)}</td><td class="num">${d.recaudado!=null?fmt(d.recaudado):'–'}</td><td>${d.estado||'–'}</td></tr>`;
   }).join('');
 }
@@ -492,7 +492,9 @@ function renderCompras(){
   kPctPagadoCompras.textContent = monto ? (pagado/monto*100).toFixed(1)+'%' : '0%';
   tablaCompras(rows);
   chartComprasAnio();
-  pivotMensual(rows, 'producto', d=>d.cantidad||0, celdaEstiloAzul, theadComprasMesRow, tbodyComprasMes, tfootComprasMes, 'Maquinaria');
+  // Una fila por modelo: las compras con varias máquinas se separan por línea.
+  const lineasCompras = rows.flatMap(d=>(d.lineas && d.lineas.length ? d.lineas : [{producto:d.producto, cantidad:d.cantidad}]).map(l=>({fecha:d.fecha, producto:l.producto, cantidad:l.cantidad})));
+  pivotMensual(lineasCompras, 'producto', d=>d.cantidad||0, celdaEstiloAzul, theadComprasMesRow, tbodyComprasMes, tfootComprasMes, 'Maquinaria');
 }
 document.querySelectorAll('#tablaCompras th').forEach(th=>th.onclick=()=>{
   const k = th.dataset.k;

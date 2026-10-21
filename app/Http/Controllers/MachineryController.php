@@ -111,11 +111,12 @@ class MachineryController extends Controller
 
         return $rows->map(function ($row) use ($pagadoPorTransaccion) {
             $lines = $row->purchase_lines;
-            $firstProduct = optional($lines->first())->product;
-            $producto = $firstProduct ? $firstProduct->name : 'Sin especificar';
-            if ($lines->count() > 1) {
-                $producto .= ' (+'.($lines->count() - 1).' más)';
-            }
+            // Cantidad por modelo, para que el cuadro mensual muestre cada
+            // máquina de una compra con varias líneas en su propia fila.
+            $lineas = $lines->groupBy(fn ($line) => optional($line->product)->name ?: 'Sin especificar')
+                ->map(fn ($group, $nombre) => ['producto' => $nombre, 'cantidad' => (float) $group->sum('quantity')])
+                ->values();
+            $producto = $lineas->pluck('producto')->implode(', ') ?: 'Sin especificar';
 
             return [
                 'id' => $row->id,
@@ -124,6 +125,7 @@ class MachineryController extends Controller
                 'proveedor' => optional($row->contact)->full_name ?: 'Sin nombre',
                 'producto' => $producto,
                 'cantidad' => (float) $lines->sum('quantity'),
+                'lineas' => $lineas,
                 'monto' => (float) $row->final_total,
                 'pagado' => (float) ($pagadoPorTransaccion[$row->id] ?? 0),
                 'estado' => $this->estadoLabelCompra($row->status),
@@ -179,6 +181,7 @@ class MachineryController extends Controller
                 'id' => $row->id,
                 'fecha' => $row->transaction_date,
                 'cliente' => optional($row->contact)->full_name ?: 'Sin nombre',
+                'telefono' => $this->telefono($row->contact),
                 'vendedor' => trim((string) optional($row->service_staff)->user_full_name) ?: 'Sin asignar',
                 'producto' => $producto,
                 'pago' => 'Crédito 3ros',
@@ -235,6 +238,7 @@ class MachineryController extends Controller
                 'id' => $row->id,
                 'fecha' => $row->transaction_date,
                 'cliente' => optional($row->contact)->full_name ?: 'Sin nombre',
+                'telefono' => $this->telefono($row->contact),
                 'vendedor' => trim((string) optional($row->service_staff)->user_full_name) ?: 'Sin asignar',
                 'producto' => $producto,
                 'pago' => 'Contado',
@@ -253,7 +257,7 @@ class MachineryController extends Controller
             'id' => $row->id,
             'fecha' => $row->date,
             'cliente' => $row->customer_name ?: 'Sin nombre',
-            'telefono' => optional($row->contact)->mobile ?: (optional($row->contact)->alternate_number ?: optional($row->contact)->landline),
+            'telefono' => $this->telefono($row->contact),
             'vendedor' => trim((string) $row->waiter) ?: 'Sin asignar',
             'producto' => $row->product_name ?: 'Sin especificar',
             'pago' => $this->pagoLabel($row),
@@ -261,6 +265,16 @@ class MachineryController extends Controller
             'monto' => (float) $row->product_price,
             'fuente' => $this->fuenteLabel($row->contact_source),
         ];
+    }
+
+    // Móvil del cliente; si no tiene, el número alterno o el fijo.
+    protected function telefono($contact)
+    {
+        if (! $contact) {
+            return null;
+        }
+
+        return $contact->mobile ?: ($contact->alternate_number ?: $contact->landline);
     }
 
     // Alquiler-venta (loans.type = 'rent-sale') se separa de crédito directo
