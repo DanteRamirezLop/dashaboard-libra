@@ -207,7 +207,9 @@
                     $total_before_tax = 0.00;
                     $total_tax = 0.00;
                     $credit = (int)  $purchase->custom_field_3;
-                    $total_neto = $purchase->final_total - $three_percent_withholding  - $percent_withholding;
+                    //Detracción redondeada (sin centavos) en la moneda de la compra
+                    $percent_withholding_rounded = round($percent_withholding * $purchase->exchange_rate);
+                    $total_neto = $purchase->final_total - $three_percent_withholding  - ($purchase->exchange_rate ? $percent_withholding_rounded / $purchase->exchange_rate : $percent_withholding);
                     $amount_pay = ($total_neto * $credit) /100;
                 @endphp
 
@@ -289,7 +291,7 @@
                             <b>Detracción {{$purchase->service_custom_field_2 }} %</b>  
                         </td> 
                         <td style="width: 10% !important; text-align: center; font-size: 12px;" colspan="2">
-                            @format_currency(round($percent_withholding * $purchase->exchange_rate), $currency_details)
+                            @format_currency($percent_withholding_rounded, $currency_details)
                         </td>
                     </tr>
                 @else
