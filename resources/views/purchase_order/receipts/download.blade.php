@@ -289,7 +289,7 @@
                             <b>Detracción {{$purchase->service_custom_field_2 }} %</b>  
                         </td> 
                         <td style="width: 10% !important; text-align: center; font-size: 12px;" colspan="2">
-                            @format_currency(($percent_withholding * $purchase->exchange_rate), $currency_details)
+                            @format_currency(round($percent_withholding * $purchase->exchange_rate), $currency_details)
                         </td>
                     </tr>
                 @else
