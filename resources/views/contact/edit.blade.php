@@ -480,9 +480,15 @@
       </div>
       <div class="col-md-3">
         <div class="form-group">
-            {!! Form::label('custom_field10', $contact_custom_field10 . ':') !!}
-            {!! Form::text('custom_field10', $contact->custom_field10, ['class' => 'form-control', 
-                'placeholder' => $contact_custom_field10]); !!}
+            @php
+                $good_taxpayer_options = ['no' => 'No', 'si' => 'Sí'];
+                //Conservar valores antiguos de texto libre para no perderlos al guardar
+                if (!empty($contact->custom_field10) && !isset($good_taxpayer_options[$contact->custom_field10])) {
+                    $good_taxpayer_options[$contact->custom_field10] = $contact->custom_field10;
+                }
+            @endphp
+            {!! Form::label('custom_field10', (!empty($custom_labels['contact']['custom_field_10']) ? $custom_labels['contact']['custom_field_10'] : 'Buen contribuyente Sunat') . ':') !!}
+            {!! Form::select('custom_field10', $good_taxpayer_options, !empty($contact->custom_field10) ? $contact->custom_field10 : 'no', ['class' => 'form-control']); !!}
         </div>
       </div>
       <div class="clearfix"></div>

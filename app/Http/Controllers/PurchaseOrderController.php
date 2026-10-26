@@ -682,6 +682,15 @@ class PurchaseOrderController extends Controller
             $transaction = Transaction::findOrFail($id);
             $business_id = request()->session()->get('user.business_id');
 
+            //No permitir cambiar entre Compra (Nacional/Internacional) y Servicios
+            $tipo_compra = ['Compra Nacional', 'Compra Internacional'];
+            $tipo_anterior = $transaction->custom_field_1;
+            $tipo_nuevo = $request->input('custom_field_1');
+            if (($tipo_anterior == 'Servicios' && $tipo_nuevo != 'Servicios')
+                || (in_array($tipo_anterior, $tipo_compra) && ! in_array($tipo_nuevo, $tipo_compra))) {
+                throw new \Exception('No se puede cambiar el tipo de proceso entre Compra y Servicios.');
+            }
+
             $currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
 
             $update_data = $request->only(['ref_no', 'contact_id',
@@ -896,6 +905,8 @@ class PurchaseOrderController extends Controller
          $three_percent_withholding = 0;
         //Proveedor agente de retención (Campo personalizado 9 del contacto)
         $is_retention_agent = !empty($purchase->contact) && $purchase->contact->custom_field9 == 'si';
+        //Proveedor buen contribuyente Sunat (Campo personalizado 10 del contacto)
+        $is_good_taxpayer = !empty($purchase->contact) && $purchase->contact->custom_field10 == 'si';
         if($purchase->service_custom_field_1 == 'si'){
              $exchange_rate_purchase = isset($exchange_rate->sale)? $exchange_rate->sale: 0 ;
              $percent_withholding =  $purchase->final_total * (int) $purchase->service_custom_field_2 / 100;
@@ -904,8 +915,11 @@ class PurchaseOrderController extends Controller
                 //Obtener rentencion de 3%
                 $is_currency_base =  ($purchase->exchange_rate == 1)? true : false;
                 if($is_currency_base){
-                    $search_date = Carbon::parse($purchase->transaction_date)->format('y-m-d');
-                    $exchange_rate = ExchangeRates::where('search_date',$search_date)->first();
+                    $search_date = Carbon::parse($purchase->transaction_date)->format('Y-m-d');
+                    //Si no hay tipo de cambio del dia, usar el ultimo registrado antes de la fecha
+                    $exchange_rate = ExchangeRates::where('search_date', '<=', $search_date)
+                        ->orderByDesc('search_date')
+                        ->first();
                     if($exchange_rate){
                         $exchange_rate_purchase =  $exchange_rate->sale;
                         $seven_hundred_usa =  700 /  $exchange_rate_purchase; // Seteciento soles convertidos a dolares
@@ -925,8 +939,8 @@ class PurchaseOrderController extends Controller
                 $three_percent_withholding =  0;
             }
 
-            //Proveedor agente de retención: no se le aplica la retención de 3%
-            if ($is_retention_agent) {
+            //Proveedor agente de retención o buen contribuyente Sunat: no se le aplica la retención de 3%
+            if ($is_retention_agent || $is_good_taxpayer) {
                 $three_percent_withholding = 0;
             }
         }
@@ -935,7 +949,7 @@ class PurchaseOrderController extends Controller
         //Determinar la moneda de la compra - transaccion
         $currency_details = $this->transactionUtil->currencyDetails($business_id,$purchase->currency_id, $purchase->exchange_rate);
         //Generate pdf 
-        $pdf = Pdf::set_option('isRemoteEnabled', true)->loadView('purchase_order.receipts.download',compact('exchange_rate_purchase','percent_withholding','three_percent_withholding','is_retention_agent','taxes','location_details','date_delivery','date_release','purchase', 'invoice_layout', 'date_print','currency_details'));
+        $pdf = Pdf::set_option('isRemoteEnabled', true)->loadView('purchase_order.receipts.download',compact('exchange_rate_purchase','percent_withholding','three_percent_withholding','is_retention_agent','is_good_taxpayer','taxes','location_details','date_delivery','date_release','purchase', 'invoice_layout', 'date_print','currency_details'));
         return $pdf->download('Orden-Compra-'.$purchase->ref_no.'.pdf');
     }
 

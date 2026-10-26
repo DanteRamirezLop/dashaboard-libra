@@ -209,7 +209,11 @@
                     $credit = (int)  $purchase->custom_field_3;
                     //Detracción redondeada (sin centavos) en la moneda de la compra
                     $percent_withholding_rounded = round($percent_withholding * $purchase->exchange_rate);
-                    $total_neto = $purchase->final_total - $three_percent_withholding  - ($purchase->exchange_rate ? $percent_withholding_rounded / $purchase->exchange_rate : $percent_withholding);
+                    //Retención redondeada (sin centavos) en la moneda de la compra
+                    $three_percent_withholding_rounded = round($three_percent_withholding * $purchase->exchange_rate);
+                    $total_neto = $purchase->final_total
+                        - ($purchase->exchange_rate ? $three_percent_withholding_rounded / $purchase->exchange_rate : $three_percent_withholding)
+                        - ($purchase->exchange_rate ? $percent_withholding_rounded / $purchase->exchange_rate : $percent_withholding);
                     $amount_pay = ($total_neto * $credit) /100;
                 @endphp
 
@@ -309,6 +313,18 @@
                                 <b>-</b> 
                             </td> 
                         </tr>
+                        @elseif(!empty($is_good_taxpayer))
+                        <tr>
+                            <td style="text-align: center; font-size: 12px;" colspan="2">
+                                <b>EL PROVEEDOR ES BUEN CONTRIBUYENTE SUNAT, NO APLICAR RETENCIÓN </b>
+                            </td>
+                            <td style="text-align: center; font-size: 13px;"colspan="2">
+                                <b>-</b>
+                            </td>
+                            <td style="text-align: center; font-size: 13px;"colspan="2">
+                                <b>-</b>
+                            </td>
+                        </tr>
                         @elseif($three_percent_withholding)
                         <tr>
                             <td style="text-align: center; font-size: 12px;" colspan="2">
@@ -318,10 +334,9 @@
                                 <b>Retención 3%</b> 
                             </td> 
                             <td style="width: 10% !important; text-align: center; font-size: 12px;" colspan="2">
-                            @format_currency(($three_percent_withholding * $purchase->exchange_rate), $currency_details)
+                            @format_currency($three_percent_withholding_rounded, $currency_details)
                             </td>
                         </tr>
-                        
                         @endif
                     @endif
                 @endif

@@ -129,19 +129,33 @@
               <div class="form-group">
                   {!! Form::label('custom_field_1', 'Tipo de proceso:*') !!}
                   <select name="custom_field_1" id="custom_field_1" class="form-control" style="width: 100%;" required>
-                    <option value="" @if($purchase->custom_field_1 == '') selected @endif>
+                    @php
+                        // Compra Nacional/Internacional son intercambiables entre sí, pero no con Servicios
+                        $is_servicio = $purchase->custom_field_1 == 'Servicios';
+                        $is_compra = in_array($purchase->custom_field_1, ['Compra Nacional', 'Compra Internacional']);
+                    @endphp
+                    @if(!$is_servicio && !$is_compra)
+                    <option value="" selected>
                         Seleccione
                     </option>
+                    @endif
+                    @if(!$is_servicio)
                     <option value="Compra Nacional" @if($purchase->custom_field_1 == 'Compra Nacional') selected @endif>
                         Compra Nacional
                     </option>
                     <option value="Compra Internacional" @if($purchase->custom_field_1 == 'Compra Internacional') selected @endif>
                         Compra Internacional
                     </option>
-                    <option value="Compra Internacional" @if($purchase->custom_field_1 == 'Servicios') selected @endif>
+                    @endif
+                    @if(!$is_compra)
+                    <option value="Servicios" @if($is_servicio) selected @endif>
                         Servicios
                     </option>
+                    @endif
                   </select>
+                  <label class="help-block text-info @if($purchase->custom_field_1 != 'Compra Nacional') hide @endif" id="retencion_msg">
+                      Se aplica 3% de retención, a menos que la compra sea menor a S/.700 o el proveedor sea "Agente de retención" o "Buen contribuyente SUNAT".
+                  </label>
               </div>
             </div>
 
@@ -513,6 +527,10 @@
             showPreview: false,
             browseLabel: LANG.file_browse_label,
             removeLabel: LANG.remove,
+        });
+
+        $('#custom_field_1').on('change', function() {
+            $('#retencion_msg').toggleClass('hide', $(this).val() !== 'Compra Nacional');
         });
     });
   </script>  

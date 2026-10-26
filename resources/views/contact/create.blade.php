@@ -477,9 +477,8 @@
           </div>
           <div class="col-md-3">
             <div class="form-group">
-                {!! Form::label('custom_field10', $contact_custom_field10 . ':') !!}
-                {!! Form::text('custom_field10', null, ['class' => 'form-control', 
-                    'placeholder' => $contact_custom_field10]); !!}
+                {!! Form::label('custom_field10', (!empty($custom_labels['contact']['custom_field_10']) ? $custom_labels['contact']['custom_field_10'] : 'Buen contribuyente Sunat') . ':') !!}
+                {!! Form::select('custom_field10', ['no' => 'No', 'si' => 'Sí'], 'no', ['class' => 'form-control']); !!}
             </div>
           </div>
           <div class="col-md-12 shipping_addr_div"><hr></div>

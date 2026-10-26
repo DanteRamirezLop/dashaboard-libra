@@ -125,6 +125,9 @@
 				<div class="form-group">
 					{!! Form::label('custom_field_1', 'Tipo de proceso:*') !!}
 					{!! Form::select('custom_field_1',['Compra Nacional'=>'Compra Nacional','Compra Internacional'=>'Compra Internacional','Servicios'=>'Servicios'], null, ['class' => 'form-control','placeholder' => __('messages.please_select'), 'required']); !!}
+					<label class="help-block text-info hide" id="retencion_msg">
+						Se aplica 3% de retención, a menos que la compra sea menor a S/.700 o el proveedor sea "Agente de retención" o "Buen contribuyente SUNAT".
+					</label>
 				</div>
 			</div> 
 
@@ -567,6 +570,7 @@
 
 			// Detracción logic
 			$('#custom_field_1').on('change', function() {
+				$('#retencion_msg').toggleClass('hide', $(this).val() !== 'Compra Nacional');
 				if ($(this).val() === 'Servicios') {
 					$('#detraccion_row').removeClass('hide');
 				} else {
