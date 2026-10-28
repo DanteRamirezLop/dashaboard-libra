@@ -20,3 +20,4 @@ npm-debug.log
 .scribe
 /laradock
 /public/dashboard.DS_Store
+.DS_Store
