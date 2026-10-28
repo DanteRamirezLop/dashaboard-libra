@@ -455,10 +455,10 @@
             @if($paymentShedule->status === 'refinanced')
                 @continue
             @endif
-            @if($currentRefinancedAt !== false && $currentRefinancedAt !== $paymentShedule->refinanced_at && $paymentShedule->refinanced_at)
+            @if($currentRefinancedAt && $currentRefinancedAt !== $paymentShedule->refinanced_at)
             <tr class="bg-gray-light">
                 <td colspan="5" align="center">
-                    <strong>Refinanciamiento: {{ date('d/m/Y', strtotime($paymentShedule->refinanced_at)) }}</strong>
+                    <strong>Refinanciamiento: {{ date('d/m/Y', strtotime($currentRefinancedAt)) }}</strong>
                 </td>
             </tr>
             @endif

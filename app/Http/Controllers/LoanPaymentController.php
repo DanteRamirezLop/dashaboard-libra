@@ -349,7 +349,11 @@ class LoanPaymentController extends Controller
             )
             ->select('ps.*');
 
-        $tbl_ps = (clone $psBase)->orderBy('ps.sheduled_date')->get();
+        // Agrupar por bloque de refinanciamiento (cronogramas anteriores primero, el vigente al final)
+        $tbl_ps = (clone $psBase)
+            ->orderByRaw('ps.refinanced_at IS NULL, ps.refinanced_at')
+            ->orderBy('ps.sheduled_date')
+            ->get();
         $annexes = json_decode($loan->annexes);
 
         //#AGREGARLE CON MAP Los pagos de las transacciones 

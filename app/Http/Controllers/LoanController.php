@@ -1054,6 +1054,23 @@ class LoanController extends Controller {
                 ]);
             }
 
+            // Validar que las fechas de las cuotas sean válidas y estén en orden ascendente
+            $prev_date = null;
+            foreach ($installments as $index => $item) {
+                try {
+                    $date = Carbon::parse($item['date'] ?? '')->startOfDay();
+                } catch (\Exception $e) {
+                    $date = null;
+                }
+                if (empty($item['date']) || ! $date || ($prev_date && $date->lte($prev_date))) {
+                    return redirect()->back()->with('status', [
+                        'success' => false,
+                        'msg'     => 'La fecha de la cuota ' . ($index + 1) . ' es inválida o no es posterior a la cuota anterior.',
+                    ]);
+                }
+                $prev_date = $date;
+            }
+
             DB::transaction(function () use (
                 $id, $business_id, $user_id,
                 $forgiven_mora, $refinance_amount, $installments, $reason
@@ -1087,8 +1104,9 @@ class LoanController extends Controller {
                 PaymentSchedule::where('loan_id', $id)
                     ->whereIn('status', ['pending', 'overdue'])
                     ->update(['status' => 'refinanced']);
-                // 3. Marcar cuotas anteriores como refinanciados 
+                // 3. Marcar cuotas anteriores como refinanciados (sin pisar la fecha de refinanciamientos previos)
                 PaymentSchedule::where('loan_id', $id)
+                    ->whereNull('refinanced_at')
                     ->update(['refinanced_at' => now()]);
 
                 // 4. Actualizar el préstamo con los nuevos términos (sin crear uno nuevo)
