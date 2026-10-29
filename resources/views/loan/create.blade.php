@@ -225,11 +225,12 @@
                         <div class="form-group col-sm-12">
                             {!! Form::label('allow_decimal', 'Tasa de interés anual' . ':*') !!} 
                             <div class="input-group combo-select">
-                                <input type="text" inputmode="decimal" autocomplete="off" name="multiplayer" id="multiplayer" class="form-control" maxlength="6" placeholder="Seleccione o escriba (1-100)" required>
+                                <input type="text" inputmode="decimal" autocomplete="off" name="multiplayer" id="multiplayer" class="form-control" maxlength="6" placeholder="Seleccione o escriba (0-100)" required>
                                 <span class="input-group-btn">
                                     <button type="button" class="btn btn-default combo-select-toggle" tabindex="-1"><span class="caret"></span></button>
                                 </span>
                                 <ul class="dropdown-menu combo-select-menu">
+                                    <li><a href="#" data-value="0">0% <small class="text-muted">(Sin intereses)</small></a></li>
                                     <li><a href="#" data-value="20">20%</a></li>
                                     <li><a href="#" data-value="19">19%</a></li>
                                     <li><a href="#" data-value="18">18%</a></li>
@@ -437,11 +438,11 @@
             return /^\d+$/.test(value) && parseInt(value) >= 1 && parseInt(value) <= 100;
         }, "Ingrese un número de meses entre 1 y 100.");
 
-        // Tasa de interés anual: se elige de la lista o se escribe del 1% al 100% (hasta 2 decimales)
+        // Tasa de interés anual: se elige de la lista o se escribe del 0% al 100% (hasta 2 decimales)
         $.validator.addMethod("rangoTasa", function(value, element) {
             if (!value) return true;
-            return /^\d+(\.\d{1,2})?$/.test(value) && parseFloat(value) >= 1 && parseFloat(value) <= 100;
-        }, "Ingrese una tasa entre 1% y 100% (hasta 2 decimales).");
+            return /^\d+(\.\d{1,2})?$/.test(value) && parseFloat(value) >= 0 && parseFloat(value) <= 100;
+        }, "Ingrese una tasa entre 0% y 100% (hasta 2 decimales).");
 
         $('form#cotizar_add_form').validate({
 

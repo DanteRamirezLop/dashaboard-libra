@@ -370,11 +370,11 @@ class LoanController extends Controller {
                 // -------------------- Tipo de prestamo --------------------
                 $type = $request->input('type') ? $request->input('type') : 'sale';
                 // -------------------- Validacion de tasa --------------------
-                if ($annual_interest_rate < 1 || $annual_interest_rate > 100) {
+                if ($annual_interest_rate < 0 || $annual_interest_rate > 100) {
                     return [
                         'redirect' => redirect('loans')->with('status', [
                             'success' => false,
-                            'msg' => 'EL PRESTAMO NO SE CREO: la tasa de interés anual debe estar entre 1% y 100%.'
+                            'msg' => 'EL PRESTAMO NO SE CREO: la tasa de interés anual debe estar entre 0% y 100%.'
                         ])
                     ];
                 }
