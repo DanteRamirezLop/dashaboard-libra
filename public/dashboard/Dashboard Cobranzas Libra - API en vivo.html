@@ -152,7 +152,8 @@ tr:hover{background:#E9F1F9}
   <div class="kpis">
     <div class="kpi"><div class="lbl">Préstamos</div><div class="val" id="kN">–</div></div>
     <div class="kpi"><div class="lbl">Venta total</div><div class="val" id="kVenta">–</div></div>
-    <div class="kpi"><div class="lbl">Pagado</div><div class="val" id="kPag">–</div></div>
+    <div class="kpi"><div class="lbl">Pagado en cuotas</div><div class="val" id="kPag">–</div></div>
+    <div class="kpi" title="Solo pagos aplicados a cuotas del cronograma: sin inicial, mora ni pagos a capital"><div class="lbl">Pagado solo cuotas</div><div class="val" id="kPagCuo">–</div></div>
     <div class="kpi rojo"><div class="lbl">Vencido (sin mora)</div><div class="val" id="kVenc">–</div></div>
     <div class="kpi rojo"><div class="lbl">Mora</div><div class="val" id="kMoraS">–</div></div>
     <div class="kpi rojo"><div class="lbl">Vencido + mora</div><div class="val" id="kVM">–</div></div>
@@ -329,6 +330,7 @@ function kpis(rows){
   kN.textContent = rows.length;
   kVenta.textContent = fmt(s('venta'));
   kPag.textContent = fmt(s('pagado'));
+  kPagCuo.textContent = fmt(s('pagadoCuotas'));
   kVenc.textContent = fmt(s('vencido'));
   kMoraS.textContent = fmt(s('mora'));
   kVM.textContent = fmt(s('vm'));
@@ -973,7 +975,7 @@ function enriquecer(){
   META26 = {};
   DATA.forEach((d, _i)=>{
     const diasApi = (+d.dias>0) ? +d.dias : null; // días de atraso que envía el ERP
-    d.venta=+d.venta||0; d.pagado=+d.pagado||0; d.vencido=+d.vencido||0; d.mora=+d.mora||0;
+    d.venta=+d.venta||0; d.pagado=+d.pagado||0; d.pagadoCuotas=+d.pagadoCuotas||0; d.vencido=+d.vencido||0; d.mora=+d.mora||0;
     d.vm = (d.vm!=null)? +d.vm : d.vencido+d.mora;
     d.porVencer=+d.porVencer||0;
     d.saldo = (d.saldo!=null)? +d.saldo : d.vm+d.porVencer;
