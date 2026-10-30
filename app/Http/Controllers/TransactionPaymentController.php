@@ -406,12 +406,15 @@ class TransactionPaymentController extends Controller
 
                     if ($previousVersion) {
                         $previousVersion->update(['status' => 'active']);
-                        $loan->interest_saved = PaymentApplication::where('transaction_payment_id', $previousVersion->transaction_payment_id)
-                            ->whereNull('payment_schedule_id')
-                            ->value('amount_discounted') ?? 0;
-                    } else {
-                        $loan->interest_saved = 0;
                     }
+                    // interest_saved es el acumulado de los pagos a capital que siguen vigentes
+                    $remainingCapitalPaymentIds = ScheduleVersion::where('loan_id', $capitalScheduleVersion->loan_id)
+                        ->where('id', '!=', $capitalScheduleVersion->id)
+                        ->whereNotNull('transaction_payment_id')
+                        ->pluck('transaction_payment_id');
+                    $loan->interest_saved = PaymentApplication::whereIn('transaction_payment_id', $remainingCapitalPaymentIds)
+                        ->whereNull('payment_schedule_id')
+                        ->sum('amount_discounted');
                     if ($loan->status === 'paid') {
                         $loan->status = 'partial';
                     }

@@ -126,7 +126,8 @@ class TransactionUtil extends Util
         }
 
         $interestSaved = round($oldTotals['total_interests'] - $newTotals['total_interests'], 4);
-        $loan->interest_saved =  $interestSaved;
+        // Acumulado: discount_amount suma los descuentos de TODOS los pagos a capital
+        $loan->interest_saved = round(($loan->interest_saved ?? 0) + $interestSaved, 4);
         $loan->save();
 
         return $interestSaved;
@@ -406,7 +407,8 @@ class TransactionUtil extends Util
         }
 
         $interestSaved = round($oldTotals['total_interests'] - $newTotals['total_interests'], 4);
-        $loan->interest_saved = $interestSaved;
+        // Acumulado: discount_amount suma los descuentos de TODOS los pagos a capital
+        $loan->interest_saved = round(($loan->interest_saved ?? 0) + $interestSaved, 4);
         $loan->save();
 
         return $interestSaved;

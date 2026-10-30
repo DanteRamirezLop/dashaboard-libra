@@ -160,10 +160,11 @@ class LoanUtil
             $total_delay = 0;
         }
 
-        if ($row->refinanced_at) {
+        if ($row->refinanced_at || $mora) {
+            // Con mora, el saldo de cuotas vencidas y su descuento ya van en total_delay
             $total_to_delay = $row->for_due;
         } else {
-            $paid_partial = $mora ? 0 : bcsub($row->delay, $row->total_only_payments, 4);
+            $paid_partial = bcsub($row->delay, $row->total_only_payments, 4);
             $total_to_delay = $row->for_due + bcsub($paid_partial, $interest_saved, 4);
         }
         if ($total_to_delay < 0 && $total_to_delay > -0.5) {

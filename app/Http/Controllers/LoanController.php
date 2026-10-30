@@ -230,15 +230,16 @@ class LoanController extends Controller {
                     //calculo la mora
                     $mora = round($row->mora);
                     if($mora){
-                        $paid_partial = 0;
+                        //Con mora, el saldo de cuotas vencidas y su descuento ya van en "Total vencido"
+                        $total_to_delay = $row->for_due;
                     }else{
                         $paid_partial = bcsub($row->delay, $row->total_only_payments, 4);
+
+                        //Calculo algun descuento (Descuento por capitalización / Regularización)
+                        $interest_saved = bcsub($row->discount_amount ?? 0, $row->interest_saved ?? 0, 2);
+
+                        $total_to_delay =  $row->for_due + bcsub($paid_partial,$interest_saved,4);
                     }
-
-                    //Calculo algun descuento (Descuento por capitalización / Regularización)
-                    $interest_saved = bcsub($row->discount_amount ?? 0, $row->interest_saved ?? 0, 2);
-
-                   $total_to_delay =  $row->for_due + bcsub($paid_partial,$interest_saved,4);
                 }
 
                 if ($total_to_delay < 0 && $total_to_delay > -0.5) {
