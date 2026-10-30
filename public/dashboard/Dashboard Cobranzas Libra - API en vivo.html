@@ -161,6 +161,8 @@ tr:hover{background:#E9F1F9}
     <div class="kpi rojo"><div class="lbl">% morosidad</div><div class="val" id="kMora">–</div></div>
     <div class="kpi verde"><div class="lbl">% avance cobranza</div><div class="val" id="kAvance">–</div></div>
     <div class="kpi verde"><div class="lbl">Cobrado este mes</div><div class="val" id="kCob">–</div></div>
+    <div class="kpi verde" title="Todos los pagos registrados este año: cuotas, inicial, mora y pagos a capital"><div class="lbl">Cobrado en el año (incl. inicial)</div><div class="val" id="kCobAnio">–</div></div>
+    <div class="kpi verde" title="Solo pagos de cuotas del cronograma registrados este año: sin inicial, mora ni pagos a capital"><div class="lbl">Cobrado en el año (sin inicial)</div><div class="val" id="kCobAnioCuo">–</div></div>
     <div class="kpi rojo"><div class="lbl">Días atraso promedio</div><div class="val" id="kDiasProm">–</div></div>
     <div class="kpi rojo"><div class="lbl">Riesgo en top 5 deudores</div><div class="val" id="kTop5">–</div></div>
   </div>
@@ -343,6 +345,11 @@ function kpis(rows){
   const mesAct = _hoy.getFullYear()+'-'+String(_hoy.getMonth()+1).padStart(2,'0');
   const cob = PAGOS.filter(p=>p.cuota && p.fecha.slice(0,7)===mesAct && ((!F.vend && !F.sem && !F.est && !F.busca) || clientes.has(p.cliente))).reduce((a,p)=>a+p.monto,0);
   kCob.textContent = fmt(cob);
+  const anioAct = String(_hoy.getFullYear());
+  const cobAnio = PAGOS.filter(p=>p.fecha.slice(0,4)===anioAct && ((!F.vend && !F.sem && !F.est && !F.busca) || clientes.has(p.cliente))).reduce((a,p)=>a+p.monto,0);
+  kCobAnio.textContent = fmt(cobAnio);
+  const cobAnioCuo = PAGOS.filter(p=>p.cuota && p.fecha.slice(0,4)===anioAct && ((!F.vend && !F.sem && !F.est && !F.busca) || clientes.has(p.cliente))).reduce((a,p)=>a+p.monto,0);
+  kCobAnioCuo.textContent = fmt(cobAnioCuo);
   const vmT = s('vm');
   kDiasProm.textContent = vmT ? Math.round(rows.reduce((a,d)=>a+d.dias*d.vm,0)/vmT)+' días' : '0 días';
   const top5 = [...rows].sort((a,b)=>b.vm-a.vm).slice(0,5).reduce((a,d)=>a+d.vm,0);
