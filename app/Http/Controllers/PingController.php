@@ -86,7 +86,8 @@ class PingController extends Controller
             ->where('tp.is_return', 0)
             ->whereNotNull('tp.paid_on')
             ->whereBetween('tp.paid_on', [$from, $to])
-            ->select('tp.paid_on', 'tp.amount', 'tp.method', 'tp.payment_schedule_id', 'l.customer_name')
+            ->select('tp.paid_on', 'tp.amount', 'tp.method', 'tp.payment_schedule_id', 'tp.note', 'l.customer_name',
+                DB::raw('EXISTS(SELECT 1 FROM schedule_versions sv WHERE sv.transaction_payment_id = tp.id) as es_capital'))
             ->orderBy('tp.paid_on')
             ->get()
             ->map(fn ($row) => [
@@ -96,6 +97,7 @@ class PingController extends Controller
                 'metodo' => $this->metodoLabel($row->method),
                 // true solo para pagos de cuotas del cronograma (excluye la inicial)
                 'cuota' => $row->payment_schedule_id !== null,
+                'tipo' => $this->pagoTipo($row),
             ]);
 
         return response()->json([
@@ -179,7 +181,8 @@ class PingController extends Controller
             ->where('tp.is_return', 0)
             ->whereNotNull('tp.paid_on')
             ->whereBetween('tp.paid_on', [$from, $to])
-            ->select('tp.paid_on', 'tp.amount', 'tp.method', 'tp.payment_schedule_id', 'l.customer_name')
+            ->select('tp.paid_on', 'tp.amount', 'tp.method', 'tp.payment_schedule_id', 'tp.note', 'l.customer_name',
+                DB::raw('EXISTS(SELECT 1 FROM schedule_versions sv WHERE sv.transaction_payment_id = tp.id) as es_capital'))
             ->orderBy('tp.paid_on')
             ->get()
             ->map(fn ($row) => [
@@ -188,6 +191,7 @@ class PingController extends Controller
                 'cliente' => $row->customer_name,
                 'metodo'  => $this->metodoLabel($row->method),
                 'cuota'   => $row->payment_schedule_id !== null,
+                'tipo'    => $this->pagoTipo($row),
             ]);
 
         return response()->json([
@@ -196,6 +200,26 @@ class PingController extends Controller
             'period'       => ['from' => $from->format('Y-m-d'), 'to' => $to->format('Y-m-d'), 'days' => $days],
             'generated_at' => Carbon::now()->toIso8601String(),
         ]);
+    }
+
+    /**
+     * Clasifica un pago: cuota (ligado al cronograma), mora, capital o inicial.
+     * Mora y capital se reconocen por la nota que genera el sistema al registrarlos.
+     */
+    protected function pagoTipo($row)
+    {
+        if ($row->payment_schedule_id !== null) {
+            return 'cuota';
+        }
+        $note = ltrim((string) $row->note);
+        if (str_starts_with($note, 'Pago moratorio')) {
+            return 'mora';
+        }
+        if ($row->es_capital || str_starts_with($note, 'Pago a capital')) {
+            return 'capital';
+        }
+
+        return 'inicial';
     }
 
     protected function estadoLabel($status)
