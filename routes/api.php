@@ -18,6 +18,7 @@ use App\Http\Controllers\RepuestosController;
 |
 */
 Route::middleware('api.token')->get('/ping', [PingController::class,'index']);
+Route::middleware('api.token')->get('/ping-rent-sale', [PingController::class,'rentSale']);
 Route::middleware('api.token')->get('/sales', [SalesController::class,'index']);
 Route::middleware('api.token')->get('/leads', [LeadsController::class,'index']);
 Route::middleware('api.token')->get('/machinery', [MachineryController::class,'index']);

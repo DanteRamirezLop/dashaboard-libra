@@ -115,6 +115,11 @@ tr:hover{background:#E9F1F9}
   .solo-print{display:block !important}
 }
 .solo-print{display:none}
+.tabs{display:flex;gap:0;background:var(--card);border:1px solid var(--borde);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.tab-btn{flex:1;padding:10px 18px;border:none;background:transparent;font-size:13px;font-weight:700;cursor:pointer;color:var(--gris);border-bottom:3px solid transparent;transition:all .15s}
+.tab-btn.active{color:var(--azul);border-bottom-color:var(--azul2);background:#EEF4FB}
+.tab-btn:hover:not(.active){background:#F5F8FC}
+.tab-loading{font-size:11px;color:var(--gris);padding:10px 18px;align-self:center}
 </style>
 </head>
 <body>
@@ -123,6 +128,11 @@ tr:hover{background:#E9F1F9}
   <div class="sub" id="subInfo">Cargando datos del ERP…</div></div>
 </header>
 <div class="wrap">
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="credito" onclick="switchTab('credito')">Crédito Directo</button>
+    <button class="tab-btn" data-tab="rent-sale" onclick="switchTab('rent-sale')">Alquiler-Venta</button>
+    <span class="tab-loading" id="rsLoading" style="display:none">Cargando Alquiler-Venta…</span>
+  </div>
   <div id="errBox" style="display:none;background:#FDECEA;border:1px solid #C00000;color:#9C0006;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px"></div>
   <div class="filtros">
     <div><label>Vendedor</label><select id="fVend"><option value="">Todos</option></select></div>
@@ -288,9 +298,19 @@ tr:hover{background:#E9F1F9}
 </div>
 <script>
 const API_URL = 'https://panel.librainternational.com.pe/api/ping';
+const API_URL_RS = API_URL.replace('/ping', '/ping-rent-sale');
 let API_TOKEN = localStorage.getItem('libra_api_token') || '';
-let DATA = [];
-let PAGOS = [];
+let DATA = [], DATA_CREDITO = [], DATA_RS = [];
+let PAGOS = [], PAGOS_CREDITO = [], PAGOS_RS = [];
+let ACTIVE_TAB = 'credito';
+function switchTab(tab){
+  ACTIVE_TAB = tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  DATA  = tab==='credito' ? DATA_CREDITO  : DATA_RS;
+  PAGOS = tab==='credito' ? PAGOS_CREDITO : PAGOS_RS;
+  if(!DATA.length) return;
+  enriquecer(); initMeses(); resetF();
+}
 const fmt = n => n.toLocaleString('es-PE', {maximumFractionDigits: 0});
 const COLS = {'AL DÍA':'#548235','1-30 DÍAS':'#E6A100','31-90 DÍAS':'#E05A5A','+90 DÍAS':'#C00000'};
 let sortK = 'dias', sortDir = -1;
@@ -1039,14 +1059,16 @@ async function cargarDatos(){
     });
     if(!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
-    DATA = data.loans || data.prestamos || [];
-    PAGOS = (data.pagos || data.payments || []).map(p=>({fecha:String(p.fecha||p.fecha_pago||'').slice(0,10).replace(/\//g,'-'), monto:+p.monto||0, cliente:p.cliente||'', metodo:p.metodo||'', cuota:!!p.cuota}));
+    DATA_CREDITO = data.loans || data.prestamos || [];
+    PAGOS_CREDITO = (data.pagos || data.payments || []).map(p=>({fecha:String(p.fecha||p.fecha_pago||'').slice(0,10).replace(/\//g,'-'), monto:+p.monto||0, cliente:p.cliente||'', metodo:p.metodo||'', cuota:!!p.cuota}));
+    if(ACTIVE_TAB === 'credito'){ DATA = DATA_CREDITO; PAGOS = PAGOS_CREDITO; }
     enriquecer();
     initMeses();
     gestSync(false);
     const p = data.period || {};
     subInfo.textContent = `Datos en vivo del ERP · actualizado ${new Date().toLocaleString('es-PE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} · montos en USD · Pagos: ${p.from||'histórico completo'} al ${p.to||'hoy'} · Días de atraso ${DATA.some(d=>d.proxVenc)?'según fechas del ERP':'estimados'}`;
     render();
+    cargarDatosRS();
   } catch(err){
     errBox.style.display='block';
     const auth = String(err.message).includes('401') || String(err.message).includes('403');
@@ -1054,6 +1076,20 @@ async function cargarDatos(){
       + ' <a href="#" onclick="localStorage.removeItem(\'libra_api_token\');location.reload();return false" style="color:#9C0006;font-weight:700;text-decoration:underline">Ingresar token de nuevo</a>';
     subInfo.textContent='Error al cargar datos';
   }
+}
+async function cargarDatosRS(){
+  if(!API_TOKEN) return;
+  rsLoading.style.display = 'inline';
+  try {
+    const res = await fetch(`${API_URL_RS}?days=3650`, {
+      headers: {'Authorization': `Bearer ${API_TOKEN}`, 'Accept': 'application/json'}
+    });
+    if(!res.ok) return;
+    const d = await res.json();
+    DATA_RS  = d.loans || d.prestamos || [];
+    PAGOS_RS = (d.pagos || d.payments || []).map(p=>({fecha:String(p.fecha||p.fecha_pago||'').slice(0,10).replace(/\//g,'-'), monto:+p.monto||0, cliente:p.cliente||'', metodo:p.metodo||'', cuota:!!p.cuota}));
+    if(ACTIVE_TAB === 'rent-sale'){ DATA = DATA_RS; PAGOS = PAGOS_RS; enriquecer(); initMeses(); render(); }
+  } catch(e){} finally { rsLoading.style.display = 'none'; }
 }
 cargarDatos();
 </script>
