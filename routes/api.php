@@ -29,5 +29,6 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 Route::middleware('auth:api')->prefix('dashboard')->group(function () {
     Route::get('loans', [ApiLoanController::class, 'index']);
+    Route::get('rent-sale-loans', [ApiLoanController::class, 'rentSale']);
 });
 
