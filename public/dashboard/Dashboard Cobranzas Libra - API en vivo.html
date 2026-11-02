@@ -140,6 +140,7 @@ tr:hover{background:#E9F1F9}
       <option>AL DÍA</option><option>1-30 DÍAS</option><option>31-90 DÍAS</option><option>+90 DÍAS</option></select></div>
     <div><label>Estado</label><select id="fEst"><option value="">Todos</option>
       <option>Atrasado</option><option>Parcial</option><option>Pagado</option></select></div>
+    <div><label>Mes del año</label><select id="fMes"><option value="">Todos</option></select></div>
     <div><label>Buscar cliente</label><input id="fBusca" type="text" placeholder="Nombre del cliente..."></div>
     <button onclick="resetF()">Limpiar filtros</button>
     <button style="background:#548235" onclick="cargarDatos()">↻ Actualizar datos</button>
@@ -160,9 +161,9 @@ tr:hover{background:#E9F1F9}
     <div class="kpi"><div class="lbl">Por cobrar</div><div class="val" id="kSaldo">–</div></div>
     <div class="kpi rojo"><div class="lbl">% morosidad</div><div class="val" id="kMora">–</div></div>
     <div class="kpi verde"><div class="lbl">% avance cobranza</div><div class="val" id="kAvance">–</div></div>
-    <div class="kpi verde" title="Pagos de cuotas del cronograma registrados este mes"><div class="lbl">Cobrado este mes solo cuotas</div><div class="val" id="kCob">–</div></div>
-    <div class="kpi verde" title="Pagos de inicial registrados este mes (sin mora ni pagos a capital)"><div class="lbl">Cobrado este mes solo inicial</div><div class="val" id="kCobMesIni">–</div></div>
-    <div class="kpi verde" title="Cuotas + inicial registradas este mes (sin mora ni pagos a capital)"><div class="lbl">Cobrado este mes (inicial + cuotas)</div><div class="val" id="kCobMesTot">–</div></div>
+    <div class="kpi verde" title="Pagos de cuotas del cronograma registrados este mes"><div class="lbl" id="lCob">Cobrado este mes solo cuotas</div><div class="val" id="kCob">–</div></div>
+    <div class="kpi verde" title="Pagos de inicial registrados este mes (sin mora ni pagos a capital)"><div class="lbl" id="lCobMesIni">Cobrado este mes solo inicial</div><div class="val" id="kCobMesIni">–</div></div>
+    <div class="kpi verde" title="Cuotas + inicial registradas este mes (sin mora ni pagos a capital)"><div class="lbl" id="lCobMesTot">Cobrado este mes (inicial + cuotas)</div><div class="val" id="kCobMesTot">–</div></div>
     <div class="kpi verde" title="Todos los pagos registrados este año: cuotas, inicial, mora y pagos a capital"><div class="lbl">Cobrado en el año (incl. inicial)</div><div class="val" id="kCobAnio">–</div></div>
     <div class="kpi verde" title="Solo pagos de cuotas del cronograma registrados este año: sin inicial, mora ni pagos a capital"><div class="lbl">Cobrado en el año (sin inicial)</div><div class="val" id="kCobAnioCuo">–</div></div>
     <div class="kpi rojo"><div class="lbl">Días atraso promedio</div><div class="val" id="kDiasProm">–</div></div>
@@ -177,7 +178,7 @@ tr:hover{background:#E9F1F9}
     <div class="panel"><h3>Cobros por día (últimos 60 días con pagos)</h3><div class="chart-box"><canvas id="chPagos"></canvas></div></div>
   </div>
   <div class="grid">
-    <div class="panel"><h3>Vence este mes por cliente</h3>
+    <div class="panel"><h3 id="tMes">Vence este mes por cliente</h3>
       <div class="hint">Lo que toca recaudar este mes (cuota del mes, sin contar deuda atrasada; si la API no envía fechas de cuota, se asume una cuota por préstamo activo) · Total: <b id="totMes">–</b></div>
       <div class="tabla-scroll" style="max-height:260px"><table>
         <thead><tr><th>Cliente</th><th>Vendedor</th><th>Fecha</th><th class="num">Cuota del mes</th></tr></thead>
@@ -319,7 +320,10 @@ function switchTab(tab){
 const fmt = n => n.toLocaleString('es-PE', {maximumFractionDigits: 0});
 const COLS = {'AL DÍA':'#548235','1-30 DÍAS':'#E6A100','31-90 DÍAS':'#E05A5A','+90 DÍAS':'#C00000'};
 let sortK = 'dias', sortDir = -1;
-const F = {vend:'', sem:'', est:'', busca:''};
+const F = {vend:'', sem:'', est:'', busca:'', mes:''};
+// Mes elegido en el filtro "Mes del año" (YYYY-MM); sin filtro, el mes actual
+function mesSel(){ return F.mes || (_hoy.getFullYear()+'-'+String(_hoy.getMonth()+1).padStart(2,'0')); }
+function mesSolo(k){ return mesNom(k).split(' ')[0]; }
 
 let vends = [];
 
@@ -344,7 +348,11 @@ function kpis(rows){
   kMora.textContent = _mor.toFixed(1)+'%';
   kMora.title = _mor>100 ? 'Supera 100% porque la mora acumulada hace que lo vencido sea mayor que el saldo registrado por el ERP' : 'Vencido+Mora ÷ Total por cobrar';
   const clientes = new Set(rows.map(r=>r.cliente));
-  const mesAct = _hoy.getFullYear()+'-'+String(_hoy.getMonth()+1).padStart(2,'0');
+  const mesAct = mesSel();
+  const enMes = F.mes ? 'en '+mesSolo(mesAct) : 'este mes';
+  lCob.textContent = `Cobrado ${enMes} solo cuotas`;
+  lCobMesIni.textContent = `Cobrado ${enMes} solo inicial`;
+  lCobMesTot.textContent = `Cobrado ${enMes} (inicial + cuotas)`;
   const cob = PAGOS.filter(p=>p.cuota && p.fecha.slice(0,7)===mesAct && ((!F.vend && !F.sem && !F.est && !F.busca) || clientes.has(p.cliente))).reduce((a,p)=>a+p.monto,0);
   kCob.textContent = fmt(cob);
   const cobMesIni = PAGOS.filter(p=>p.tipo==='inicial' && p.fecha.slice(0,7)===mesAct && ((!F.vend && !F.sem && !F.est && !F.busca) || clientes.has(p.cliente))).reduce((a,p)=>a+p.monto,0);
@@ -448,9 +456,15 @@ function chipClick(v, b, nCount){
   render();
 }
 function tablasMes(rows){
-  const mes = rows.filter(d=>d.venceMes>0).sort((a,b)=>b.venceMes-a.venceMes);
-  tbodyMes.innerHTML = mes.map(d=>`<tr><td title="${d.maq}">${d.cliente.length>38?d.cliente.slice(0,37)+'…':d.cliente}</td><td>${d.vend}</td><td>${d.proxVenc||'—'}</td><td class="num"><b>${fmt(d.venceMes)}</b></td></tr>`).join('') || '<tr><td colspan="4" style="color:var(--gris)">Sin cuotas este mes con los filtros actuales</td></tr>';
-  totMes.textContent = fmt(mes.reduce((a,d)=>a+d.venceMes,0));
+  // Mes elegido relativo al actual: 0 = este mes, >0 = futuro (se usa el cronograma estimado), <0 = pasado
+  const k = mesSel();
+  const off = (+k.slice(0,4))*12 + (+k.slice(5,7)-1) - (_hoy.getFullYear()*12 + _hoy.getMonth());
+  tMes.textContent = off===0 ? 'Vence este mes por cliente' : 'Vence en '+mesSolo(k)+' por cliente';
+  const vence = d => off===0 ? d.venceMes : (d.nFut>0 && off>=d.proxM && off<d.proxM+d.nFut ? d.cuota : 0);
+  const mes = off<0 ? [] : rows.map(d=>({d, v:vence(d)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
+  const vacio = off<0 ? 'Mes pasado: lo cobrado en ese mes está en el Informe mensual de cobranza' : 'Sin cuotas en este mes con los filtros actuales';
+  tbodyMes.innerHTML = mes.map(({d,v})=>`<tr><td title="${d.maq}">${d.cliente.length>38?d.cliente.slice(0,37)+'…':d.cliente}</td><td>${d.vend}</td><td>${d.proxVenc||'—'}</td><td class="num"><b>${fmt(v)}</b></td></tr>`).join('') || `<tr><td colspan="4" style="color:var(--gris)">${vacio}</td></tr>`;
+  totMes.textContent = fmt(mes.reduce((a,x)=>a+x.v,0));
   const le = rows.filter(d=>d.vm>0 && d.dias>30).sort((a,b)=>b.vm-a.vm);
   tbodyLetras.innerHTML = le.map(d=>`<tr><td title="${d.maq}">${d.cliente.length>38?d.cliente.slice(0,37)+'…':d.cliente}</td><td>${d.vend}</td><td class="num">${d.letras}</td><td class="num" style="color:var(--rojo);font-weight:600">${fmt(d.vm)}</td><td class="num">${d.dias}</td></tr>`).join('') || '<tr><td colspan="5" style="color:var(--gris)">Sin letras vencidas</td></tr>';
   totLetras.textContent = fmt(le.reduce((a,d)=>a+d.vm,0));
@@ -502,13 +516,14 @@ function statsApi(rows){
   cHist.data.datasets[0].data = meses.map(k=>Math.round(porMes[k]));
   cHist.update();
   // metodos
+  const pagosM = F.mes ? pagosF.filter(p=>p.fecha.slice(0,7)===F.mes) : pagosF;
   const porMet = {};
-  pagosF.forEach(p=>{ const m=p.metodo||'Otro'; porMet[m]=(porMet[m]||0)+p.monto; });
+  pagosM.forEach(p=>{ const m=p.metodo||'Otro'; porMet[m]=(porMet[m]||0)+p.monto; });
   const mets = Object.keys(porMet);
   cMet.data.labels = mets;
   cMet.data.datasets[0].data = mets.map(m=>Math.round(porMet[m]));
   cMet.update();
-  hintMet.textContent = pagosF.length + ' pagos · ticket promedio ' + fmt(pagosF.length?pagosF.reduce((a,p)=>a+p.monto,0)/pagosF.length:0);
+  hintMet.textContent = (F.mes ? mesNom(F.mes)+' · ' : '') + pagosM.length + ' pagos · ticket promedio ' + fmt(pagosM.length?pagosM.reduce((a,p)=>a+p.monto,0)/pagosM.length:0);
   // dias sin pagar
   const ultPago = {};
   PAGOS.forEach(p=>{ if(!ultPago[p.cliente] || p.fecha>ultPago[p.cliente]) ultPago[p.cliente]=p.fecha; });
@@ -521,9 +536,9 @@ function statsApi(rows){
     return {cli, vend:c.vend, vm:c.vm, up, dias};
   }).sort((a,b)=>(b.dias??9999)-(a.dias??9999));
   // cobros por dia (ultimos 60 dias)
-  const diasP = [...new Set(pagosF.map(p=>p.fecha))].sort().slice(-60);
+  const diasP = [...new Set(pagosM.map(p=>p.fecha))].sort().slice(-60);
   cPagos.data.labels = diasP.map(d=>d.slice(8)+'/'+d.slice(5,7));
-  cPagos.data.datasets[0].data = diasP.map(d=>Math.round(pagosF.filter(p=>p.fecha===d).reduce((a,p)=>a+p.monto,0)));
+  cPagos.data.datasets[0].data = diasP.map(d=>Math.round(pagosM.filter(p=>p.fecha===d).reduce((a,p)=>a+p.monto,0)));
   cPagos.update();
   tbodySinPago.innerHTML = filas.map(f=>`<tr><td>${f.cli.length>44?f.cli.slice(0,43)+'…':f.cli}</td><td>${f.vend}</td><td class="num" style="color:var(--rojo);font-weight:600">${fmt(f.vm)}</td><td>${f.up?f.up.split('-').reverse().join('/'):'sin pagos en el historial'}</td><td class="num"><b>${f.dias??'—'}</b></td></tr>`).join('') || '<tr><td colspan="5" style="color:var(--gris)">Sin deudores con los filtros actuales</td></tr>';
 }
@@ -827,6 +842,22 @@ function initMeses(){
   if(!meses.includes(actual)) meses.unshift(actual);
   infMes.innerHTML = meses.map(k=>`<option value="${k}">${mesNom(k)}</option>`).join('');
   infMes.value = actual;
+  const anio = _hoy.getFullYear();
+  fMes.innerHTML = '<option value="">Todos</option>' + Array.from({length:12}, (_,i)=>{
+    const k = anio+'-'+String(i+1).padStart(2,'0');
+    return `<option value="${k}">${mesNom(k).replace(/^./, c=>c.toUpperCase())}</option>`;
+  }).join('');
+  fMes.value = F.mes;
+  sincInfMes();
+}
+// El informe mensual y el de avances siguen al filtro "Mes del año"
+function sincInfMes(){
+  const k = mesSel();
+  if(![...infMes.options].some(o=>o.value===k)){
+    infMes.add(new Option(mesNom(k), k));
+    [...infMes.options].sort((a,b)=>b.value.localeCompare(a.value)).forEach(o=>infMes.appendChild(o));
+  }
+  infMes.value = k;
 }
 function renderAv(){
   if(!infMes.options.length) return;
@@ -907,13 +938,15 @@ function render(){
   SIMROWS = rows;  kpis(rows); tabla(rows); charts(rows); vendCards(); tablasMes(rows); seccionAno(rows); statsApi(rows); renderGest(rows); renderCal(rows); renderSim(); renderDiag(); renderInf(); renderAv();
 }
 function resetF(){
-  F.vend=F.sem=F.est=F.busca='';
-  fVend.value=fSem.value=fEst.value=fBusca.value='';
+  F.vend=F.sem=F.est=F.busca=F.mes='';
+  fVend.value=fSem.value=fEst.value=fBusca.value=fMes.value='';
+  sincInfMes();
   render();
 }
 fVend.onchange = e=>{F.vend=e.target.value; render()};
 fSem.onchange = e=>{F.sem=e.target.value; render()};
 fEst.onchange = e=>{F.est=e.target.value; render()};
+fMes.onchange = e=>{F.mes=e.target.value; sincInfMes(); render()};
 fBusca.oninput = e=>{F.busca=e.target.value.toLowerCase(); render()};
 document.querySelectorAll('th').forEach(th=>th.onclick=()=>{
   const k = th.dataset.k;
