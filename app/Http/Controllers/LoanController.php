@@ -130,6 +130,10 @@ class LoanController extends Controller {
                                     $html .= '<li><a href="#" class="open_refinance_modal" data-href="'.route('loan.refinance.form', $row->id).'"><i class="fa fa-landmark" aria-hidden="true"></i> Refinanciar</a></li>';
                                 }
                             }
+                            if ($row->refinanced_at) {
+                                $html .= '<li class="divider"></li>';
+                                $html .= '<li><a href="#" class="revert_refinance_btn" data-href="'.route('loan.refinance.revert', $row->id).'"><i class="fa fa-undo" aria-hidden="true"></i> Revertir refinanciamiento</a></li>';
+                            }
                             if (!in_array($row->status, ['repossessed', 'paid', 'cancelled'])) {
                                 $html .= '<li class="divider"></li>';
                                 $html .= '<li><a href="#" class="open_repossess_modal" data-id="'.$row->id.'" data-href="'.route('loan.repossess', $row->id).'"><i class="fa fa-retweet" aria-hidden="true"></i> Reposición</a></li>';
@@ -1166,6 +1170,98 @@ class LoanController extends Controller {
                 'success' => false,
                 'msg'     => 'Error al procesar el refinanciamiento: ' . $e->getMessage(),
             ]);
+        }
+    }
+
+    // Deshace el último refinanciamiento: elimina el cronograma nuevo y restaura el anterior.
+    // refinanceStore no guarda un snapshot, así que se reconstruye a partir de los registros
+    // marcados en el mismo instante (loans.refinanced_at).
+    public function revertRefinance($id)
+    {
+        if (! request()->ajax()) {
+            abort(403);
+        }
+
+        try {
+            $business_id = request()->session()->get('user.business_id');
+            $loan = Loan::where('business_id', $business_id)->findOrFail($id);
+
+            if (! $loan->refinanced_at) {
+                return response()->json(['success' => false, 'msg' => 'El préstamo no tiene un refinanciamiento aplicado.']);
+            }
+
+            // Margen de segundos: refinanceStore llama a now() varias veces dentro de la transacción
+            $refinanced_at = Carbon::parse($loan->refinanced_at);
+            $window = [$refinanced_at->copy()->subSeconds(5), $refinanced_at->copy()->addSeconds(5)];
+
+            $new_schedule_ids = PaymentSchedule::where('loan_id', $id)
+                ->whereNull('refinanced_at')
+                ->pluck('id');
+
+            // No se puede revertir si el cronograma nuevo ya tiene pagos aplicados
+            $has_payments = PaymentSchedule::whereIn('id', $new_schedule_ids)->where('status', '!=', 'pending')->exists()
+                || TransactionPayment::whereIn('payment_schedule_id', $new_schedule_ids)->exists()
+                || PaymentApplication::whereIn('payment_schedule_id', $new_schedule_ids)->exists()
+                || Delay::withoutGlobalScope('not_deleted')->withTrashed()->whereIn('payment_schedule_id', $new_schedule_ids)->exists();
+
+            if ($has_payments) {
+                return response()->json(['success' => false, 'msg' => 'No se puede revertir: el nuevo cronograma ya tiene pagos o moras registrados.']);
+            }
+
+            DB::transaction(function () use ($loan, $id, $window, $new_schedule_ids) {
+                // 1. Eliminar el cronograma generado por el refinanciamiento
+                PaymentSchedule::whereIn('id', $new_schedule_ids)->delete();
+
+                // 2. Restaurar las moras que se soft-deletearon al refinanciar
+                $restored_delays = Delay::withoutGlobalScope('not_deleted')->withTrashed()
+                    ->where('loan_id', $id)
+                    ->whereBetween('deleted_at', $window)
+                    ->get();
+                Delay::withoutGlobalScope('not_deleted')->withTrashed()
+                    ->whereIn('id', $restored_delays->pluck('id'))
+                    ->update(['deleted_at' => null]);
+
+                $late_schedule_ids = $restored_delays->where('status', 'late')->pluck('payment_schedule_id')->filter()->all();
+
+                // 3. Restaurar las cuotas anteriores: las que tenían mora o ya vencieron vuelven a 'overdue'
+                $old_schedules = PaymentSchedule::where('loan_id', $id)
+                    ->whereBetween('refinanced_at', $window)
+                    ->get();
+                foreach ($old_schedules as $schedule) {
+                    if ($schedule->status === 'refinanced') {
+                        $is_overdue = in_array($schedule->id, $late_schedule_ids)
+                            || Carbon::parse($schedule->sheduled_date)->lt(Carbon::today());
+                        $schedule->status = $is_overdue ? 'overdue' : 'pending';
+                    }
+                    $schedule->refinanced_at = null;
+                    $schedule->save();
+                }
+
+                // 4. Revertir la condonación de mora registrada contra la venta (si la hubo)
+                $forgiveness = PaymentApplication::where('loan_id', $id)
+                    ->whereNull('transaction_payment_id')
+                    ->whereNull('payment_schedule_id')
+                    ->whereBetween('created_at', $window)
+                    ->get();
+                if ($forgiveness->isNotEmpty()) {
+                    $forgiven_mora = $forgiveness->sum('amount_discounted');
+                    $transaction = Transaction::find($loan->transaction_id);
+                    $transaction->final_total += $forgiven_mora;
+                    $transaction->discount_amount = max(0, $transaction->discount_amount - $forgiven_mora);
+                    $transaction->save();
+                    PaymentApplication::whereIn('id', $forgiveness->pluck('id'))->delete();
+                }
+
+                // 5. Volver al refinanciamiento previo (si existía) y recalcular el estado del préstamo
+                $loan->refinanced_at = PaymentSchedule::where('loan_id', $id)->max('refinanced_at');
+                $loan->status = ! empty($late_schedule_ids) ? 'in arrears' : 'partial';
+                $loan->save();
+            });
+
+            return response()->json(['success' => true, 'msg' => 'Refinanciamiento revertido. Se restauró el cronograma anterior.']);
+        } catch (\Exception $e) {
+            \Log::emergency('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
+            return response()->json(['success' => false, 'msg' => 'Error al revertir el refinanciamiento.']);
         }
     }
 

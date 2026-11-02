@@ -456,6 +456,38 @@ $(document).on('click', '.revert_execution_btn', function(e) {
     });
 });
 
+$(document).on('click', '.revert_refinance_btn', function(e) {
+    e.preventDefault();
+    var href = $(this).data('href');
+    swal({
+        title: '¿Revertir refinanciamiento?',
+        text: 'Se eliminará el cronograma refinanciado y se restaurará el cronograma anterior con sus moras.',
+        icon: 'warning',
+        buttons: ['Cancelar', 'Confirmar'],
+        dangerMode: true,
+    }).then(function(confirm) {
+        if (confirm) {
+            $.ajax({
+                method: 'PATCH',
+                url: href,
+                data: { _token: $('meta[name="csrf-token"]').attr('content') },
+                dataType: 'json',
+                success: function(result) {
+                    if (result.success) {
+                        toastr.success(result.msg);
+                        loan_table.ajax.reload();
+                    } else {
+                        toastr.error(result.msg);
+                    }
+                },
+                error: function() {
+                    toastr.error('Error al procesar la solicitud.');
+                }
+            });
+        }
+    });
+});
+
 $(document).on('click', '.open_refinance_modal', function(e) {
     e.preventDefault();
     var href = $(this).data('href');
