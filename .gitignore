@@ -19,5 +19,5 @@ npm-debug.log
 /public/uploads/temp
 .scribe
 /laradock
-/public/dashboard.DS_Store
+/public/dashboard
 .DS_Store
