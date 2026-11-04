@@ -131,9 +131,34 @@ tr:hover{background:#E9F1F9}
   <div class="tabs">
     <button class="tab-btn active" data-tab="credito" onclick="switchTab('credito')">Crédito Directo</button>
     <button class="tab-btn" data-tab="rent-sale" onclick="switchTab('rent-sale')">Alquiler-Venta</button>
+    <button class="tab-btn" data-tab="historico" onclick="switchTab('historico')">Histórico de cobranzas <span style="font-size:10px;font-weight:700;background:#FFEB9C;color:#9C6500;padding:2px 7px;border-radius:10px;margin-left:4px;vertical-align:middle">🚧 En construcción</span></button>
     <span class="tab-loading" id="rsLoading" style="display:none">Cargando Alquiler-Venta…</span>
   </div>
   <div id="errBox" style="display:none;background:#FDECEA;border:1px solid #C00000;color:#9C0006;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px"></div>
+  <div id="vistaHist" style="display:none">
+    <div class="filtros">
+      <div><label>Cartera</label><select id="hCart" onchange="renderHist()"><option value="">Crédito Directo + Alquiler-Venta</option><option value="credito">Crédito Directo</option><option value="rent-sale">Alquiler-Venta</option></select></div>
+      <div><label>Año</label><select id="hAnio" onchange="renderHist()"><option value="">Todos</option></select></div>
+      <div><label>Vendedor</label><select id="hVend" onchange="renderHist()"><option value="">Todos</option></select></div>
+      <div><label>Iniciales</label><label style="display:flex;gap:6px;align-items:center;font-size:13px;text-transform:none;color:var(--texto);font-weight:400;padding:7px 0;margin:0;cursor:pointer"><input type="checkbox" id="hIni" checked onchange="renderHist()" style="min-width:0;padding:0;width:16px;height:16px">Incluir pagos de inicial</label></div>
+      <button class="no-print" onclick="expHistCSV()">⬇ Exportar a Excel</button>
+      <div class="chip-info" id="hInfo"></div>
+    </div>
+    <div class="kpis" id="hKpis"></div>
+    <div class="panel" style="margin-bottom:16px">
+      <h3>Pagos realizados por mes</h3>
+      <div class="hint">Montos cobrados cada mes según la fecha del pago, separados por tipo (cuotas del cronograma, inicial, mora y pagos a capital).</div>
+      <div class="chart-box" style="height:300px"><canvas id="chHistMes"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3>Detalle mensual</h3>
+      <div class="tabla-scroll"><table>
+        <thead id="theadHist"></thead>
+        <tbody id="tbodyHist"></tbody></table></div>
+      <div class="nota">Clientes = clientes distintos que registraron al menos un pago en el mes. Variación = cambio del total respecto al mes anterior.</div>
+    </div>
+  </div>
+  <div id="vistaCartera">
   <div class="filtros">
     <div><label>Vendedor</label><select id="fVend"><option value="">Todos</option></select></div>
     <div><label>Semáforo</label><select id="fSem"><option value="">Todos</option>
@@ -298,6 +323,7 @@ tr:hover{background:#E9F1F9}
     </table></div>
     <div class="nota">Días de atraso calculados con las fechas de vencimiento del ERP. Fuente: exports del ERP Libra. La proyección mensual distribuye el "por vencer" de cada préstamo en sus meses restantes de cronograma; el "cobrado real" solo cubre el período del informe de pagos (23 Jun - 14 Jul).</div>
   </div>
+  </div>
   <div class="solo-print" style="margin-top:10px;font-size:10px;color:#66788a;text-align:center">
     Libra International Perú — Reporte de cobranzas generado desde el dashboard · <span id="pieFecha"></span>
   </div>
@@ -312,6 +338,9 @@ let ACTIVE_TAB = 'credito';
 function switchTab(tab){
   ACTIVE_TAB = tab;
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  vistaHist.style.display = tab==='historico' ? '' : 'none';
+  vistaCartera.style.display = tab==='historico' ? 'none' : '';
+  if(tab==='historico'){ renderHist(); return; }
   DATA  = tab==='credito' ? DATA_CREDITO  : DATA_RS;
   PAGOS = tab==='credito' ? PAGOS_CREDITO : PAGOS_RS;
   if(!DATA.length) return;
@@ -933,6 +962,101 @@ function imprimirAvances(){
   document.body.classList.add('solo-avances');
   setTimeout(()=>{ window.print(); document.body.classList.remove('solo-avances'); }, 300);
 }
+// ================= HISTORICO DE COBRANZAS =================
+const H_TIPOS = [['cuota','Cuotas','#2E75B6'],['inicial','Inicial','#E6A100'],['mora','Mora','#C00000'],['capital','Pagos a capital','#548235']];
+function histDatos(){
+  const cart = hCart.value;
+  const fuentes = [];
+  if(cart!=='rent-sale') fuentes.push([DATA_CREDITO, PAGOS_CREDITO]);
+  if(cart!=='credito') fuentes.push([DATA_RS, PAGOS_RS]);
+  const vendDe = {};
+  fuentes.forEach(([data])=>data.forEach(d=>{ if(!vendDe[d.cliente]) vendDe[d.cliente] = d.vend; }));
+  // selects de año y vendedor según la cartera elegida
+  const todos = fuentes.flatMap(([,pagos])=>pagos).filter(p=>p.fecha.length>=7);
+  const anios = [...new Set(todos.map(p=>p.fecha.slice(0,4)))].sort().reverse();
+  const anioSel = anios.includes(hAnio.value) ? hAnio.value : '';
+  hAnio.innerHTML = '<option value="">Todos</option>' + anios.map(a=>`<option>${a}</option>`).join('');
+  hAnio.value = anioSel;
+  const vs = [...new Set(Object.values(vendDe))].sort();
+  const vendSel = vs.includes(hVend.value) ? hVend.value : '';
+  hVend.innerHTML = '<option value="">Todos</option>' + vs.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+  hVend.value = vendSel;
+  const tipos = H_TIPOS.filter(t=>hIni.checked || t[0]!=='inicial');
+  const pagos = todos.filter(p=>(!anioSel || p.fecha.slice(0,4)===anioSel) && (!vendSel || vendDe[p.cliente]===vendSel) && (hIni.checked || p.tipo!=='inicial'));
+  // meses continuos del primero al último con pagos
+  const porMes = {};
+  pagos.forEach(p=>{
+    const k = p.fecha.slice(0,7);
+    const o = porMes[k] || (porMes[k] = {n:0, cli:new Set(), total:0, cuota:0, inicial:0, mora:0, capital:0});
+    const t = o[p.tipo]!==undefined ? p.tipo : (p.cuota ? 'cuota' : 'inicial');
+    o[t] += p.monto; o.total += p.monto; o.n++; o.cli.add(p.cliente);
+  });
+  const ks = Object.keys(porMes).sort();
+  const meses = [];
+  if(ks.length){
+    let y = +ks[0].slice(0,4), m = +ks[0].slice(5,7);
+    const fin = ks[ks.length-1];
+    for(;;){
+      const k = y+'-'+String(m).padStart(2,'0');
+      meses.push(Object.assign({k}, porMes[k] || {n:0, cli:new Set(), total:0, cuota:0, inicial:0, mora:0, capital:0}));
+      if(k===fin) break;
+      if(++m>12){ m=1; y++; }
+    }
+  }
+  return {pagos, meses, tipos, vendDe};
+}
+let cHistMes;
+function renderHist(){
+  if(!cHistMes){
+    cHistMes = new Chart(chHistMes, {type:'bar', data:{labels:[], datasets:[]},
+      options:{maintainAspectRatio:false,
+        plugins:{legend:{position:'top'},tooltip:{mode:'index',callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw),footer:it=>'Total: '+fmt(it.reduce((a,c)=>a+c.raw,0))}}},
+        scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:v=>fmt(v)}}}}});
+  }
+  const {pagos, meses, tipos} = histDatos();
+  const total = pagos.reduce((a,p)=>a+p.monto,0);
+  const conPago = meses.filter(m=>m.n>0);
+  const mejor = conPago.slice().sort((a,b)=>b.total-a.total)[0];
+  const clientes = new Set(pagos.map(p=>p.cliente));
+  hKpis.innerHTML = [
+    ['Total cobrado', fmt(total), 'verde'],
+    ['Promedio mensual', fmt(meses.length?total/meses.length:0), ''],
+    ['Mejor mes', mejor? mesNom(mejor.k)+' · '+fmt(mejor.total) : '—', 'verde'],
+    ['Meses con cobros', conPago.length+' de '+meses.length, ''],
+    ['N° de pagos', pagos.length, ''],
+    ['Clientes que pagaron', clientes.size, ''],
+  ].map(([l,v,c])=>`<div class="kpi ${c}"><div class="lbl">${l}</div><div class="val"${l==='Mejor mes'?' style="font-size:16px"':''}>${v}</div></div>`).join('');
+  hInfo.textContent = hIni.checked ? 'Incluye pagos de inicial' : 'Sin pagos de inicial';
+  cHistMes.data.labels = meses.map(m=>mesNom(m.k).slice(0,3)+' '+m.k.slice(2,4));
+  cHistMes.data.datasets = tipos.map(([t,l,c])=>({label:l, data:meses.map(m=>Math.round(m[t])), backgroundColor:c, borderRadius:2}));
+  cHistMes.update();
+  theadHist.innerHTML = '<tr><th>Mes</th>' + tipos.map(t=>`<th class="num">${t[1]}</th>`).join('')
+    + '<th class="num">Total</th><th class="num">N° pagos</th><th class="num">Clientes</th><th class="num">Var. vs mes ant.</th></tr>';
+  tbodyHist.innerHTML = meses.map((m,i)=>{
+    const ant = i ? meses[i-1].total : 0;
+    const v = (i && ant) ? (m.total-ant)/ant*100 : null;
+    return `<tr><td><b>${mesNom(m.k).replace(/^./, c=>c.toUpperCase())}</b></td>`
+      + tipos.map(([t])=>`<td class="num">${m[t]?fmt(m[t]):'—'}</td>`).join('')
+      + `<td class="num" style="color:#548235;font-weight:700">${m.total?fmt(m.total):'—'}</td><td class="num">${m.n}</td><td class="num">${m.cli.size}</td>`
+      + `<td class="num" style="color:${v===null?'var(--gris)':v>=0?'#548235':'#C00000'}">${v===null?'—':(v>=0?'+':'')+v.toFixed(1)+'%'}</td></tr>`;
+  }).reverse().join('')
+    + (meses.length ? `<tr style="background:#DDEBF7;font-weight:700"><td>Total</td>`
+      + tipos.map(([t])=>`<td class="num">${fmt(meses.reduce((a,m)=>a+m[t],0))}</td>`).join('')
+      + `<td class="num">${fmt(total)}</td><td class="num">${pagos.length}</td><td class="num">${clientes.size}</td><td></td></tr>` : '')
+    || `<tr><td colspan="${tipos.length+5}" style="color:var(--gris)">Sin pagos con los filtros actuales</td></tr>`;
+}
+function expHistCSV(){
+  const {meses, tipos} = histDatos();
+  const q = v => '"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const n = v => v.toFixed(2).replace('.',',');
+  const L = [['Mes'].concat(tipos.map(t=>t[1]), ['Total','N pagos','Clientes']).map(q).join(';')];
+  meses.forEach(m=>L.push([mesNom(m.k)].concat(tipos.map(([t])=>n(m[t])), [n(m.total), m.n, m.cli.size]).map(q).join(';')));
+  const blob = new Blob(['﻿'+L.join('\r\n')], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'historico_cobranzas' + (hIni.checked?'':'_sin_inicial') + '_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
 function render(){
   const rows = filtrar();
   SIMROWS = rows;  kpis(rows); tabla(rows); charts(rows); vendCards(); tablasMes(rows); seccionAno(rows); statsApi(rows); renderGest(rows); renderCal(rows); renderSim(); renderDiag(); renderInf(); renderAv();
@@ -1115,6 +1239,7 @@ async function cargarDatos(){
     const p = data.period || {};
     subInfo.textContent = `Datos en vivo del ERP · actualizado ${new Date().toLocaleString('es-PE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} · montos en USD · Pagos: ${p.from||'histórico completo'} al ${p.to||'hoy'} · Días de atraso ${DATA.some(d=>d.proxVenc)?'según fechas del ERP':'estimados'}`;
     render();
+    if(ACTIVE_TAB === 'historico') renderHist();
     cargarDatosRS();
   } catch(err){
     errBox.style.display='block';
@@ -1136,6 +1261,7 @@ async function cargarDatosRS(){
     DATA_RS  = d.loans || d.prestamos || [];
     PAGOS_RS = (d.pagos || d.payments || []).map(p=>({fecha:String(p.fecha||p.fecha_pago||'').slice(0,10).replace(/\//g,'-'), monto:+p.monto||0, cliente:p.cliente||'', metodo:p.metodo||'', cuota:!!p.cuota, tipo:p.tipo||''}));
     if(ACTIVE_TAB === 'rent-sale'){ DATA = DATA_RS; PAGOS = PAGOS_RS; enriquecer(); initMeses(); render(); }
+    if(ACTIVE_TAB === 'historico') renderHist();
   } catch(e){} finally { rsLoading.style.display = 'none'; }
 }
 cargarDatos();
