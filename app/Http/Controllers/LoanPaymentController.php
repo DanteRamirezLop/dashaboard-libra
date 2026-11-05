@@ -205,7 +205,7 @@ class LoanPaymentController extends Controller
                 $inputs['transaction_id'] = $transaction->id;
                 $inputs['amount'] = $this->transactionUtil->num_uf($inputs['amount']);
 
-                // Intereses de los días hasta la próxima cuota: se cobran primero y solo el resto se aplica a capital
+                // Intereses de los días transcurridos del periodo: se cobran primero y solo el resto se aplica a capital
                 $schedule_version_active = ScheduleVersion::where('loan_id', $request->input('loan_id'))->where('status','active')->first();
                 $accrued = ['days' => 0, 'interest' => 0.0];
                 if ($type_pay == 'parcial') {

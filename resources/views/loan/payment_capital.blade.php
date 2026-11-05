@@ -147,7 +147,7 @@
                 {!! Form::text("amount", @num_format($amount + $accrued['interest']), ['class' => 'form-control input_number payment_amount','required', 'placeholder' => 'Amount', 'data-rule-max-value' => @num_format($amount + $accrued['interest']), 'data-msg-max-value' => __('lang_v1.max_amount_to_be_paid_is', ['amount' => @num_format($amount + $accrued['interest'])])]); !!}
               </div>
               <span class="help-block" style="font-size:11px;">
-                Primero se cobran los intereses de <strong id="accrued_days">{{ $accrued['days'] }}</strong> días hasta la próxima cuota ({{ @format_date($next_due_date) }}):
+                Primero se cobran los intereses de <strong id="accrued_days">{{ $accrued['days'] }}</strong> días transcurridos desde el {{ @format_date($accrued['from_date']) }} (próxima cuota {{ @format_date($next_due_date) }}):
                 <strong id="accrued_interest">{{ @num_format($accrued['interest']) }}</strong>.
                 Capital aplicado: <strong id="accrued_capital">{{ @num_format($amount) }}</strong>
               </span>
@@ -203,13 +203,22 @@
     var balance = {{ (float) $accrued['balance'] }};
     var annualRate = {{ (float) $loan->annual_interest_rate }};
     var nextDue = moment('{{ \Carbon\Carbon::parse($next_due_date)->format('Y-m-d') }}', 'YYYY-MM-DD');
+    var fromDate = moment('{{ \Carbon\Carbon::parse($accrued['from_date'])->format('Y-m-d') }}', 'YYYY-MM-DD');
+    var maxInterest = {{ round((float) $accrued['max_interest'], 2) }};
+    var periodDays = Math.max(0, nextDue.diff(fromDate, 'days'));
 
+    // Intereses transcurridos desde el inicio del periodo (mismo cálculo que calcCapitalAccruedInterest)
     function refreshAccrued() {
       var $form = $('#transaction_payment_add_form');
       var paidOn = moment($form.find('#paid_on').val(), moment_date_format + ' ' + moment_time_format).startOf('day');
-      var days = paidOn.isValid() ? Math.max(0, nextDue.diff(paidOn, 'days')) : 0;
-      var interest = Math.round(balance * (annualRate / 100) / 360 * days * 100) / 100;
-      var capital = __read_number($form.find('input[name="amount"]')) - interest;
+      var days = paidOn.isValid() ? Math.min(periodDays, Math.max(0, paidOn.diff(fromDate, 'days'))) : 0;
+      var interest = Math.min(maxInterest, Math.round(balance * (annualRate / 100) / 360 * days * 100) / 100);
+      var $amount = $form.find('input[name="amount"]');
+      var maxAmount = __number_f(Math.round((balance + interest) * 100) / 100);
+      $amount.removeData('rule-max-value msg-max-value ruleMaxValue msgMaxValue')
+        .attr('data-rule-max-value', maxAmount)
+        .attr('data-msg-max-value', '{{ __('lang_v1.max_amount_to_be_paid_is', ['amount' => '__AMT__']) }}'.replace('__AMT__', maxAmount));
+      var capital = __read_number($amount) - interest;
       $form.find('#accrued_days').text(days);
       $form.find('#accrued_interest').text(__number_f(interest));
       $form.find('#accrued_capital').text(__number_f(capital));

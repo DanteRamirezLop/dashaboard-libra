@@ -1550,7 +1550,7 @@ class LoanController extends Controller {
                         $amount_formated = $this->transactionUtil->num_f($amount);
                         $pending_count = $rows->where('status', 'pending')->count();
                         $current_installment = round((float) $nextPending->capital + (float) $nextPending->interests, 2);
-                        // Intereses de los días hasta la próxima cuota (se recalculan en el form al cambiar la fecha)
+                        // Intereses de los días transcurridos del periodo (se recalculan en el form al cambiar la fecha)
                         $accrued = $this->transactionUtil->calcCapitalAccruedInterest($loan->id, $schedule_version_id, $paid_on);
                         $next_due_date = $nextPending->sheduled_date;
                         $view = view('loan.payment_capital')->with(compact('transaction','loan','amount','amount_formated','paid_on','payment_types','accounts','type','pending_count','current_installment','accrued','next_due_date'))->render();
@@ -1598,7 +1598,7 @@ class LoanController extends Controller {
                         return; // no hay cuotas pendientes
                     }
 
-                    // Se permite pagar el saldo más los intereses de los días hasta la próxima cuota
+                    // Se permite pagar el saldo más los intereses de los días transcurridos del periodo
                     $accrued = $this->transactionUtil->calcCapitalAccruedInterest($loan->id, $schedule_version_id, Carbon::now());
                     $amount = round((float) $nextPending->opening_balance + $accrued['interest'], 2);
                     $amount_formated = $this->transactionUtil->num_f($amount);
@@ -1639,7 +1639,7 @@ class LoanController extends Controller {
             $moraAmount = (float) $this->transactionUtil->num_uf($request->input('mora_amount', 0));
             $targetCuotas = $request->filled('target_cuotas') ? (int) $request->input('target_cuotas') : null;
 
-            // Igual que en el pago real: primero se descuentan los intereses de los días hasta la próxima cuota
+            // Igual que en el pago real: primero se descuentan los intereses de los días transcurridos del periodo
             $paid_on = $request->input('paid_on') ?: Carbon::now()->format('Y-m-d');
             $accrued = ['days' => 0, 'interest' => 0.0];
             if ($type_pay == 'parcial') {

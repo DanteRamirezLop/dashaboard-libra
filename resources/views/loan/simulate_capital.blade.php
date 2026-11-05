@@ -22,7 +22,7 @@
               </span>
               {!! Form::date("paid_on", \Carbon\Carbon::now()->format('Y-m-d'), ['class' => 'form-control', 'required']); !!}
             </div>
-            <span class="help-block" style="font-size:11px;">Del monto se descuentan primero los intereses de los días que faltan hasta la próxima cuota; el resto se aplica a capital.</span>
+            <span class="help-block" style="font-size:11px;">Del monto se descuentan primero los intereses de los días transcurridos desde la última cuota hasta la fecha de pago; el resto se aplica a capital.</span>
           </div>
         </div>
         <div class="col-md-6">

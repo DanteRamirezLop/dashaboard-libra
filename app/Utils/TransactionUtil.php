@@ -211,30 +211,60 @@ class TransactionUtil extends Util
         ];
     }
 
-    // Intereses de los días que faltan desde la fecha del pago a capital hasta el vencimiento de la
-    // próxima cuota pendiente (base 360 días). Se cobran antes de aplicar el pago a capital.
-    // Ej: saldo 34,191.82 al 20% anual, pago el 24/08 y próxima cuota el 14/09 => 21 días => 398.90
+    // Intereses devengados (ya transcurridos) desde el inicio del periodo de la próxima cuota pendiente
+    // hasta la fecha del pago a capital (base 360 días). Se cobran antes de aplicar el pago a capital,
+    // por lo que el monto aumenta día a día conforme se acerca el vencimiento.
+    // Inicio del periodo = vencimiento de la cuota anterior (o vencimiento - 1 mes si es la primera);
+    // si ya hubo un pago a capital dentro del periodo, se cuenta desde la fecha de ese pago.
+    // Ej: saldo 32,908.49 al 18% anual, última cuota 21/10 y pago el 05/11 => 15 días => 246.81
     public function calcCapitalAccruedInterest(int $loanId, ?int $scheduleVersionId, $paidOn): array
     {
         $loan = Loan::findOrFail($loanId);
-        $nextPending = PaymentSchedule::query()
+        $rows = PaymentSchedule::query()
             ->where('loan_id', $loanId)
             ->where('schedule_version_id', $scheduleVersionId ?: null)
-            ->where('status', 'pending')
             ->orderBy('id')
-            ->first();
+            ->get();
 
-        if (! $nextPending) {
-            return ['days' => 0, 'interest' => 0.0, 'balance' => 0.0, 'next_date' => null];
+        $nextIndex = $rows->search(fn ($r) => $r->status === 'pending');
+        if ($nextIndex === false) {
+            return ['days' => 0, 'interest' => 0.0, 'balance' => 0.0, 'next_date' => null, 'from_date' => null, 'max_interest' => 0.0];
         }
+        $nextPending = $rows[$nextIndex];
 
         $paidOn = \Carbon\Carbon::parse($paidOn)->startOfDay();
         $nextDate = \Carbon\Carbon::parse($nextPending->sheduled_date)->startOfDay();
-        $days = max(0, $paidOn->diffInDays($nextDate, false));
+
+        // Inicio del periodo de la cuota pendiente
+        $fromDate = $nextIndex > 0
+            ? \Carbon\Carbon::parse($rows[$nextIndex - 1]->sheduled_date)->startOfDay()
+            : $nextDate->copy()->subMonthNoOverflow();
+
+        // Si la versión activa nació de un pago a capital dentro de este periodo, los intereses hasta
+        // esa fecha ya se cobraron: se cuenta desde ese pago.
+        if ($scheduleVersionId) {
+            $version = ScheduleVersion::find($scheduleVersionId);
+            $capitalPaidOn = $version && $version->transaction_payment_id
+                ? TransactionPayment::where('id', $version->transaction_payment_id)->value('paid_on')
+                : null;
+            if ($capitalPaidOn) {
+                $capitalPaidOn = \Carbon\Carbon::parse($capitalPaidOn)->startOfDay();
+                if ($capitalPaidOn->gt($fromDate) && $capitalPaidOn->lte($paidOn)) {
+                    $fromDate = $capitalPaidOn;
+                }
+            }
+        }
+
+        // Entre 0 y los días del periodo (si el pago es posterior al vencimiento, el exceso es mora)
+        $periodDays = max(0, $fromDate->diffInDays($nextDate, false));
+        $days = min($periodDays, max(0, $fromDate->diffInDays($paidOn, false)));
         $balance = (float) $nextPending->opening_balance;
         $interest = round($balance * ($loan->annual_interest_rate / 100) / 360 * $days, 2);
+        // Nunca más que el interés de la propia cuota (meses de 31 días con base 360)
+        $maxInterest = round((float) $nextPending->interests, 2);
+        $interest = min($interest, $maxInterest);
 
-        return ['days' => $days, 'interest' => $interest, 'balance' => $balance, 'next_date' => $nextDate];
+        return ['days' => $days, 'interest' => $interest, 'balance' => $balance, 'next_date' => $nextDate, 'from_date' => $fromDate, 'max_interest' => $maxInterest];
     }
 
     private function calcPMT(float $principal, float $monthlyRate,int $n): float

@@ -25,7 +25,7 @@
           </tr>
           @if($accrued['interest'] > 0)
           <tr>
-            <th>Intereses de {{ $accrued['days'] }} días hasta la próxima cuota</th>
+            <th>Intereses de {{ $accrued['days'] }} días transcurridos @if(!empty($accrued['from_date']))(desde el {{ @format_date($accrued['from_date']) }})@endif</th>
             <td>@format_currency($accrued['interest'])</td>
           </tr>
           @endif
