@@ -129,13 +129,12 @@ class LoanQuotationController extends Controller
         $categoryId = Category::query()->where('name', 'Maquinarias')->value('id'); // devuelve id o null
         $products = collect();
         if ($categoryId) {
+                // Solo maquinarias activas; "Activo solo en préstamo, venta y compra" (product_custom_field6)
+                // no restringe aquí: con "Si" o "No" la maquinaria activa se puede cotizar.
                 $products = Product::query()
                 ->where('category_id',$categoryId)
                 ->where('is_inactive',0)
-                ->where(function ($q) {
-                        $q->whereNull('product_custom_field6')
-                            ->orWhere('product_custom_field6', 0);
-                })->get();
+                ->get();
         }
 
         $walk_in_customer = $this->contactUtil->getWalkInCustomer($business_id);
