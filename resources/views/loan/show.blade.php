@@ -1,5 +1,8 @@
 @extends('layouts.app')
 @section('title', __('loans.calendar_payments'))
+@section('css')
+    @include('loan.partials._schedule_scroll_css')
+@endsection
 @section('content')
 <!-- Content Header (Page header) -->
 <section class="content-header no-print">

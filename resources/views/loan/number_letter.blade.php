@@ -1,5 +1,8 @@
 @extends('layouts.app')
 @section('title', __('loans.number_letter'))
+@section('css')
+    @include('loan.partials._schedule_scroll_css')
+@endsection
 
 @section('content')
 <!-- Content Header (Page header) -->
@@ -166,7 +169,7 @@
         
         @component('components.widget', ['class' => 'box-primary', 'title' => __( 'loans.all_lletters_payments' )]) 
            <div class="tab-content">
-                <div class="table-responsive">        
+                <div class="table-responsive schedule-scroll">        
                     <table class="table table-bordered table-striped dataTable" id="loans_table">
                         <thead>
                             <tr>

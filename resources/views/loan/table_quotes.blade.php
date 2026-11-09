@@ -22,7 +22,7 @@
 </ul>
 <div class="tab-content" style="padding-top:15px">
     <div role="tabpanel" class="tab-pane active" id="tab-current">
-        <div class="table-responsive">
+        <div class="table-responsive schedule-scroll">
             <table class="table table-bordered table-striped" id="loans_table">
                 @include('loan.partials._schedule_thead')
                 <tbody>
@@ -35,7 +35,7 @@
         </div>
     </div>
     <div role="tabpanel" class="tab-pane" id="tab-refinanced">
-        <div class="table-responsive">
+        <div class="table-responsive schedule-scroll">
             <table class="table table-bordered table-striped" id="loans_table_refinanced">
                 @include('loan.partials._schedule_thead')
                 <tbody>
@@ -51,6 +51,7 @@
 
 @else
 
+<div class="schedule-scroll">
 <table class="table table-bordered table-striped" id="loans_table">
     @include('loan.partials._schedule_thead')
     <tbody>
@@ -59,5 +60,6 @@
         @endforeach
     </tbody>
 </table>
+</div>
 
 @endif
