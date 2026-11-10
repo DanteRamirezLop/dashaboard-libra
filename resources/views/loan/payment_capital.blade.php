@@ -206,15 +206,24 @@
     var fromDate = moment('{{ \Carbon\Carbon::parse($accrued['from_date'])->format('Y-m-d') }}', 'YYYY-MM-DD');
     var maxInterest = {{ round((float) $accrued['max_interest'], 2) }};
     var periodDays = Math.max(0, nextDue.diff(fromDate, 'days'));
+    var lastMax = __read_number($('#transaction_payment_add_form input[name="amount"]'));
 
     // Intereses transcurridos desde el inicio del periodo (mismo cálculo que calcCapitalAccruedInterest)
-    function refreshAccrued() {
+    function refreshAccrued(dateChanged) {
       var $form = $('#transaction_payment_add_form');
       var paidOn = moment($form.find('#paid_on').val(), moment_date_format + ' ' + moment_time_format).startOf('day');
       var days = paidOn.isValid() ? Math.min(periodDays, Math.max(0, paidOn.diff(fromDate, 'days'))) : 0;
       var interest = Math.min(maxInterest, Math.round(balance * (annualRate / 100) / 360 * days * 100) / 100);
       var $amount = $form.find('input[name="amount"]');
-      var maxAmount = __number_f(Math.round((balance + interest) * 100) / 100);
+      var newMax = Math.round((balance + interest) * 100) / 100;
+
+      // Si el monto no fue editado a mano (sigue siendo el saldo total), se ajusta al de la nueva fecha
+      if (dateChanged === true && Math.abs(__read_number($amount) - lastMax) < 0.005) {
+        __write_number($amount, newMax);
+      }
+      lastMax = newMax;
+
+      var maxAmount = __number_f(newMax);
       $amount.removeData('rule-max-value msg-max-value ruleMaxValue msgMaxValue')
         .attr('data-rule-max-value', maxAmount)
         .attr('data-msg-max-value', '{{ __('lang_v1.max_amount_to_be_paid_is', ['amount' => '__AMT__']) }}'.replace('__AMT__', maxAmount));
@@ -224,8 +233,8 @@
       $form.find('#accrued_capital').text(__number_f(capital));
     }
 
-    $('#transaction_payment_add_form #paid_on').on('dp.change change', refreshAccrued);
-    $('#transaction_payment_add_form input[name="amount"]').on('change keyup', refreshAccrued);
-    refreshAccrued();
+    $('#transaction_payment_add_form #paid_on').on('dp.change change', function () { refreshAccrued(true); });
+    $('#transaction_payment_add_form input[name="amount"]').on('change keyup', function () { refreshAccrued(false); });
+    refreshAccrued(false);
   })();
 </script>
