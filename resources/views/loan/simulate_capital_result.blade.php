@@ -80,7 +80,7 @@
 
     <div class="modal-footer">
       <button type="button" class="btn btn-default no-print back_to_simulate_form"
-        data-href="{{ route('loan.simulate.capital.form', ['loan_id' => $loan->id, 'type' => $type]) }}">
+        data-href="{{ route('loan.simulate.capital.form', ['loan_id' => $loan->id, 'type' => $type, 'paid_on' => $paid_on]) }}">
         <i class="fa fa-arrow-left"></i> Volver a editar
       </button>
       <button type="button" class="btn btn-primary no-print" aria-label="Print"

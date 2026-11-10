@@ -1598,13 +1598,25 @@ class LoanController extends Controller {
                         return; // no hay cuotas pendientes
                     }
 
-                    // Se permite pagar el saldo más los intereses de los días transcurridos del periodo
-                    $accrued = $this->transactionUtil->calcCapitalAccruedInterest($loan->id, $schedule_version_id, Carbon::now());
+                    // Fecha de pago a simular (por defecto hoy; se conserva al volver desde el resultado)
+                    $paid_on = Carbon::now()->format('Y-m-d');
+                    if (request()->filled('paid_on')) {
+                        try {
+                            $paid_on = Carbon::createFromFormat('Y-m-d', request()->input('paid_on'))->format('Y-m-d');
+                        } catch (\Throwable $e) {
+                            // fecha inválida: se usa hoy
+                        }
+                    }
+
+                    // Se permite pagar el saldo más los intereses de los días transcurridos hasta la fecha de pago
+                    // (el formulario los recalcula al cambiar la fecha)
+                    $accrued = $this->transactionUtil->calcCapitalAccruedInterest($loan->id, $schedule_version_id, $paid_on);
                     $amount = round((float) $nextPending->opening_balance + $accrued['interest'], 2);
                     $amount_formated = $this->transactionUtil->num_f($amount);
                     $pending_count = $rows->where('status', 'pending')->count();
                     $current_installment = round((float) $nextPending->capital + (float) $nextPending->interests, 2);
-                    $view = view('loan.simulate_capital')->with(compact('loan', 'amount', 'amount_formated', 'type', 'pending_count', 'current_installment'))->render();
+                    $next_due_date = $nextPending->sheduled_date;
+                    $view = view('loan.simulate_capital')->with(compact('loan', 'amount', 'amount_formated', 'type', 'pending_count', 'current_installment', 'accrued', 'next_due_date', 'paid_on'))->render();
 
                     $output = ['status' => 'due', 'view' => $view];
                 } else {
@@ -1669,6 +1681,7 @@ class LoanController extends Controller {
                 'loan_would_be_paid' => $result['loan_would_be_paid'],
                 'accrued' => $accrued,
                 'capital_amount' => $capitalAmount,
+                'paid_on' => Carbon::parse($paid_on)->format('Y-m-d'),
             ])->render();
 
             return response()->json(['success' => true, 'view' => $view]);
