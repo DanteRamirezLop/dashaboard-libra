@@ -587,6 +587,12 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone'])
     Route::post('/sell/check-invoice-number', [SellController::class, 'checkInvoiceNumber']);
 });
 
+// Ejecución manual de los jobs diarios de préstamos (solo Admin)
+Route::middleware(['setData', 'auth', 'SetSessionData', 'CheckUserLogin'])->group(function () {
+    Route::get('/jobs/prestamos', [App\Http\Controllers\ScheduledJobController::class, 'index'])->name('scheduled-jobs.index');
+    Route::post('/jobs/prestamos', [App\Http\Controllers\ScheduledJobController::class, 'run'])->name('scheduled-jobs.run');
+});
+
 Route::get('/turuta', function(){
   Artisan::call('pos:recalculateLateFees');
 });
