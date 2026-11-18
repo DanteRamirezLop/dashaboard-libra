@@ -15,6 +15,7 @@ class Delay extends Model
         'start_date',
         'late_date',
         'days_late',
+        'last_charged_date',
         'late_amount',
         'status',
         'regularization_date',

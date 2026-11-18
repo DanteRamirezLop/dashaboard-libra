@@ -46,6 +46,9 @@ class CalculateStatusLoan extends Command
         try {
             $customers = [];
             $numeros = [];
+            $today = now()->toDateString();
+            $charged = 0;
+            $skipped = 0;
 
             DB::beginTransaction();
             $prestamos = Loan::whereIn('status', ['approved', 'in arrears', 'partial'])
@@ -81,12 +84,20 @@ class CalculateStatusLoan extends Command
 
                     if ($registro_moratorio && $registro_moratorio->status === 'late') {
 
+                        // Idempotencia: si ya se cobró el día de hoy, no volver a cobrarlo
+                        if ((string) $registro_moratorio->last_charged_date === $today) {
+                            $skipped++;
+                            continue;
+                        }
+
                         $late_amount_late = $letra_pago->getQuote() * 0.00111;
 
                         // Aumentar en la mora un día más de atraso
                         $registro_moratorio->days_late = $registro_moratorio->days_late + 1;
                         $registro_moratorio->late_amount = $registro_moratorio->late_amount + $late_amount_late;
+                        $registro_moratorio->last_charged_date = $today;
                         $registro_moratorio->save();
+                        $charged++;
 
                         // Actualizar totales de la transacción
                         $transaction = Transaction::find($prestamo->transaction_id);
@@ -106,12 +117,17 @@ class CalculateStatusLoan extends Command
             }
 
             DB::commit();
-            Log::info('MiJob de MORA se ejecutó correctamente a las ' . now());
+            Log::info('MiJob de MORA se ejecutó correctamente a las ' . now() . " (cobradas: {$charged}, ya cobradas hoy: {$skipped})");
+            $this->info("Moras cobradas: {$charged}. Ya cobradas hoy (omitidas): {$skipped}.");
 
-        } catch (\Exception $e) {
+            return self::SUCCESS;
+
+        } catch (\Throwable $e) {
             DB::rollBack();
-            \Log::emergency('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
-            exit($e->getMessage());
+            \Log::emergency('Command CalculateStatusLoan File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
+            $this->error($e->getMessage());
+
+            return self::FAILURE;
         }
     }
 

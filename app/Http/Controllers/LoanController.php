@@ -1105,9 +1105,10 @@ class LoanController extends Controller {
                     $transaction->save();
                 }
 
-                // 3. Marcar cuotas pendientes/vencidas como 'refinanced'
+                // 3. Marcar cuotas pendientes/vencidas/parciales como 'refinanced'
+                // (el saldo de una cuota parcial ya va incluido en el monto refinanciado)
                 PaymentSchedule::where('loan_id', $id)
-                    ->whereIn('status', ['pending', 'overdue'])
+                    ->whereIn('status', ['pending', 'overdue', 'partial'])
                     ->update(['status' => 'refinanced']);
                 // 3. Marcar cuotas anteriores como refinanciados (sin pisar la fecha de refinanciamientos previos)
                 PaymentSchedule::where('loan_id', $id)
@@ -1231,7 +1232,12 @@ class LoanController extends Controller {
                     if ($schedule->status === 'refinanced') {
                         $is_overdue = in_array($schedule->id, $late_schedule_ids)
                             || Carbon::parse($schedule->sheduled_date)->lt(Carbon::today());
-                        $schedule->status = $is_overdue ? 'overdue' : 'pending';
+                        $has_partial_payment = TransactionPayment::where('payment_schedule_id', $schedule->id)->exists();
+                        if ($has_partial_payment) {
+                            $schedule->status = 'partial';
+                        } else {
+                            $schedule->status = $is_overdue ? 'overdue' : 'pending';
+                        }
                     }
                     $schedule->refinanced_at = null;
                     $schedule->save();

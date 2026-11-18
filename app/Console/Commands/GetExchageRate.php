@@ -67,10 +67,14 @@ class GetExchageRate extends Command
                     ]);
                     Log::info('TIPO DE CAMBIO CREADO CON EXITO EL: ' . now());
                 }
-        } catch (\Exception $e) {
+
+                return self::SUCCESS;
+        } catch (\Throwable $e) {
             DB::rollBack();
             \Log::emergency('ERRO, NO SE GENERÓ LA TASA DE CAMBIO,  File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
-            exit('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
+            $this->error('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
+
+            return self::FAILURE;
         }
     }
 

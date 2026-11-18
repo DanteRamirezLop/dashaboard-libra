@@ -64,11 +64,17 @@ class ScheduledJobController extends Controller
                 }
 
                 Log::info("Ejecución manual de {$command} por el usuario #" . auth()->id());
-                Artisan::call($command);
+                $exitCode = Artisan::call($command);
+                $output = trim(Artisan::output());
 
-                $results[] = $this->ranToday($successMessage)
-                    ? "{$command}: EJECUTADO correctamente."
-                    : "{$command}: TERMINÓ SIN el mensaje de éxito, revisa el log de hoy.";
+                $results[] = $exitCode === 0
+                    ? "{$command}: EJECUTADO correctamente. {$output}"
+                    : "{$command}: FALLÓ ({$output}). Revisa el log de hoy.";
+
+                // Si la mora falla no se ejecuta el SMS, para respetar el orden.
+                if ($exitCode !== 0) {
+                    break;
+                }
             }
         } finally {
             $lock->release();

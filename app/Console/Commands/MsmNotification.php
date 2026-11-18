@@ -95,7 +95,7 @@ class MsmNotification extends Command
                             $late_amount_late = $payment_schedules->getQuote() * 0.00111;
                             $late_amount = $late_amount_late ; //Calcular la cantidad de morosidad
                             //registro de la mora en el primer día
-                            Delay::create(['late_date'=> $dayRightNow,'days_late'=> $days_late,'late_amount'=> $late_amount,'status'=> 'late','regularization_date'=> null,'loan_id'=> $loan->id,'payment_schedule_id'=>$payment_schedules->id]);
+                            Delay::create(['late_date'=> $dayRightNow,'days_late'=> $days_late,'last_charged_date'=> $dayRightNow->toDateString(),'late_amount'=> $late_amount,'status'=> 'late','regularization_date'=> null,'loan_id'=> $loan->id,'payment_schedule_id'=>$payment_schedules->id]);
                             //Aumento la cantidad de morosidad en el la registro total
                             $transaction = Transaction::find($loan->transaction_id);
                             $transaction->final_total +=  $late_amount;
@@ -111,7 +111,9 @@ class MsmNotification extends Command
                     }
                 }
 
-                if($numeros){ 
+                if ($numeros && ! config('services.sms.enabled')) {
+                    Log::info('SMS deshabilitado (SMS_ENABLED=false): no se envió el recordatorio a ' . count(array_unique($numeros)) . ' número(s).');
+                } elseif ($numeros) {
                     $phones = array_unique($numeros);
                     $mobile_number = implode(',', $phones);
                     #Envio de mensaje SMS a los clientes
@@ -131,10 +133,14 @@ class MsmNotification extends Command
                  
             DB::commit();
             Log::info('JOB de SMS se ejecuto correctamente el '. now());
-        } catch (\Exception $e) {
+
+            return self::SUCCESS;
+        } catch (\Throwable $e) {
             DB::rollBack();
             \Log::emergency('Command MsmNotification File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
-            exit($e->getMessage());
+            $this->error($e->getMessage());
+
+            return self::FAILURE;
         }
     }
 }

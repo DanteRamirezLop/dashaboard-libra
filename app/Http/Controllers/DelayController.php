@@ -82,6 +82,7 @@ class DelayController extends Controller
                 'start_date'=> $start_date,
                 'late_date'=> $late_date,
                 'days_late'=> $days_late,
+                'last_charged_date'=> Carbon::now()->toDateString(),
                 'late_amount'=> $late_amount,
                 'status'=> 'late',
                 'regularization_date'=> null,

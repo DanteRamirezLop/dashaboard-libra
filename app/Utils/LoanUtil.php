@@ -123,11 +123,17 @@ class LoanUtil
                         FROM transaction_payments AS TP
                         WHERE TP.transaction_id = transactions.id) as total_paid'),
 
-                DB::raw('(SELECT
+                // Pagos aplicados a cuotas, sin contar los de cuotas refinanciadas
+                // (esas cuotas tampoco suman en "delay", su saldo pasó al nuevo cronograma)
+                DB::raw("(SELECT
                             SUM(IF(TP.is_return = 1,-1*TP.amount,TP.amount))
                             FROM transaction_payments AS TP
                             WHERE TP.transaction_id = transactions.id AND TP.payment_schedule_id IS NOT NULL
-                        ) as total_only_payments'),
+                            AND NOT EXISTS (
+                                SELECT 1 FROM payment_schedules AS PSR
+                                WHERE PSR.id = TP.payment_schedule_id AND PSR.status = 'refinanced'
+                            )
+                        ) as total_only_payments"),
 
                 DB::raw('COALESCE(psa.delay,0) as delay'),
                 DB::raw('COALESCE(da.mora,0) as mora'),

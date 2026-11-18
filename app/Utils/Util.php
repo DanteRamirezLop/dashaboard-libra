@@ -466,6 +466,12 @@ class Util
      */
     public function sendSms($data)
     {
+        if (! config('services.sms.enabled')) {
+            \Log::info('SMS deshabilitado (SMS_ENABLED=false): no se envió el SMS.');
+
+            return false;
+        }
+
         $sms_settings = $data['sms_settings'];
         $sms_service = isset($sms_settings['sms_service']) ? $sms_settings['sms_service'] : 'other';
         $parameter_type = isset($sms_settings['data_parameter_type']) ? $sms_settings['data_parameter_type'] : 'form-data';

@@ -604,6 +604,13 @@ class BusinessController extends Controller
         try {
             $sms_settings = $request->input();
 
+            if (! config('services.sms.enabled')) {
+                return [
+                    'success' => 0,
+                    'msg' => 'El envío de SMS está deshabilitado. Para activarlo, configure SMS_ENABLED=true en el archivo .env',
+                ];
+            }
+
             $data = [
                 'sms_settings' => $sms_settings,
                 'mobile_number' => $sms_settings['test_number'],

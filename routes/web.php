@@ -591,8 +591,14 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone'])
 Route::middleware(['setData', 'auth', 'SetSessionData', 'CheckUserLogin'])->group(function () {
     Route::get('/jobs/prestamos', [App\Http\Controllers\ScheduledJobController::class, 'index'])->name('scheduled-jobs.index');
     Route::post('/jobs/prestamos', [App\Http\Controllers\ScheduledJobController::class, 'run'])->name('scheduled-jobs.run');
-});
 
-Route::get('/turuta', function(){
-  Artisan::call('pos:recalculateLateFees');
+    // Recalcula las moras activas (solo Admin)
+    Route::get('/turuta', function () {
+        if (! app(App\Utils\Util::class)->is_admin(auth()->user())) {
+            abort(403, 'Unauthorized action.');
+        }
+        Artisan::call('pos:recalculateLateFees');
+
+        return '<pre>' . e(Artisan::output()) . '</pre>';
+    });
 });

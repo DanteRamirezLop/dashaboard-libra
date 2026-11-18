@@ -433,9 +433,11 @@ class LoanPaymentController extends Controller
              $total_month_now += $paymentSchedule->getQuote();
         }
 
-        // Pagos aplicados directamente a una cuota (igual criterio que LoanController::index)
+        // Pagos aplicados directamente a una cuota, sin contar los de cuotas refinanciadas
+        // (igual criterio que LoanUtil::loanListQuery)
         $total_only_payments = TransactionPayment::where('transaction_id', $sell->id)
             ->whereNotNull('payment_schedule_id')
+            ->whereNotIn('payment_schedule_id', PaymentSchedule::where('loan_id', $loan->id)->where('status', 'refinanced')->select('id'))
             ->get()
             ->sum(fn ($tp) => $tp->is_return ? -$tp->amount : $tp->amount);
 

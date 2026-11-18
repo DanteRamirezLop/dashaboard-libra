@@ -50,4 +50,18 @@ return [
         'business_id' => env('DASHBOARD_BUSINESS_ID', 4),
     ],
 
+    // Interruptor global de envío de SMS (Twilio, Nexmo u otro proveedor).
+    // Deshabilitado por defecto; para reactivarlo poner SMS_ENABLED=true en el .env
+    'sms' => [
+        'enabled' => env('SMS_ENABLED', false),
+    ],
+
+    // URLs opcionales de monitoreo (ej. healthchecks.io). Se llaman cuando el job
+    // termina bien; si un día no llega el ping, el servicio externo avisa.
+    'scheduler_ping' => [
+        'pos:calculateStatusLoan' => env('SCHEDULER_PING_MORA'),
+        'pos:smsPagoVencer' => env('SCHEDULER_PING_SMS'),
+        'pos:exchangerate' => env('SCHEDULER_PING_EXCHANGERATE'),
+    ],
+
 ];
