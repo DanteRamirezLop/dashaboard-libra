@@ -724,6 +724,10 @@
 				Nro. 575-9773535-1-63<br>
 				CCI 00257500977353516393
 			</td>
+			<td style="vertical-align: top; text-align: center; width: 80px;">
+				<strong>BBVA QR</strong><br>
+				<img src="{{ asset('img/qr-bbva.jpg') }}" alt="QR BBVA" style="height: 120px; width: auto; margin-top: 2px;">
+			</td>
 		</tr>
 	</table>
 
