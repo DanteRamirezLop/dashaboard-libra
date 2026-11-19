@@ -702,10 +702,46 @@
 	<div><strong>6.</strong>  Los componentes eléctricos (sensores, solenoides, bujías de precalentamiento, entre otros) no admiten cambio ni devolución una vez entregados.</div>
 	<div><strong>7.</strong>  Las devoluciones de repuestos mecánicos en stock por error del cliente solo se aceptarán dentro de los 7 días calendario siguientes a la entrega, siempre que el producto se encuentre sin uso y en su empaque original, y estarán sujetas a una penalidad del 10 % por reingreso al almacén.</div>
 
-	<div style="margin-top: 8px; font-size: 9px; text-align: center;">
-		<strong>PAGA CON QR (BBVA - cualquier billetera)</strong><br>
-		<img src="{{ asset('img/qr-libra.png') }}" alt="QR BBVA" style="display: block; width: 130px; height: auto; margin: 2px auto 0 auto;">
-	</div>
+	<table style="width: 100%; margin-top: 8px; font-size: 9px; text-align: left;">
+		<tr>
+			<td style="vertical-align: top; padding-bottom: 6px;">
+				<strong>INTERBANK SOLES</strong><br>
+				CTA: 731-3004014408<br>
+				CCI: 003-731-003004014408-78
+			</td>
+			<td style="vertical-align: top; padding-bottom: 6px;">
+				<strong>BCP SOLES</strong><br>
+				Nro. 575-9967850-0-31<br>
+				CCI 00257500996785003197
+			</td>
+			<td style="vertical-align: top; padding-bottom: 6px;">
+				<strong>BBVA CTA. CTE. SOLES</strong><br>
+				Nro. 0011-0265-02-00923229<br>
+				CCI 011 265 000200923229 65
+			</td>
+			<td rowspan="2" style="vertical-align: middle; text-align: center; width: 100px;">
+				<strong>QR BBVA</strong>
+				<img src="{{ asset('img/qr-bbva-libra.png') }}" alt="QR BBVA" style="display: block; width: 85px; height: 85px; margin: 2px auto 0 auto;">
+			</td>
+		</tr>
+		<tr>
+			<td style="vertical-align: top;">
+				<strong>INTERBANK DÓLARES</strong><br>
+				CTA: 731-3004014415<br>
+				CCI: 003-731-003004014415-73
+			</td>
+			<td style="vertical-align: top;">
+				<strong>BCP DÓLARES</strong><br>
+				Nro. 575-9773535-1-63<br>
+				CCI 00257500977353516393
+			</td>
+			<td style="vertical-align: top;">
+				<strong>BBVA CTA. CTE. DÓLARES</strong><br>
+				Nro. 0011-0265-02-00934271<br>
+				CCI 011 265 000200934271 64
+			</td>
+		</tr>
+	</table>
 
 	<div style="margin-top: 8px; font-size: 9px;">La aceptación del cliente (firmar a continuación):</div>
 	<div style="margin-top: 24px;">

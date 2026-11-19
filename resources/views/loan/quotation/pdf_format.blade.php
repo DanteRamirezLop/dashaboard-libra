@@ -628,9 +628,17 @@ Tumbes</p>
                     </li>
                 </ul>
 
-                <p style="text-align: center; margin-top: 8px;"><strong><em>Nota: Para agilizar la atención, agradeceremos enviar la constancia de pago al correo informes@librainternational.com.pe indicando el N° de cotización</em></strong></p>
+                <p style="text-align: left; margin-top: 8px;"><strong><em>Nota: Para agilizar la atención, agradeceremos enviar la constancia de pago al correo informes@librainternational.com.pe indicando el N° de cotización</em></strong></p>
             </div>
         </div>
+        </div>
+
+        {{-- Mensaje de cierre --}}
+        <div style="page-break-inside: avoid; text-align: center; margin-top: 20px;">
+            <hr style="margin: 0 0 12px 0;" />
+            <p style="font-size: 0.8rem; margin: 0 0 4px 0;">Si usted tiene alguna pregunta sobre esta cotización, por favor, póngase en contacto con nosotros</p>
+            <p style="font-size: 0.8rem; margin: 0 0 4px 0; color: #034896;"><strong>LIBRA INTERNATIONAL EIRL | Cel: 957233959 | E-mail: informes@librainternational.com.pe</strong></p>
+            <p style="font-size: 0.9rem; margin: 0;"><strong><em>¡Gracias por hacer negocios con nosotros!</em></strong></p>
         </div>
     </main>
 </body>
