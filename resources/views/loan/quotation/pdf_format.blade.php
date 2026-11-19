@@ -331,6 +331,8 @@ Tumbes</p>
             </table>
         </div>
         
+        {{-- Título + cuadro de precio juntos: si no entra completo, pasa a la siguiente página --}}
+        <div style="page-break-inside: avoid;">
         @if($loan->type_quotation == 2)
             <div class="etiqueta">
                 <h4 class="title">Precio CREDITO</h4>
@@ -363,6 +365,7 @@ Tumbes</p>
                 <td align='center' style='font-size: 0.8rem;'> ${{number_format($total,2)}}</td>
             </tr>
         </table>
+        </div>
     
         @if($loan->type_quotation == 2)
             <div class="etiqueta">
@@ -556,8 +559,16 @@ Tumbes</p>
             <h4 class="title">Términos y Condiciones</h4>
         </div>
 
+        @php
+            // El editor guarda la tabla de términos con una altura fija (ej. height: 330px).
+            // Si la tabla se parte entre páginas, dompdf reserva esa altura completa en la
+            // página siguiente y deja un gran espacio en blanco. Se quita la altura de <table>.
+            $terms_html = preg_replace_callback('/<table\b[^>]*>/i', function ($m) {
+                return preg_replace('/(?<![\w-])height\s*:\s*[\d.]+px;?\s*/i', '', $m[0]);
+            }, $loan->terms ?? '');
+        @endphp
         <div class="ml-3">
-            {!! $loan->terms !!}
+            {!! $terms_html !!}
         </div>
 
         <div class="etiqueta">
@@ -582,21 +593,44 @@ Tumbes</p>
             </p>
         </div>
 
+        {{-- Bloque completo (título + contenido) sin partir: si no cabe, pasa entero a la siguiente página --}}
+        <div style="page-break-inside: avoid;">
         <div class="etiqueta">
             <h4 class="title">Datos Adicionales:</h4>
         </div>
 
         <div class="ml-3">
             <p>Cualquier información adicional, visite nuestra página web: <a href="">https://librainternational.com.pe/</a></p>
-            <table width="100%" >
-                <tr>
-                    <td align="center" style="width: 2%;"></td>
-                    <td align="center" style="width: 96%;">
-                        <img class="my-5" src="{{ public_path('images/bancos.png') }}" alt="Bancos" width="100%" />
-                    </td>
-                    <td align="center" style="width: 2%;"></td>
-                </tr>
-            </table>
+            <div style="font-size: 0.8rem;">
+                <p style="font-weight: bold; margin-bottom: 4px;">CANCELA A TRAVÉS DE</p>
+                <div style="text-align: center;">
+                    <img src="{{ public_path('images/bcp-cuenta-recaudadora.png') }}" alt="Cuenta Recaudadora BCP" style="width: 260px;" />
+                </div>
+
+                <p style="margin: 10px 0 2px 0;"><strong>FORMA DE PAGO: Cuenta Recaudadora BCP</strong></p>
+                <p style="margin: 0 0 4px 0;">Para realizar el pago de esta cotización, sírvase utilizar el módulo de <strong>Pago de Servicios</strong> del BCP bajo las siguientes indicaciones:</p>
+
+                <ul style="margin: 0; padding-left: 20px; font-size: 0.9rem;">
+                    <li><strong>Por Banca Móvil BCP o Banca por Internet (ViaBCP):</strong>
+                        <ol style="margin: 2px 0 4px 0;">
+                            <li>Ingresar a la opción <strong>"Pagar servicios"</strong>.</li>
+                            <li>Buscar la empresa como: <strong>LIBRA INTERNATIONAL PERU EIRL</strong></li>
+                            <li>Seleccionar el servicio: <strong>INICIAL / LETRA</strong></li>
+                            <li>Ingresar su código de depositante: Solicítalo a tu asesor</li>
+                        </ol>
+                    </li>
+                    <li><strong>Por Agente BCP o Ventanilla:</strong>
+                        <ol start="5" style="margin: 2px 0 4px 0;">
+                            <li>Indicar que realizará un <strong>Pago de Servicio / Recaudación</strong>.</li>
+                            <li>Brindar el nombre de la empresa: <strong>LIBRA INTERNATIONAL PERU EIRL</strong></li>
+                            <li>Indicar su código de pago: Solicítalo a tu asesor</li>
+                        </ol>
+                    </li>
+                </ul>
+
+                <p style="text-align: center; margin-top: 8px;"><strong><em>Nota: Para agilizar la atención, agradeceremos enviar la constancia de pago al correo informes@librainternational.com.pe indicando el N° de cotización</em></strong></p>
+            </div>
+        </div>
         </div>
     </main>
 </body>
