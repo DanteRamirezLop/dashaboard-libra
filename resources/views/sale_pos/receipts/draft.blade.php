@@ -704,7 +704,7 @@
 
 	<div style="margin-top: 8px; font-size: 9px; text-align: center;">
 		<strong>PAGA CON QR (BBVA - cualquier billetera)</strong><br>
-		<img src="{{ asset('img/qr-bbva.png') }}" alt="QR BBVA" style="display: block; width: 130px; height: auto; margin: 2px auto 0 auto;">
+		<img src="{{ asset('img/qr-libra.png') }}" alt="QR BBVA" style="display: block; width: 130px; height: auto; margin: 2px auto 0 auto;">
 	</div>
 
 	<div style="margin-top: 8px; font-size: 9px;">La aceptación del cliente (firmar a continuación):</div>
