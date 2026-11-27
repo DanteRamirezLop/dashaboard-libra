@@ -946,10 +946,7 @@ class SellPosController extends Controller
             foreach ($sell_details as $key => $value) {
                 $variation = Variation::with('media')->findOrFail($value->variation_id);
                 $sell_details[$key]->media = $variation->media;
-                $sell_details[$key]->is_cyber_combo = $transaction->selling_price_group_id == 2 && (
-                    $value->category_id == 12 ||
-                    ($value->category_id == 1 && in_array($value->brand_id, [22, 57]))
-                );
+                $sell_details[$key]->is_cyber_combo = $transaction->selling_price_group_id == 2 && $value->category_id == 12;
 
                 //If modifier or combo sell line then unset
                 if (!empty($sell_details[$key]->parent_sell_line_id)) {
@@ -1722,10 +1719,7 @@ class SellPosController extends Controller
         $purchase_line_id = request()->get('purchase_line_id');
 
         $price_group = request()->input('price_group');
-        $is_cyber_combo = $price_group == 2 && (
-            $product->category_id == 12 ||
-            ($product->category_id == 1 && in_array($product->brand_id, [22, 57]))
-        );
+        $is_cyber_combo = $price_group == 2 && $product->category_id == 12;
 
         $is_cyber_repuesto = false;
         if ($price_group == 2 && $product->category_id == 2) {
@@ -1776,7 +1770,7 @@ class SellPosController extends Controller
                 $discount->id = null;
                 $discount->discount_type = 'percentage';
                 $discount->discount_amount = $is_cyber_repuesto ? 10 : 3;
-                $discount->name = $is_cyber_repuesto ? 'Descuento CYBER Repuestos' : 'Descuento CYBER Lubricantes/Filtros';
+                $discount->name = $is_cyber_repuesto ? 'Descuento CYBER Repuestos' : 'Descuento CYBER Filtros';
                 $discount->formated_starts_at = '';
                 $discount->formated_ends_at = '';
             }

@@ -1127,10 +1127,7 @@ class SellController extends Controller
             foreach ($sell_details as $key => $value) {
                 $variation = Variation::withTrashed()->with('media')->findOrFail($value->variation_id);
                 $sell_details[$key]->media = $variation->media;
-                $sell_details[$key]->is_cyber_combo = $transaction->selling_price_group_id == 2 && (
-                    $value->category_id == 12 ||
-                    ($value->category_id == 1 && in_array($value->brand_id, [22, 57]))
-                );
+                $sell_details[$key]->is_cyber_combo = $transaction->selling_price_group_id == 2 && $value->category_id == 12;
                 //If modifier or combo sell line then unset
                 if (! empty($sell_details[$key]->parent_sell_line_id)) {
                     unset($sell_details[$key]);

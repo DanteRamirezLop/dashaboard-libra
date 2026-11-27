@@ -1933,17 +1933,14 @@ function recompute_row_discounted_price(tr) {
     pos_each_row(tr);
 }
 
-//Lubricantes (category 1) + Filtros (category 12) combo discount for the "CYBER" price group:
-//5% each when both categories are present in the cart at once, 3% each otherwise.
+//Filtros (category 12) discount for the "CYBER" price group: 3% each.
 function apply_cyber_combo_discount() {
     var rows = $('table#pos_table tbody tr[data-cyber_combo="1"]');
     if (rows.length === 0) {
         return;
     }
 
-    var hasLubricante = rows.filter('[data-category_id="1"]').length > 0;
-    var hasFiltro = rows.filter('[data-category_id="12"]').length > 0;
-    var percent = (hasLubricante && hasFiltro) ? 5 : 3;
+    var percent = 3;
 
     rows.each(function() {
         var row = $(this);
