@@ -5,6 +5,7 @@ namespace App;
 use DB;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Category extends Model
 {
@@ -21,6 +22,19 @@ class Category extends Model
      * @var array
      */
     protected $guarded = ['id'];
+
+    /**
+     * Genera el slug automáticamente a partir del nombre al crear
+     * o cuando el nombre cambia.
+     */
+    protected static function booted()
+    {
+        static::saving(function ($category) {
+            if ($category->isDirty('name') || empty($category->slug)) {
+                $category->slug = Str::slug($category->name);
+            }
+        });
+    }
 
     /**
      * Combines Category and sub-category

@@ -160,6 +160,7 @@ class TaxonomyController extends Controller
             }
             $input['business_id'] = $request->session()->get('user.business_id');
             $input['created_by'] = $request->session()->get('user.id');
+            $input['show_on_website'] = $request->boolean('show_on_website') ? 1 : 0;
 
             $category = Category::create($input);
             $output = ['success' => true,
@@ -249,6 +250,7 @@ class TaxonomyController extends Controller
                 $category->name = $input['name'];
                 $category->description = $input['description'];
                 $category->short_code = $request->input('short_code');
+                $category->show_on_website = $request->boolean('show_on_website') ? 1 : 0;
 
                 if (! empty($request->input('add_as_sub_cat')) && $request->input('add_as_sub_cat') == 1 && ! empty($request->input('parent_id'))) {
                     $category->parent_id = $request->input('parent_id');
